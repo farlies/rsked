@@ -1,0 +1,89 @@
+// Ogg Testing Schedule
+{
+    "encoding" : "UTF-8",
+
+    // lower case call sign -> MHz
+    "sources" :
+    {
+        "kbem" : {"mode" : "radio", "frequency" : "88.5"},  // jazz
+        "kfai" : {"mode" : "radio", "frequency" : "90.3"},  // world music
+        "know" : {"mode" : "radio", "frequency" : "91.1"},  // news
+        "ksjn" : {"mode" : "radio", "frequency" : "99.5"},  // classical
+        
+        "%snooze1" : {"mode" : "ogg", "file" : "~/.config/rsked/snooze-1hr.ogg" },
+        "%resume" : {"mode" : "ogg", "file" :  "~/.config/rsked/resuming.ogg" },
+        "%revert" : {"mode" : "ogg", "file" :  "~/.config/rsked/reverting.ogg" },
+        "%goodam" : {"mode" : "ogg", "file" :  "~/.config/rsked/goodam.ogg" },
+        "%goodaf" : {"mode" : "ogg", "file" :  "~/.config/rsked/goodaf.ogg" },
+        "%goodev" : {"mode" : "ogg", "file" :  "~/.config/rsked/goodev.ogg" },
+
+        "cms"  : {"mode" : "stream", "url" : "http://cms.stream.publicradio.org/cms.mp3",
+                  "alternate" : "ksjn"},
+        "nis"  : {"mode" : "stream", "url" : "http://nis.stream.publicradio.org/nis.mp3",
+                  "alternate" : "know"},
+        
+        "aja"  : {"mode" : "ogg", "directory" : "/home/sharp/Music/Steely Dan/Aja",
+                  "repeat" : "yes", "alternate" : "who" },
+
+        "bach" : {"mode" : "ogg", "repeat" : "yes",  "directory" :
+     "/home/sharp/Music/Johann Sebastian Bach/Bach Cello Suites (feat. cello: Zuill Bailey)/"},
+
+        "atomheart" : {"mode" : "ogg", "directory" :
+                  "/home/sharp/Music/Pink Floyd/Atom Heart Mother/"},
+
+        "echoes1" : {"mode" : "mp3", "repeat" : "yes", "directory" :
+                  "/home/sharp/Music/Pink Floyd/ECHOES The Best Of Pink Floyd, Disc 1"},
+
+        "riley": {"mode" : "mp3", "repeat" : "yes", "directory" :
+                  "/home/sharp/Music/Terry Riley/A Rainbow In Curved Air/"},
+
+        "who"  : {"mode" : "ogg" , "repeat" : "yes",
+                  "directory" : "/home/sharp/Music/The Who/Who’s Next/"},
+
+        "lust" : {"mode" : "ogg", "repeat" : "yes",
+                  "directory" : "/home/sharp/Music/Roedelius/Lustwandel/"}
+    },
+
+    // must have 7 entries, Sun->Sat
+    "weekmap" : [
+         "sunday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "saturday" ],
+
+    "weekday" : [
+        {"start" : "00:00", "source" : "OFF" },
+        {"start" : "08:00", "source" : "lust" },
+        {"start" : "09:45", "source" : "atomheart" },
+        {"start" : "09:55", "source" : "OFF" },
+        {"start" : "10:25", "source" : "bach" },
+        {"start" : "10:30", "source" : "lust" },
+        {"start" : "10:35", "source" : "OFF" },
+        {"start" : "10:40", "source" : "bach" },
+        {"start" : "14:00", "source" : "aja" },
+        {"start" : "15:00", "source" : "lust" },
+        {"start" : "17:00", "source" : "who" },
+        {"start" : "17:30", "source" : "bach" },
+        {"start" : "21:00", "source" : "OFF" }
+    ],
+
+    "sunday" : [
+        {"start" : "00:00:00", "source" : "OFF" },
+        {"start" : "08:00", "source" : "lust" },
+        {"start" : "14:47:13", "source" : "bach" },
+        {"start" : "15:00", "source" : "lust" },
+        {"start" : "15:15", "source" : "who" },
+        {"start" : "15:30", "source" : "echoes1" },
+        {"start" : "18:00", "source" : "lust" },
+        {"start" : "21:00", "source" : "OFF" }
+    ],
+
+    "saturday" : [
+        {"start" : "00:00", "source" : "OFF" },
+        {"start" : "08:00", "source" : "riley" },
+        {"start" : "21:00", "source" : "OFF" }
+    ]
+}

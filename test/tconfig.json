@@ -1,0 +1,47 @@
+// tconfig.json
+{
+    "encoding"   : "UTF-8",
+    "schema" : "1.0",
+
+    "General" : {
+        "sched_path" : "~/.config/rsked/schedule.json",
+        "log_dir"    : "~/log",
+        "version" : "2.0"
+    },
+    
+    "Mpd_player" : {
+        "enabled" : true,
+        "priority" : 1,
+        "mpd_socket" : "~/.config/mpd/socket",
+        "mpd_host" : "localhost",
+        "mpd_port" : 6666
+    },
+
+    "Sdr_player" : {
+        "enabled" : true,
+        "priority" : 2,
+        "gqrx_bin_path"  : "~/bin/gqrx",
+        "gqrx_work"  : "~/.config/gqrx/gqrx.conf",
+        "gqrx_gold"  : "~/.config/gqrx/gold.conf",
+        "gqrx_low_s"      : -20.0,
+        "gqrx_low_low_s"  : -40.0
+    },
+
+    "Ogg_player" : {
+        "enabled" : true,
+        "priority" : 3,
+        "ogg_bin_path"   : "/usr/bin/whoami"
+    },
+
+    "NA_player" : {
+        "enabled" : true,
+        "priority" : 3,
+        "secret_path" : "/tmp/.secret/foo"
+    },
+
+    "Mp3_player" : {
+        "enabled" : false,
+        "priority" : 4,
+        "mp3_bin_path"   : "/usr/bin/mpg321"
+    }
+}

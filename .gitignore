@@ -1,0 +1,10 @@
+debug-x86_64
+release-x86_64
+debug-armv7l
+release-armv7l
+debug-dev
+release-dev
+debug-rpi
+release-rpi
+builddir
+*~

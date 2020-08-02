@@ -1,0 +1,11 @@
+// tncheck2.json
+{
+    "encoding" : "UTF-8",
+    "schema" : "1.0",
+
+    "Inet_checker" : {
+        "enabled" : false,
+        "status_path" : "/tmp/tncheck",
+        "refresh" : 1001
+    }
+}

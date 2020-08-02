@@ -1,0 +1,32 @@
+// sked-test2 : Defective--weekday day does not start at 00:00
+{
+    "encoding" : "UTF-8",
+    "schema"   : "1.0",
+    "version"  : "1.0",
+
+    "sources" :
+    {
+        // playlists
+        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
+                    "path" : "~/.config/mpd/playlists/master.m3u"}
+    },
+
+    // must have 7 entries, Sun->Sat
+    "weekmap" : [
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday" ],
+
+    "dayprograms" : {
+
+        "weekday" : [
+            {"start" : "06:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ]
+    }
+}

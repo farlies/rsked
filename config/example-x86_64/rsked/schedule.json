@@ -1,0 +1,94 @@
+// Example schedule for the week. This file refers to radio stations
+// and recorded music files that are unlikely to be useful to you.
+// Delete or alter them to suit your local needs. The stock messages
+// should be retained--these files will be automatically installed.
+{
+    "encoding" : "UTF-8",
+    "schema"   : "1.0",
+    "version"  : "1.0",
+
+    "sources" :
+    {
+        // FM radio
+        "kbem" : {"mode" : "radio", "frequency" : "88.5", "alternate" : "master"},
+        "kfai" : {"mode" : "radio", "frequency" : "90.3", "alternate" : "master"},
+        "know" : {"mode" : "radio", "frequency" : "91.1", "alternate" : "master"},
+        "ksjn" : {"mode" : "radio", "frequency" : "99.5", "alternate" : "master"},
+        
+        // Internet streams
+        "cms"  : {"mode" : "stream", "url" : "http://cms.stream.publicradio.org/cms.mp3",
+                  "alternate" : "ksjn", "repeat" : true},
+        "nis"  : {"mode" : "stream", "url" : "http://nis.stream.publicradio.org/nis.mp3",
+                  "alternate" : "know", "repeat" : true},
+
+        // stock messages
+        "%snooze1" : {"mode" : "ogg", "file" : "~/.config/rsked/resource/snooze-1hr.ogg" },
+        "%resume" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/resuming.ogg" },
+        "%revert" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/reverting.ogg" },
+        "%goodam" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodam.ogg" },
+        "%goodaf" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodaf.ogg" },
+        "%goodev" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodev.ogg" },
+
+        "%motd"   : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/motd.ogg" },
+
+        // playlists
+        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
+                    "path" : "~/.config/mpd/playlists/master.m3u"},
+
+        // dynamic content examples
+        "motd-ymd" : {"mode" : "ogg", "dynamic" : true, "alternate" : "motd-md",
+                      "file" : "~/.config/rsked/motd/%Y-%m-%d.ogg"},
+
+        "motd-md" : {"mode" : "ogg", "dynamic" : true,
+                     "file" : "~/.config/rsked/motd/each-%m-%d.ogg"},
+
+        "dnow" : {"mode" : "stream",  "repeat" : false, "alternate" : "nis",
+                  "dynamic" : true,
+                  "url" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"}
+    },
+
+    // must have 7 entries, Sun->Sat
+    "weekmap" : [
+         "sunday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "weekday",
+         "saturday" ],
+
+    "dayprograms" : {
+    "weekday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "14:00", "program" : "nis" },
+        {"start" : "15:00", "program" : "cms" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "saturday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "08:00", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-ymd" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "sunday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "08:00", "program" : "cms" },
+        {"start" : "10:30", "announce" : "motd-ymd" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "recorded" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "master"},
+        {"start" : "12:00", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+        ]
+    }
+}

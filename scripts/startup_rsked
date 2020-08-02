@@ -1,0 +1,40 @@
+#!/bin/bash
+# This is meant to be invoked on login, e.g. in the autostart file
+# in directory .config/lxsession/LXDE-pi on the RPi platform.
+# It will start cooling and hence rsked each time the user session starts.
+
+# kill any existing processes and clean out PID files
+/usr/bin/pkill -9 -u ${USER} -x cooling
+/usr/bin/pkill -9 -u ${USER} -x rsked
+/usr/bin/pkill -9 -u ${USER} -x vumonitor
+/usr/bin/pkill -9 -u ${USER} -x mpd
+
+rm -f ${XDG_RUNTIME_DIR}/cooling.pid
+rm -f ${XDG_RUNTIME_DIR}/rsked.pid
+rm -f ${XDG_RUNTIME_DIR}/vumonitor.pid
+rm -f ${XDG_RUNTIME_DIR}/mpd.pid
+rm -f ${XDG_RUNTIME_DIR}/mpd.socket
+# Note that if you reconfigure the mpd socket in rsked.json, you should
+# adjust the following line to reflect the new pathname:
+rm -f ${HOME}/.config/mpd/socket
+
+# verify log directories are present
+mkdir -p ${HOME}/logs
+mkdir -p ${HOME}/logs_old
+
+# run the first internet check prior to starting rsked
+if [[ -x ${HOME}/bin/check_inet.sh ]]; then
+    ${HOME}/bin/check_inet.sh
+fi
+
+# strobe all the gpio pins we use to assure clean
+${HOME}/bin/gpiopost.py
+
+ts=`date +%y%m%d_%H%M%S`
+
+# start cooling, which starts rsked, vumonitor, and all players
+# any misc output to stderr or stdout will be collected
+# in ~/logs/rsked{datetime}.out
+#
+${HOME}/bin/cooling --debug &> ${HOME}/logs/rsked${ts}.out
+
