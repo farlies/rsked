@@ -39,7 +39,9 @@ repository, and a selection of external audio players that you must install
 separately.  The choice of external players depends on the sources
 desired for the intended application.
 
-![architecture](doc/architecture.png alt="applications in rsked")
+![architecture]
+
+[architecture]: doc/architecture.png
 
 A typical embedded application will:
 
@@ -81,7 +83,7 @@ Over-the-air FM broadcasts may be scheduled using *Software Defined
 Radio* (SDR). Attach an inexpensive USB SDR radio dongle such as
 [RTL-2832U](https://www.rtl-sdr.com/), then configure the
 desired frequencies in the schedule.  `rsked` uses a slightly modified
-fork of [gqrx](https://github.com/al-sharp/gqrx). Consult that project
+fork of [gqrx](https://github.com/farlies/gqrx). Consult that project
 for further instructions.
 
 ### rsked application
