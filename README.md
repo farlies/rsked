@@ -26,7 +26,7 @@ to require human interaction to schedule audio programming.
 - Play FM broadcast stations
 - Audio "message of the day" at scheduled times
 - Audio source failure detected, with reversion to defined backup sources
-- Runs on Raspberry Pi-3 or x86 (32 or 64 bit), no screen required
+- Runs on Raspberry Pi-3 or x86_64, no screen required
 - Snooze button to pause or resume play (optional, GPIO)
 - Status LEDs (optional, GPIO)
 - Control of active cooling (optional, GPIO)
@@ -111,8 +111,8 @@ It can be configured to:
 
 RPi systems may need active cooling (fan) if the SDR player is used
 extensively. SDR is very compute intensive and will make an RPi run
-hot for passive cooling in some enclosures.
-See [README-RPi](doc/README-RPi.md README-RPi) for
+too hot for passive cooling alone in some enclosures.
+See [README-RPi](doc/README-RPi.md) for
 more details about hardware, wiring, and configuration.
 
 ### VUmonitor application
