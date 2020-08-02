@@ -10,13 +10,13 @@ an **embedded application** on an inexpensive low power microsystem
 (Raspberry Pi 3, RPi).  However it can run on x86 desktop computers as
 well, and likely on any Linux computer with a sound card.
 
-`rsked` was originally developed for people physically unable due to
-disability to operate conventional audio equipment. It satisfies a
-desire to have a variety of audio programming without reliance on
-others to control the equipment. It can work in an environment where
-internet connectivity is absent or unreliable. It could be used in any
-situation where it is inconvenient or undesirable to require
-human interaction to schedule audio programming.
+`rsked` was originally developed for people who, due to disability,
+are physically unable to operate conventional audio equipment. It
+satisfies a desire to have a variety of audio programming without
+reliance on others to control the equipment. It can work in an
+environment where internet connectivity is absent or unreliable. It
+could be used in any situation where it is inconvenient or undesirable
+to require human interaction to schedule audio programming.
 
 ## Features
 
@@ -54,15 +54,16 @@ A typical embedded application will:
 
 ### Recorded Music
 
-Recorded music may be played with any of these external applications:
+Recorded music may be played with any of these external applications
+available as packages on most Linux distributions:
 
-- `ogg123`: vorbis-tools package
-- `mpd`:   mpd package 
-- `mpg321`: mpg321 package
+- [ogg123](https://wiki.xiph.org/Vorbis-tools)
+- [mpd](https://www.musicpd.org)
+- [mpg321](http://mpg321.sourceforge.net/)
 
 The `ogg123` player plays Ogg-Vorbis recordings, and is required to
 play announcments in `rsked`.  The music player daemon
-[mpd](https://www.musicpd.org) is extremely versatile and recommended.
+`mpd` is extremely versatile and recommended.
 The lightweight `mpg321` player is suitable for MP3 files.  All of
 these programs can play both individual files and playlists.
 
@@ -74,7 +75,7 @@ such as internet radio stations. Streaming connections occasionally
 *break* for reasons outside of one's control.  `rsked` can detect and
 respond to such problems.  No player I've tested handles the full
 range of failures encountered in the field, but *mpd* seems most
-robust.  `ogg321` can support ogg vorbis streams, although
+robust.  `ogg123` can support ogg vorbis streams, although
 these have not been tested in `rsked`.
 
 ### FM Radio
