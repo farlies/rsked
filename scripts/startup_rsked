@@ -3,6 +3,9 @@
 # in directory .config/lxsession/LXDE-pi on the RPi platform.
 # It will start cooling and hence rsked each time the user session starts.
 
+# Optionally set master volume to a known level:
+#/usr/bin/amixer set Master playback 50%
+
 # kill any existing processes and clean out PID files
 /usr/bin/pkill -9 -u ${USER} -x cooling
 /usr/bin/pkill -9 -u ${USER} -x rsked
