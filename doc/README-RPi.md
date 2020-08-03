@@ -221,3 +221,11 @@ in `/etc/udev/rules.d/`; correct permissions should be applied
 automatically on the next boot. The rules assume the target user, e.g.
 `pi`, is a member of the Linux group `gpio`; add the user to the
 group if necessary.
+
+**Initialization** The GPIO configuration is not always as desired on
+power-up.  To normalize this, an included Python script,
+`gpiopost.py`, will force the relevant lines to a known state. It will
+also strobe the outputs, which provides a quick power-on test of the
+hardware. This is invoked automatically by included shell script
+`startup_rsked`.  If you use a different GPIO mapping, be sure to
+adjust `gpiopost.py`.
