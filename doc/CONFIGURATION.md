@@ -450,22 +450,36 @@ The example `mpd/` configuration directory includes a subdirectory
 ## gqrx
 
 `gqrx` uses an "ini" file syntax, with sections denoted by names in
-square brackets.  The `gqrx` application generates this file and that
-is the easiest way to obtain additional examples if needed.
+square brackets.  The `gqrx` application generates this file, and
+running it is the best way to obtain a usable configuraton.  The
+parameters values may *vary considerably* based on the SDR hardware
+you have attached.  Run `gqrx` from the desktop and make adjustments
+as needed, e.g. selecting the right SDR hardware. Pay particular
+attention to the audo window **gain** slider: the default value may be
+far too high for powerful commercial FM stations.  Keep the gqrx
+window small, and in the top left corner of the screen.  Disable
+dynamic features for embedded use. Save the configuration file,
+e.g. as `gqrx.conf` and exit. Copy the saved configuration file to
+`gold.conf`, which is the configuration file that will be used by
+`rsked`.
 
-The most critical section for `rsked` is `[remote_control]`.
-Configure it enable remote control and allow only the local host
-to connect:
+Edit the file `gold.conf` to adjust or verify certain settings:
+
+1. Under `[General]`, verify that parameter `crashed=false`.
+2. Set the`fft_rate` parameter in the `[fft]` section to 0
+   to disable the waterfall display (for embedded use).
+3. Under the section `[remote_control]`, configure it enable remote
+   control, and allow only the local host to connect, e.g.
 
 ```
 [remote_control]
 allowed_hosts=::ffff:127.0.0.1
 enabled=true
 ```
-
-Also of interest is the `fft_rate` parameter in the `fft` section.
-Set this to 0 to disable the waterfall display, saving many processor
-cycles.
+Note that the working copy of `gold.conf` will be overwritten each time
+`ninja install` is invoked from the `rsked` build directory. Consider
+installing your gold.conf in the build's `config/<arch>/gqrx/`
+subdirectory.
 
 ## check_inet
 
