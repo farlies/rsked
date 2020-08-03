@@ -22,6 +22,8 @@
 #include <memory>
 #include <string.h>
 
+#include <boost/program_options.hpp>
+
 #include "config.hpp"
 #include "source.hpp"
 #include "schedule.hpp"
@@ -98,6 +100,7 @@ public:
     void operator=(Rsked const&) = delete;
     ~Rsked();
     //
-    void configure( const std::string& );
+    void configure( const std::string&,
+                    const boost::program_options::variables_map& );
     void track_schedule();
 };

@@ -132,6 +132,7 @@ int main(int ac, char **av)
         ("config",po::value<std::string>(),"use a particular config file")
         ("console","echo log to console in addition to log file")
         ("debug","show debug level messages in logs")
+        ("schedule",po::value<std::string>(),"override schedule json file")
         ("test","test configuration and exit without running")
         ("version","print version identifier and exit without running");
     po::variables_map vm;
@@ -180,9 +181,9 @@ int main(int ac, char **av)
         std::unique_ptr<Rsked> rsked( new Rsked(key_id,test_mode) );
         if (vm.count("config")) {
             std::string cstr { vm["config"].as<std::string>() };
-            rsked->configure(cstr);
+            rsked->configure(cstr,vm);
         } else {
-            rsked->configure(DefaultConfigPath);
+            rsked->configure(DefaultConfigPath,vm);
         }
         if (!test_mode) {
             rsked->track_schedule(); // <=== MAY RUN FOREVER ====

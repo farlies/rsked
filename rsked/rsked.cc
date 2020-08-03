@@ -40,6 +40,7 @@ const boost::filesystem::path DefaultSchedulePath
 const boost::filesystem::path DefaultMotdPath
 {"~/.config/rsked/motd"};
 
+namespace po = boost::program_options;
 
 /// CTOR
 /// @arg key  status out shared memory key passed from command line
@@ -86,9 +87,11 @@ Rsked::~Rsked()
     }
 }
 
-/// Configure the application from a file indicated by p.
+/// Configure the application from a file indicated by p with
+/// a program options variables map vm (which may override settings
+/// in the config file).
 ///
-void Rsked::configure(const std::string& p)
+void Rsked::configure(const std::string& p, const po::variables_map &vm)
 {
     constexpr const char* GSection { "General" };
     m_config->set_config_path( p );
@@ -117,9 +120,15 @@ void Rsked::configure(const std::string& p)
         throw Config_error();
     }
 
-    // get the schedule path and attempt to load schedule
-    m_config->get_pathname(GSection,"sched_path",FileCond::MustExist,
+    // Retrieve the schedule path from config and attempt to load it--
+    // unless the program options specifies a schedule (use it instead of
+    // the value in m_config; no need to do shell expansion on it).
+    if (vm.count("schedule")) {
+        m_schedpath = vm["schedule"].as<std::string>();
+    } else {
+        m_config->get_pathname(GSection,"sched_path",FileCond::MustExist,
                            m_schedpath);
+    }
     m_sched->load( m_schedpath );
 
     // load player configurations
