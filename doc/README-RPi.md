@@ -38,21 +38,29 @@ for the RTC.  See further instructions at
 ## Audio Output
 
 Native RPi audio output is "a compromise" ill suited for high
-fidelity.  Buy a USB audio adapter that is known to be Linux
-compatible. These inexpensive devices can deliver high quality stereo
-output. Then:
+fidelity.  In addition to obtaining reasonable sounding powered
+speakers, attach a USB audio adapter to the RPi that is known to be Linux
+compatible. Even inexpensive devices can deliver high quality stereo
+output,  e.g. the Antlion Audio USB Sound Card. Then:
 
 - Set the USB audio device to be the Linux default
 - Disable the built-in audio.
 
-The utility command `aplay -L` will list the audio hardware and
-the current default.
-
 In the file `/boot/config.txt` one can disable the unused built-in
 audio with the line `dtparam=audio=off`, replacing the `audio=on`
-setting.
+setting. A reboot will be necessary.
 
+The utility command `aplay -L` will list the audio hardware and the
+current default. With a source playing, adjust the master volume
+control to achieve a level suitable for your hardware. Levels that are
+too high will cause audible distortion. Your choice of powered speakers will
+affect this setting. For example to set playback to 50%:
 
+```
+amixer set Master playback 50%
+```
+
+You may wish to execute this command at the start of each session.
 
 ## Networking
 
