@@ -164,7 +164,7 @@ The `logs_old/` directory contains a limited set of older logs.
 
 # Configuration Files
 
-There are two examples of configuration directories, one for each
+There are two *examples* of configuration directories, one for each
 architecture:
 
 - `config/example-x86_64/`  x86 workstation oriented (no gpio)
@@ -183,12 +183,7 @@ cd ./x86_64
 ```
 
 Edit the files in the new directory per instructions in
-[CONFIGURATION](CONFIGURATION.md).  Configuration changes you
-will likely want to make include:
-
-- `schedule.json`  times and audio sources
-- `mpd.conf` -- pathnames for music library, playlists, logs, db, socket
-- `cooling.json` -- gpio pin assignments matching your hardware
+[CONFIGURATION](CONFIGURATION.md).
 
 # Install
 

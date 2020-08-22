@@ -11,7 +11,7 @@
 
 The best approach to configuration is to begin with example configuration
 files and modify them to suit your needs.  See the section
-*Configuration Files* in [INSTALLATION](INSTALLATION.md#Configuration Files)
+*Configuration Files* in [INSTALLATION](INSTALLATION.md#configuration-files)
 for more information. In overview:
 
 - prepare a set of configuration files in `rsked/config/$MYCONFIG`
@@ -27,6 +27,15 @@ files.  The `rsked` and `cooling` configuration files use the **JSON**
 syntax (ECMA-404).  If you are unfamiliar with this, consult an
 [introduction to JSON](https://www.json.org/json-en.html).
 (Work on a web-based configurator for rsked schedules is in progress.)
+
+Configuration changes you will almost certainly want to make include:
+
+- `rsked/schedule.json` -- audio sources and times to play them
+- `rsked/rsked.json` -- which players to use
+- `mpd/mpd.conf` -- pathnames for music library, playlists, logs, db, socket
+- `rsked/cooling.json` -- GPIO pin assignments matching your hardware
+
+
 
 ### Pathnames in Configuration Files
 
