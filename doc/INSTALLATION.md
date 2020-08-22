@@ -111,7 +111,7 @@ currently must be built from a particular fork of the source. Stock
 `gqrx` from a Linux distro's package will *not* have the remote
 protocol extensions needed by `rsked`.  Building `gqrx` entails a
 number of additional tools and libraries.  Consult
-[gqrx](https://github.com/al-sharp/gqrx) for details.
+[gqrx](https://github.com/farlies/gqrx) for details.
 
 
 # Compiling rsked
@@ -119,7 +119,7 @@ number of additional tools and libraries.  Consult
 Fetch sources:
 
 ```
-git clone https://github.com/al-sharp/rsked.git
+git clone https://github.com/farlies/rsked.git
 cd rsked
 ```
 
@@ -167,14 +167,18 @@ The `logs_old/` directory contains a limited set of older logs.
 There are two examples of configuration directories, one for each
 architecture:
 
-- `config/x86_64.eg/`  x86 workstation oriented (no gpio)
-- `config/armv7l.eg/`  Raspberry Pi oriented (gpio enabled)
+- `config/example-x86_64/`  x86 workstation oriented (no gpio)
+- `config/example-armv7l/`  Raspberry Pi oriented (gpio enabled)
 
 Copy an example configuration directory to a directory matching the
-desired architecture, e.g.
+desired architecture.  For example, from `$MYBUILDDIR`:
 
 ```
-cp -a ./x86_64.eg ./x86_64
+cd ../config
+
+# From inside the 'config/' directory:
+
+cp -a example-x86_64 ./x86_64
 cd ./x86_64
 ```
 
@@ -200,7 +204,23 @@ ninja install
 
 Binary files will be installed to `$HOME/bin`. 
 Add this directory to your `PATH` environment variable if necessary.
-Configuration files will be installed in `$HOME/.config/`.
+
+Configuration files will be installed in `$HOME/.config/{rsked,mpd,gqrx}/`.
+
+>NOTE: after installation, you may edit the files in their installed locations.
+>Note however that each "ninja install" will overwrite the installed
+>files with ones from the associated `config` directory. So, if you
+>expect to do multiple installations (e.g. you are modifying rsked
+>sources), it is better to edit configuration files in the "rsked/config"
+>directory and use ninja to install them from there.
+
+Some further one-time steps must be done at the command line.
+The `ninja install` step will *not*:
+
+- install a `crontab`
+- make hardware specific changes as described in [README-RPi](README-RPi.md)
+- configure `rsked` to autostart on login
+
 
 ## Runtime Directory
 

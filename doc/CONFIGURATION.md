@@ -7,22 +7,28 @@
 5. [gqrx](#gqrx)
 6. [check_inet](#check_inet)
 
+## Overview
+
 The best approach to configuration is to begin with example configuration
-files and modify them to suit your needs.
+files and modify them to suit your needs.  See the section
+*Configuration Files* in [INSTALLATION](INSTALLATION.md#Configuration Files)
+for more information. In overview:
 
-```
-# On Raspberry Pi:
-cp -a example-armv7l armv7l
-
-# On 64-bit Intel Linux system:
-cp -a example-x86_64 x86_64
-```
+- prepare a set of configuration files in `rsked/config/$MYCONFIG`
+- compile `rsked` in the build directory
+- use `ninja` to install the binaries and your configuration files
+- make further adjustments to configuration files, do *either*
+  - edit them in their installed locations, *or*
+  - edit the ones in `rsked/config/$MYCONFIG`, and use `ninja install` to reinstall
 
 The most common sorts of changes required are enabling or disabling
 features, or altering path names to reflect where you have stored
 files.  The `rsked` and `cooling` configuration files use the **JSON**
 syntax (ECMA-404).  If you are unfamiliar with this, consult an
 [introduction to JSON](https://www.json.org/json-en.html).
+(Work on a web-based configurator for rsked schedules is in progress.)
+
+### Pathnames in Configuration Files
 
 Pathnames in the JSON configuration
 files for `rsked`, `cooling` and `schedule` may start with a tilde string
