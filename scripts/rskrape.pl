@@ -4,7 +4,17 @@
 # the designated music directory (default: $HOME/Music). This
 # resource is used by the rcal web configurator. The assumed
 # structure of this directory is:  Artist/Album/Track
-
+# It will also catalog the playlists (in PlaylistDir/)
+#
+# The JSON is printed on stdout is structured as an object with 2 fields:
+#  {"library" : { artist : { album : { see_below }, ... }, ... },
+#   "playlists" : { name.m3u : { "duration": n, "encoding": e}, ... } }
+#
+# Each album is an object with fields:
+#   "tracks" : array of filenames
+#   "durations" :array of track durations in seconds
+#   "encoding" : one of ogg, mp3, mp4
+#   "totalsecs" : sum of all track durations
 
 # Part of the rsked package.
 # Copyright 2020 Steven A. Harp
@@ -33,6 +43,8 @@ use JSON::PP;
 
 my $Musicdir = "$ENV{'HOME'}/Music";
 
+# Where to find playlists. Default location is MPD typical.
+my $PlaylistDir = "$ENV{'HOME'}/.config/mpd/playlists";
 
 
 # maximum limit on artists to process
@@ -43,7 +55,12 @@ my $Alimit=20000;
 # turn on with  --pretty
 my $PrettyPrint=0;
 
+# Harvest playlists instead of Music library
+# enable with flag --playlists
+my $SkrapePlaylists=1;
+
 my %resources;
+my %playlists;
 
 ## Pick  mediainfo...prefer local one if available.
 my $SysMediainfo = "/usr/bin/mediainfo";
@@ -59,14 +76,30 @@ if (-x $LocalMediainfo) {
 }
 print STDERR "; Using mediainfo: $Mediainfo\n";
 
+
+sub print_usage {
+    print "Usage: rskrape.pl [--pretty] [--alimit=N] [MusicDir]\n";
+    exit(0);
+}
+
+sub print_version {
+    print "rskrape v1.0, perl5\n";
+}
+
+
 #########################################################################
 
 # Collect track durations and total duration (seconds).
 # This can be easily collected from an external command:
 #   mediainfo --Inform="Audio;%Duration%" <audiofile> => milliseconds
+# We will not attempt to do this for URLs, instead return 0.
 #
 sub track_duration_sec {
     my ($mpathname) = @_;  # may have all sorts of shell special chars
+    if ($mpathname=~m{http(s)*://}) {
+        print STDERR "Won't measure: $mpathname\n";
+        return 0;
+    }
     $mpathname =~ s/(["`])/\\$1/g;
     my $msec = qx/$Mediainfo --Inform="Audio;%Duration%" "$mpathname"/;
     chomp $msec;
@@ -109,7 +142,7 @@ sub skrape_an_album {
                 push(@songs, $song);
                 push(@durs, $dur);
             }
-            if ($song =~ /\.m4[ab]$/) {
+            if ($song =~ /\.(m4a|m4b|mp4)$/) {
                 $mp4_count += 1;
                 my $dur= track_duration_sec($fpsong);
                 $total_dur += $dur;
@@ -147,17 +180,79 @@ sub skrape_albums {
     closedir($adh);
 }
 
-sub print_usage {
-    print "Usage: rskrape.pl [--pretty] [--alimit=N] [MusicDir]\n";
-    exit(0);
+# library scan
+#
+sub skrape_library {
+    my $acount=0;
+    opendir(my $dh, $Musicdir) or die "Can't open $Musicdir: $!";
+    while( defined(my $artist = readdir($dh)) ) {
+        next if $artist =~ /^\./;   # ignore hidden files and directories
+        my $fp = "${Musicdir}/$artist";
+        if (-d $fp) {
+            skrape_albums( $fp, $artist );
+            $acount++
+        }
+        last if $acount >= $Alimit;
+    }
+    closedir($dh);
 }
 
-sub print_version {
-    print "rskrape v1.0, perl5\n";
+# If argument is a relative path, prepend the Musicdir.
+# Return possibly prefixed arg.
+#
+sub abspath {
+    my ($fn) = @_;
+    if ($fn=~m{^/}) { return $fn; }  # absolute path
+    return "$Musicdir/$fn";
+}
+
+# process one playlist
+#
+sub process_playlist {
+    my ($plname) = @_;
+    my $plpath = "$PlaylistDir/$plname";
+    open my $plfile, '<', $plpath
+        or croak "Cannot open $plpath";
+    my @lines = <$plfile>;
+    close $plfile;
+    my ($nogg,$nmp3,$nmp4,$dur)=(0,0,0,0);
+    foreach my $res (@lines) {
+        next if $res=~m/^\s*#/;
+        chomp $res;
+        if ($res=~m/\.ogg/) { 
+            $nogg +=1; $dur += track_duration_sec(abspath($res)); }
+        elsif ($res=~m/\.mp3/) {
+            $nmp3 +=1;  $dur += track_duration_sec(abspath($res)); }
+        elsif ($res=~m/\.(mp4|m4a|m4b)/) {
+            $nmp4 +=1;  $dur += track_duration_sec(abspath($res)); }
+    }
+    my $ntotal = $nogg+$nmp3+$nmp4;
+    return unless $ntotal;
+    my $enc = "mixed";
+    if ($nogg == $ntotal) {
+        $enc = "ogg";
+    } elsif ($nmp3 == $ntotal) {
+        $enc = "mp3";
+    } elsif ($nmp4 == $ntotal) {
+        $enc = "mp4";
+    }
+    #print STDERR "$plname: $enc, Total sec: $dur\n";
+    $playlists{$plname} = { "encoding" => $enc, "duration" => $dur };
+}
+
+
+# playlist scan
+#
+sub skrape_playlists {
+    opendir(my $dh, $PlaylistDir) or die "Can't open $PlaylistDir: $!";
+    while( defined(my $plname = readdir($dh)) ) {
+        next unless $plname =~ /\.m3u$/;
+        process_playlist( $plname );
+    }
+    closedir($dh);
 }
 
 ###########################################################################
-my $acount=0;
 
 GetOptions("alimit=i"=> \$Alimit,  # numeric
            "pretty" => \$PrettyPrint, # flag
@@ -171,18 +266,17 @@ if (scalar(@ARGV)) {
     $Musicdir = $ARGV[0];
 }
 
-opendir(my $dh, $Musicdir) or die "Can't open $Musicdir: $!";
-while( defined(my $artist = readdir($dh)) ) {
-    next if $artist =~ /^\./;   # ignore hidden files and directories
-    my $fp = "${Musicdir}/$artist";
-    if (-d $fp) {
-        skrape_albums( $fp, $artist );
-        $acount++
-    }
-    last if $acount >= $Alimit;
+skrape_library();
+skrape_playlists();
+
+my %result;
+if (scalar keys %resources) {
+    $result{"library"} = \%resources;
 }
-closedir($dh);
+if (scalar keys %playlists) {
+    $result{"playlists"} = \%playlists;
+}
 
 my $Jason = ($PrettyPrint ? JSON::PP->new->pretty([1]) : JSON::PP->new);
-my $utf8_json = $Jason->encode( \%resources );
+my $utf8_json = $Jason->encode( \%result );
 print "$utf8_json\n";
