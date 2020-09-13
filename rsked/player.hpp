@@ -90,7 +90,6 @@ public:
     virtual bool check()=0;
 };
 
-/* Shared pointer to a Player.
- */
-typedef std::shared_ptr<Player>   spPlayer;
+/// Shared pointer to a Player.
+using spPlayer = std::shared_ptr<Player>;
 
