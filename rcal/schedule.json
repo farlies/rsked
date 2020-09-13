@@ -2,6 +2,8 @@
     "encoding" : "UTF-8",
     "schema"   : "2.0",
     "version"  : "2020-09-10T17:35",
+    "library" : "~/Music",
+    "playlists" : "~/.config/mpd",
 
     "sources" :
     {
@@ -43,28 +45,39 @@
                   "repeat" : false, "alternate" : "nis", "dynamic" : true,
                   "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"},
         
-        "motd-md" : {"encoding" : "ogg", "location" : "motd/each-%m-%d.ogg",
-                     "dynamic" : true, "duration" : 10,
+        "motd-md" : {"encoding" : "ogg", "medium" : "file",
+                     "location" : "motd/each-%m-%d.ogg",
+                     "dynamic" : true, "duration" : 10, 
+                     "announcement" : true,
                      "text" : "(content based on calendar day/month)"},
 
-        "motd-ymd" : {"encoding" : "ogg","location" : "motd/%Y-%m-%d.ogg",
+        "motd-ymd" : {"encoding" : "ogg", "medium" : "file",
+                      "location" : "motd/%Y-%m-%d.ogg",
                       "dynamic" : true, "duration" : 10,
+                      "announcement" : true,
                       "text" : "(content based on calendar day/month/year)"},
 
-        "%snooze1" : {"encoding" : "ogg", "medium": "file","duration": 1,
-                      "location" : "~/.config/rsked/resource/snooze-1hr.ogg" },
-        "%resume" : {"encoding" : "ogg", "medium": "file","duration": 1,
-                     "location" :  "~/.config/rsked/resource/resuming.ogg" },
+        "%snooze1" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                      "announcement" : true, "text" : "snooze for one hour",
+                      "location" : "resource/snooze-1hr.ogg" },
+        "%resume" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "resuming program",
+                     "location" :  "resource/resuming.ogg" },
         "%revert" : {"encoding" : "ogg", "medium": "file", "duration": 1,
-                     "location" :  "~/.config/rsked/resource/reverting.ogg" },
-        "%goodam" : {"encoding" : "ogg", "medium": "file","duration": 1,
-                     "location" :  "~/.config/rsked/resource/goodam.ogg" },
-        "%goodaf" : {"encoding" : "ogg", "medium": "file","duration": 1,
-                     "location" :  "~/.config/rsked/resource/goodaf.ogg" },
+                     "announcement" : true, "text" : "reverting to alternate program",
+                      "location" :  "resource/reverting.ogg" },
+        "%goodam" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good morning",
+                     "location" :  "resource/goodam.ogg" },
+        "%goodaf" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good afternoon",
+                     "location" :  "resource/goodaf.ogg" },
         "%goodev" : {"encoding" : "ogg", "medium": "file", "duration": 1,
-                     "location" :  "~/.config/rsked/resource/goodev.ogg" },
-        "%motd"   : {"encoding" : "ogg", "medium": "file","duration": 2,
-                     "location" :  "~/.config/rsked/resource/motd.ogg" }
+                     "announcement" : true, "text" : "good evening",
+                     "location" :  "resource/goodev.ogg",},
+        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                     "text" : "message of the day",
+                     "location" :  "resource/motd.ogg", "announcement" : true  }
     },
 
     "dayprograms" : {
