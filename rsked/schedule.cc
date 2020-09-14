@@ -20,10 +20,9 @@
 
 #include <iostream>
 #include <fstream>
-#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/json.h>      /* apt install libjsoncpp-dev */
 #include <initializer_list>
 
-// apt install libjsoncpp-dev
 
 #include <time.h>
 
@@ -31,12 +30,30 @@
 #include "configutil.hpp"
 
 
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 
+/// These are the names of days expected in the dayprograms object of
+/// schedule JSON.  Note: all lower case.
+///
 const char* DayNames[] = {
-    "Sunday", "Monday", "Tuesday", "Wednesday",
-    "Thursday", "Friday", "Saturday"
+ "sunday","monday","tuesday","wednesday","thursday","friday","saturday"
 };
+
+
+/// Return the day index corresponding to string dname, e.g. "monday".
+/// The match must be exact to one of DayNames[].
+/// * Throws Schedule_error if no match is found
+///
+int daynameToIndex( const std::string& dname )
+{
+    for ( unsigned d=Sun; d < DaysPerWeek; d++ ) {
+        if (dname == DayNames[d]) {
+            return(d);
+        }
+    }
+    LOG_ERROR(Lgr) << "Invalid day name: '" << dname << "'";
+    throw Schedule_error();
+}
 
 
 
@@ -210,12 +227,18 @@ void Play_slot::describe() const
 /// CTOR
 ///
 Schedule::Schedule()
+    : m_rps( std::make_shared<ResPathSpec>() )
 {
+    // initialize the Day_programs:
+    for (int d=Sun; d<DaysPerWeek; d++) {
+        m_programs[d].name = DayNames[d];
+    }
 }
 
 /// Read the sources into m_sources map. Note that duplicate keys are
 /// allowed in JSON, and cannot be trapped here, so be careful that a
 /// source is defined only once!  Do some basic checking of fields.
+///
 /// * May throw: Schedule_error
 ///
 void Schedule::load_sources(Json::Value &root)
@@ -237,7 +260,8 @@ void Schedule::load_sources(Json::Value &root)
         }
     }
     // Check that the alternates defined by each source are actually
-    // defined in the source map.
+    // defined in the source map.  Validate source pathnames.
+    //
     for (auto&& [sname,sp] : m_sources) {
         if (not has_source( sp->alternate()) ) {
             LOG_ERROR(Lgr) << "Schedule: Alternate for source '" << sname
@@ -245,38 +269,49 @@ void Schedule::load_sources(Json::Value &root)
                               "has not been defined.";
             throw Schedule_error();
         }
+        sp->validate( *m_rps );  // may throw Schedule_error
     }
 }
 
-
-/// Load the weekmap, verify each generic day program mentioned therein.
+/// Construct a Day_program from the prog node.
+/// 
+/// * May throw: Schedule_error
 ///
-/// * May throw Schedule_error
-///
-void Schedule::load_weekmap(Json::Value& root)
+void Schedule::load_a_dayprogram( const std::string &pname,
+                                  const Json::Value &jprog )
 {
-    // Inspect the weekmap
-    const Json::Value jwkmap = root["weekmap"];
-    if (not jwkmap.isArray() or jwkmap.size() != 7) {
-        LOG_ERROR(Lgr) << "Error in schedule " << m_fname
-                  << ": Weekmap does not specify 7 day array.";
+    int day = daynameToIndex(pname);
+    Day_program &dp { m_programs[day] };
+    dp.m_slots.clear();
+
+    if (0 == jprog.size()) {
+        LOG_ERROR(Lgr) << "Day program " << pname
+                       << " must have at least one play slot";
         throw Schedule_error();
     }
-    //
-    for (unsigned d=Sun; d<=Sat; d++) {
-        const std::string pname = jwkmap[d].asString();
-        if (m_debug) {
-            LOG_INFO(Lgr) << DayNames[d] << ": " << pname;
-        }
-        m_weekmap[d] = pname;
-        if (!has_day_program(pname)) {
-            LOG_ERROR(Lgr) << "Error in schedule " << m_fname
-                      << ": Missing day program named '" << pname 
-                      << "'";
-            throw Schedule_error();
-        }
+    unsigned last_time = 0;
+    // Iterate through JSON array elements of jprog adding Play_slots.
+    for ( unsigned index=0; index < jprog.size(); ++index ) {
+        spPlay_slot ps = make_slot( index, jprog[index], last_time );
+        dp.m_slots.push_back( ps );
+        last_time = ps->start_day_sec();
     }
-}    
+    if (0 != dp.m_slots[0]->start_day_sec()) {
+        LOG_ERROR(Lgr) << "Start time of first slot is not 00:00 on program: "
+                       << dp.name;
+        throw Schedule_error();
+    }
+    if (dp.m_slots[0]->is_announcement()) {
+        LOG_ERROR(Lgr) << "First slot may not be an announcement on program: "
+                       << dp.name;
+        throw Schedule_error();
+    }
+    if (m_debug) {
+        LOG_INFO(Lgr) << "Loaded program '" << dp.name
+              << "' (" << jprog.size() << " slots)";
+    }
+}
+
 
 /// Read all of the dayprograms from the given root into schedule
 /// member map m_programs.
@@ -320,7 +355,7 @@ void Schedule::load(const boost::filesystem::path &fname)
         throw Schedule_error();
     }
     std::string schema_id = root["schema"].asString();
-    if (schema_id != "1.0") {
+    if (schema_id != "2.0") {
         LOG_ERROR(Lgr) << "Unsupported schedule schema " << schema_id;
         throw Schedule_error();
     }
@@ -329,20 +364,11 @@ void Schedule::load(const boost::filesystem::path &fname)
     m_valid = false;
     load_sources(root);
     load_dayprograms(root);
-    load_weekmap(root);
     LOG_INFO(Lgr) << "Valid schedule, version <" << m_version 
                   << "> loaded from " << m_fname;
     m_valid = true;
 }
 
-
-/// Check if we have a Day_program named pname.
-///
-bool Schedule::has_day_program( const std::string &pname )
-{
-    auto itr = m_programs.find(pname);
-    return (itr != m_programs.end());
-}
 
 /// Is there a source of the given name?
 ///
@@ -376,45 +402,6 @@ spPlay_slot Schedule::make_slot(unsigned ix, const Json::Value& slot,
         ps->describe();
     }
     return ps;
-}
-
-/// Construct a Day_program from the prog node, add it to the
-/// map under name pname.
-/// * May throw: Schedule_error
-///
-void Schedule::load_a_dayprogram( const std::string &pname,
-                                 const Json::Value &jprog )
-{
-    Day_program dp;
-
-    if (0 == jprog.size()) {
-        LOG_ERROR(Lgr) << "Day program " << pname
-                       << " must have at least one play slot";
-        throw Schedule_error();
-    }
-    dp.name = pname;
-    unsigned last_time = 0;
-    // Iterate through JSON array elements of jprog adding Play_slots.
-    for ( unsigned index=0; index < jprog.size(); ++index ) {
-        spPlay_slot ps = make_slot( index, jprog[index], last_time );
-        dp.m_slots.push_back( ps );
-        last_time = ps->start_day_sec();
-    }
-    if (0 != dp.m_slots[0]->start_day_sec()) {
-        LOG_ERROR(Lgr) << "Start time of first slot is not 00:00 on program: "
-                       << dp.name;
-        throw Schedule_error();
-    }
-    if (dp.m_slots[0]->is_announcement()) {
-        LOG_ERROR(Lgr) << "First slot may not be an announcement on program: "
-                       << dp.name;
-        throw Schedule_error();
-    }
-    m_programs[pname] = dp;
-    if (m_debug) {
-        LOG_INFO(Lgr) << "Loaded program '" << pname
-              << "' (" << jprog.size() << " slots)";
-    }
 }
 
 
@@ -486,18 +473,14 @@ unsigned Schedule::tm_to_day_sec( const struct tm *loc_tm ) const
 /// there is always a valid slot) it will always return a smart pointer
 /// to a valid slot.
 ///
-/// * May throw std::runtime_error, std::invalid_argument, Schedule_error  
+/// * May throw: std::runtime_error, std::invalid_argument, Schedule_error  
 ///
 spPlay_slot Schedule::play_daytime( const struct tm *loc_tm )
 {
     unsigned sec_of_day = tm_to_day_sec(loc_tm); // can throw
-    std::size_t wd = static_cast<std::size_t>(loc_tm->tm_wday);
-    auto dp_itr = m_programs.find( m_weekmap[wd] );
-    if (dp_itr == m_programs.end()) {
-        throw std::invalid_argument("Missing program day");
-    }
-    int yday = loc_tm->tm_yday;
-    std::vector<spPlay_slot> &the_pslots = dp_itr->second.m_slots;
+    std::size_t wd { static_cast<std::size_t>(loc_tm->tm_wday) };
+    int yday  { loc_tm->tm_yday };
+    std::vector<spPlay_slot> &the_pslots = m_programs[wd].m_slots;
 
     // Scan the slots until we get to a start time past the current
     // time.  The current slot will be the previous one in the list.

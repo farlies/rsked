@@ -29,8 +29,9 @@
 #include "radio.hpp"
 
 /// Days of the week per tm_wday
-enum Day { Sun=0, Mon, Tue, Wed, Thu, Fri, Sat };
+enum Day { Sun=0, Mon, Tue, Wed, Thu, Fri, Sat, DaysPerWeek };
 extern const char* DayNames[];
+int daynameToIndex( const std::string& );
 
 class Schedule;
 
@@ -68,7 +69,7 @@ public:
     Play_slot( const Json::Value& );
 };
 
-typedef std::shared_ptr<Play_slot>   spPlay_slot;
+using spPlay_slot = std::shared_ptr<Play_slot>;
 
 /**
  * A Day Program is a vector of shared pointers to Play_slots. For
@@ -84,8 +85,7 @@ struct Day_program {
 /**
  * Map from time to item to play. This object reflects the structure of
  * the json schedule file.
- *  m_weekmap:   Day (e.g. Sun) -> generic day name (e.g. "weekday")
- *  m_programs:  generic day name -> Day_program
+ *  m_programs:  day_index_int -> Day_program
  *  m_sources:   source name -> spSource
  */
 class Schedule {
@@ -93,17 +93,15 @@ private:
     bool m_valid {false};
     bool m_debug {false};
     std::string m_version {};
-    std::array<std::string,7> m_weekmap {};
-    std::map<std::string,Day_program> m_programs {};
+    std::array<Day_program,7> m_programs {};
     std::map<std::string,spSource> m_sources {};
     boost::filesystem::path m_fname {};
+    std::shared_ptr<ResPathSpec> m_rps;
     //
     bool has_source( const std::string& );
-    bool has_day_program( const std::string & );
     void load_a_dayprogram( const std::string &, const Json::Value &);
     void load_dayprograms(Json::Value&);
     void load_sources(Json::Value&);
-    void load_weekmap(Json::Value&);
     spPlay_slot make_slot( unsigned, const Json::Value&, unsigned);
     unsigned tm_to_day_sec( const struct tm* ) const;
 

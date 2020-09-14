@@ -40,7 +40,7 @@ namespace bdata = boost::unit_test::data;
 ///
 struct LogFixture {
     LogFixture() {
-        init_logging("tsked","tsked_%5N.log",LF_FILE|LF_DEBUG);
+        init_logging("tsked","tsked_%5N.log",LF_FILE|LF_DEBUG|LF_CONSOLE);
     }
     ~LogFixture() {
         finish_logging();
@@ -110,6 +110,7 @@ static int test_time( Schedule &sched, int yday, int wday, int hour,
 /// Valid baseline schedule for testing, includes a rich set of features.
 constexpr const char* TestSchedule1 = "../test/sked-test1.json";
 
+/*
 /// Bad schedules array--each should fail on load.
 ///
 const char* badskeds[] = {
@@ -129,7 +130,7 @@ BOOST_DATA_TEST_CASE( Sked_defect, bdata::make(badskeds), skedname )
     BOOST_CHECK_THROW( sched.load(skedname), Schedule_error );
     BOOST_TEST(false == sched.valid());
 }
-
+*/
 
 /// For time Mon 15:15:00, get the source (cms).
 /// Mark it as failed.
@@ -163,6 +164,7 @@ BOOST_AUTO_TEST_CASE( Source_fail_test )
     //
     slot = sched.play_daytime( pstm );
     spSource src3 = slot->source();
+    src3->describe();
     BOOST_TEST( src3->name() == "master" );
 }
 
@@ -178,7 +180,7 @@ BOOST_AUTO_TEST_CASE( Time_probe )
     BOOST_TEST(test_time( sched,  120,  Mon,  0, 0, 0, "OFF" ));
     BOOST_TEST(test_time( sched,  120,  Mon,  7,29,59, "OFF" ));
     BOOST_TEST(test_time( sched,  120,  Mon,  7,30,00, "cms" ));
-    BOOST_TEST(test_time( sched,  120,  Mon,  9,00,01, "motd-ymd" ));
+    BOOST_TEST(test_time( sched,  120,  Mon,  9,00,01, "motd-md" ));
     BOOST_TEST(test_time( sched,  120,  Mon,  9,30,00, "cms" ));
     BOOST_TEST(test_time( sched,  120,  Mon, 12,00,00, "dnow" ));
     BOOST_TEST(test_time( sched,  120,  Mon, 14,00,00, "nis" ));
