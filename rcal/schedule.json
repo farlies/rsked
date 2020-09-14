@@ -74,7 +74,7 @@
                      "location" :  "resource/goodaf.ogg" },
         "%goodev" : {"encoding" : "ogg", "medium": "file", "duration": 1,
                      "announcement" : true, "text" : "good evening",
-                     "location" :  "resource/goodev.ogg",},
+                     "location" :  "resource/goodev.ogg"},
         "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
                      "text" : "message of the day",
                      "location" :  "resource/motd.ogg", "announcement" : true  }
@@ -92,10 +92,12 @@
     "monday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:30", "announce" : "motd-md" },
-        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-md" },
+        {"start" : "12:00", "program" : "dnow" },
+        {"start" : "13:00", "program" : "cms" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
@@ -112,8 +114,8 @@
     "wednesday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:30", "announce" : "motd-md" },
-        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "13:30", "announce" : "motd-md" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
         {"start" : "21:00", "program" : "OFF" }
