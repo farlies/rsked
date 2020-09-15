@@ -13,31 +13,83 @@
         "playlists": { "type": "string" },
         "sources": { 
             "type": "object",
-            "additionalProperties": {"$ref": "#/definitions/source"}
+            "$comment": "may not redefine the internal OFF source",
+            "properties": {
+                "OFF": {"not": {}}
+            },
+            "additionalProperties": {
+                "anyOf": [ {"$ref": "#/defs/source"},
+                           {"$ref": "#/defs/rfsource"} ] }
         },
         "dayprograms": { 
             "type": "object",
             "properties": {
-                "sunday": { "type" : "array", "items": {"type": "object"} },
-                "monday": { "type" : "array", "items": {"type": "object"}  },
-                "tuesday": { "type" : "array", "items": {"type": "object"}  },
-                "wednesday": { "type" : "array", "items": {"type": "object"}  },
-                "thursday": { "type" : "array", "items": {"type": "object"}  },
-                "friday": { "type" : "array", "items": {"type": "object"}  },
-                "saturday": { "type" : "array", "items": {"type": "object"}  } },
+                "sunday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}},
+                "monday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
+                "tuesday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
+                "wednesday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
+                "thursday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
+                "friday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
+                "saturday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  }
+            },
             "required" : ["sunday","monday","tuesday","wednesday",
                           "thursday","friday","saturday"]
         }
     },
-    "definitions": {
+    "defs": {
+        "playslot": {
+            "$comment:": "Either a regular program or an announcement",
+            "oneOf": [ {"$ref": "#/defs/psprogram"}, {"$ref": "#/defs/psannounce"} ]
+        },
+        "psprogram": {
+            "type": "object",
+            "properties": {
+                "start": { "type" : "string",
+                           "$comment" : "Time as hh:mm or hh:mm:ss",
+                           "pattern": "^[0-9]{2}:[0-9]{2}(:[0-9]{2})*$" },
+                "program": { "type" : "string" }
+            },
+            "required": ["start","program"],
+            "additionalProperties": false
+        },
+        "psannounce": {
+            "type": "object",
+            "properties": {
+                "start": { "type" : "string",
+                           "pattern": "^[0-9]{2}:[0-9]{2}(:[0-9]{2})*$" },
+                "announce": { "type" : "string" }
+            },
+            "required": ["start","announce"],
+            "additionalProperties": false
+        },
         "source": {
             "properties": {
-                "encoding": {"enum" : ["wfm","nfm","ogg","mp3","mp4","flac","mixed"] },
-                "medium": {"enum" : ["radio","file","directory","stream","playlist"] },
-                "location": {
-                    "anyOf": [{"type": "string"}, {"type": "number"}] }
+                "encoding": {"enum" : ["ogg","mp3","mp4","flac","mixed"] },
+                "medium": {"enum" : ["file","directory","stream","playlist"] },
+                "location": { "type": "string" },
+                "alternate": { "type": "string" },
+                "announcement": { "type": "boolean" },
+                "repeat": { "type": "boolean" },
+                "text": { "type": "string" },
+                "duration": { "type": "number" },
+                "dynamic": { "type": "boolean" }
             },
+            "additionalProperties": false,
             "required": ["encoding", "medium", "location"]
+        },
+        "rfsource": {
+            "$comment": "RF sources have restricted property set, numeric location",
+            "properties": {
+                "encoding": {"enum" : ["wfm","nfm"] },
+                "medium": {"const" : "radio"},
+                "location": { "type": "number",
+                              "$comment": "Frequency in MHz",
+                              "minimum": 65.0,
+                              "maximum": 135.0 },
+                "alternate": { "type": "string" }
+            },
+            "required": ["encoding", "medium", "location"],
+            "additionalProperties": false
         }
     }
 }
