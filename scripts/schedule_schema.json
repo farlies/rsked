@@ -1,0 +1,39 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://rsked.org/schedule_schema2.json",
+    "title": "schedule-2.0",
+    "description": "Validates an rsked schedule written in JSON with schema 2.0",
+    "type": "object",
+    "required": [ "encoding", "schema", "version", "sources", "dayprograms" ],
+    "properties": {
+        "encoding": { "type": "string" },
+        "schema": { "type": "string" },
+        "version": { "type": "string" },
+        "library": { "type": "string" },
+        "playlists": { "type": "string" },
+        "sources": { "type": "object", "$ref": "#/definitions/source" },
+        "dayprograms": { 
+            "type": "object",
+            "properties": {
+                "sunday": { "type" : "array", "items": {"type": "object"} },
+                "monday": { "type" : "array", "items": {"type": "object"}  },
+                "tuesday": { "type" : "array", "items": {"type": "object"}  },
+                "wednesday": { "type" : "array", "items": {"type": "object"}  },
+                "thursday": { "type" : "array", "items": {"type": "object"}  },
+                "friday": { "type" : "array", "items": {"type": "object"}  },
+                "saturday": { "type" : "array", "items": {"type": "object"}  } },
+            "required" : ["sunday","monday","tuesday","wednesday",
+                          "thursday","friday","saturday"]
+        }
+    },
+    "definitions": {
+        "source": {
+            "properties": {
+                "encoding": {"enum" : ["wfm","nfm","ogg","mp3","mp4","flac"] },
+                "medium": {"enum" : ["radio","file","directory","stream","playlist"] },
+                "location": {"type": "string" }
+            },
+            "required": ["encoding", "medium", "location"]
+        }
+    }
+}
