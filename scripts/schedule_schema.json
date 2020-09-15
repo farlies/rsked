@@ -6,11 +6,13 @@
     "type": "object",
     "required": [ "encoding", "schema", "version", "sources", "dayprograms" ],
     "properties": {
-        "encoding": { "type": "string" },
+        "encoding": { "const": "UTF-8" },
         "schema": { "const": "2.0" },
         "version": { "type": "string" },
+        "description": { "type": "string" },
         "library": { "type": "string" },
         "playlists": { "type": "string" },
+        "announcements": { "type": "string" },
         "sources": { 
             "type": "object",
             "$comment": "may not redefine the internal OFF source",

@@ -101,6 +101,7 @@ private:
     bool has_source( const std::string& );
     void load_a_dayprogram( const std::string &, const Json::Value &);
     void load_dayprograms(Json::Value&);
+    void load_rps(Json::Value&);
     void load_sources(Json::Value&);
     spPlay_slot make_slot( unsigned, const Json::Value&, unsigned);
     unsigned tm_to_day_sec( const struct tm* ) const;

@@ -235,6 +235,29 @@ Schedule::Schedule()
     }
 }
 
+/// Load and canonicalize the (optional) resource path spec elements.
+///
+/// * May throw: Schedule_error
+///
+void Schedule::load_rps(Json::Value &root)
+{
+    const Json::Value jlibpath = root["library"];
+    if (not jlibpath.isNull()) {
+        m_rps->set_library_base(jlibpath.asString());
+    }
+
+    const Json::Value jplypath = root["playlists"];
+    if (not jplypath.isNull()) {
+        m_rps->set_playlist_base(jplypath.asString());
+    }
+
+    const Json::Value jannpath = root["announcements"];
+    if (not jannpath.isNull()) {
+        m_rps->set_announcement_base(jannpath.asString());
+    }
+}
+
+
 /// Read the sources into m_sources map. Note that duplicate keys are
 /// allowed in JSON, and cannot be trapped here, so be careful that a
 /// source is defined only once!  Do some basic checking of fields.
@@ -362,6 +385,7 @@ void Schedule::load(const boost::filesystem::path &fname)
     m_version = root["version"].asString();
     m_fname = fname;
     m_valid = false;
+    load_rps(root);
     load_sources(root);
     load_dayprograms(root);
     LOG_INFO(Lgr) << "Valid schedule, version <" << m_version 
