@@ -7,11 +7,14 @@
     "required": [ "encoding", "schema", "version", "sources", "dayprograms" ],
     "properties": {
         "encoding": { "type": "string" },
-        "schema": { "type": "string" },
+        "schema": { "const": "2.0" },
         "version": { "type": "string" },
         "library": { "type": "string" },
         "playlists": { "type": "string" },
-        "sources": { "type": "object", "$ref": "#/definitions/source" },
+        "sources": { 
+            "type": "object",
+            "additionalProperties": {"$ref": "#/definitions/source"}
+        },
         "dayprograms": { 
             "type": "object",
             "properties": {
@@ -29,9 +32,10 @@
     "definitions": {
         "source": {
             "properties": {
-                "encoding": {"enum" : ["wfm","nfm","ogg","mp3","mp4","flac"] },
+                "encoding": {"enum" : ["wfm","nfm","ogg","mp3","mp4","flac","mixed"] },
                 "medium": {"enum" : ["radio","file","directory","stream","playlist"] },
-                "location": {"type": "string" }
+                "location": {
+                    "anyOf": [{"type": "string"}, {"type": "number"}] }
             },
             "required": ["encoding", "medium", "location"]
         }
