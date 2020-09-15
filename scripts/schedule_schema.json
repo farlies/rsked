@@ -17,6 +17,7 @@
             "properties": {
                 "OFF": {"not": {}}
             },
+            "minProperties": 1,
             "additionalProperties": {
                 "anyOf": [ {"$ref": "#/defs/source"},
                            {"$ref": "#/defs/rfsource"} ] }
@@ -24,19 +25,23 @@
         "dayprograms": { 
             "type": "object",
             "properties": {
-                "sunday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}},
-                "monday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
-                "tuesday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
-                "wednesday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
-                "thursday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
-                "friday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  },
-                "saturday": { "type" : "array", "items": {"$ref": "#/defs/playslot"}  }
+                "sunday":    {"$ref": "#/defs/dayprogram"},
+                "monday":    {"$ref": "#/defs/dayprogram"},
+                "tuesday":   {"$ref": "#/defs/dayprogram"},
+                "wednesday": {"$ref": "#/defs/dayprogram"},
+                "thursday":  {"$ref": "#/defs/dayprogram"},
+                "friday":    {"$ref": "#/defs/dayprogram"},
+                "saturday":  {"$ref": "#/defs/dayprogram"}
             },
             "required" : ["sunday","monday","tuesday","wednesday",
                           "thursday","friday","saturday"]
         }
     },
     "defs": {
+        "dayprogram": { 
+            "type" : "array", "minItems": 1, 
+            "items": {"$ref": "#/defs/playslot"}
+        },
         "playslot": {
             "$comment:": "Either a regular program or an announcement",
             "oneOf": [ {"$ref": "#/defs/psprogram"}, {"$ref": "#/defs/psannounce"} ]
