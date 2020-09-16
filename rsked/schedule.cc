@@ -276,6 +276,14 @@ void Schedule::load_sources(Json::Value &root)
 
     // For each key/val in sources, create a Source and add to map
     for (const std::string &name : jsrcs.getMemberNames()) {
+        if (name == OFF_SOURCE) {
+            LOG_ERROR(Lgr) << "Schedule attempts to redefine " << name;
+            throw Schedule_error();
+        }
+        if (name.empty()) {
+            LOG_ERROR(Lgr) << "Schedule has source with empty name ";
+            throw Schedule_error();
+        }
         m_sources[name] = std::make_shared<Source>(name);
         m_sources[name]->load( jsrcs[name] );
         if (m_debug) {

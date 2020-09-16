@@ -108,9 +108,9 @@ static int test_time( Schedule &sched, int yday, int wday, int hour,
 //////////////////////////////////////////////////////////////////////////
 
 /// Valid baseline schedule for testing, includes a rich set of features.
-constexpr const char* TestSchedule1 = "../test/sked-test1.json";
+constexpr const char* TestSchedule1
+  = "../test/sked-test1.json";
 
-/*
 /// Bad schedules array--each should fail on load.
 ///
 const char* badskeds[] = {
@@ -118,7 +118,9 @@ const char* badskeds[] = {
     "../test/sked-test3.json",
     "../test/sked-test4.json",
     "../test/sked-test5.json",
-    "../test/sked-test6.json"
+    "../test/sked-test6.json",
+    "../test/sked-test7.json",
+    "../test/sked-test8.json"
 };
 
 /// Load should throw. Schedule should be marked as not valid.
@@ -130,7 +132,9 @@ BOOST_DATA_TEST_CASE( Sked_defect, bdata::make(badskeds), skedname )
     BOOST_CHECK_THROW( sched.load(skedname), Schedule_error );
     BOOST_TEST(false == sched.valid());
 }
-*/
+
+
+//////////////////////////////////////////////////////////////////////////
 
 /// For time Mon 15:15:00, get the source (cms).
 /// Mark it as failed.
