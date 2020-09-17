@@ -87,9 +87,9 @@ void Ogg_player::play( spSource src )
         stop();
         return;
     }
-    if (src->medium() != Medium::ogg_file) {
+    if (src->encoding() != Encoding::ogg) {
         LOG_ERROR(Lgr) << m_name <<  " cannot play this type of source: "
-                       << media_name( src->medium() );
+                       << encoding_name( src->encoding() );
         return;
     }
     m_src = src;
@@ -104,10 +104,10 @@ void Ogg_player::play( spSource src )
         m_cm->add_arg( "--repeat" );  // repeat this indefinitely
         LOG_INFO(Lgr) << m_name << " will repeat the program for entire period";
     }
-    if (m_src->res_type()==ResType::Playlist) {
+    if (m_src->medium()==Medium::playlist) {
         m_cm->add_arg("--list");      // for playlist
     }
-    if (m_src->res_type()==ResType::URL) {
+    if (m_src->medium()==Medium::stream) {
         m_cm->add_arg( m_src->resource().c_str() );
     } else {
         boost::filesystem::path path;

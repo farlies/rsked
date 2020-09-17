@@ -121,6 +121,7 @@ const char* badskeds[] = {
     "../test/sked-test6.json",
     "../test/sked-test7.json",
     "../test/sked-test8.json"
+    // "../test/sked-test9.json"
 };
 
 /// Load should throw. Schedule should be marked as not valid.

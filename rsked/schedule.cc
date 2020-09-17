@@ -284,6 +284,11 @@ void Schedule::load_sources(Json::Value &root)
             LOG_ERROR(Lgr) << "Schedule has source with empty name ";
             throw Schedule_error();
         }
+        // TODO: desirable to detect duplicates, but this won't do it:
+        // if (m_sources.find(name) != m_sources.end()) {
+        //     LOG_ERROR(Lgr) << "Schedule has duplicate source name " << name;
+        //     throw Schedule_error();
+        // }
         m_sources[name] = std::make_shared<Source>(name);
         m_sources[name]->load( jsrcs[name] );
         if (m_debug) {

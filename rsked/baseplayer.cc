@@ -60,7 +60,7 @@ void Base_player::pause()
 {
     // verify m_src is not mode streaming
     if (!m_src) return;
-    if (m_src->medium() == Medium::mp3_stream) {
+    if (m_src->medium() == Medium::stream) {
         LOG_WARNING(Lgr) << m_name << " -- cannot pause while in stream mode.";
         return;
     }

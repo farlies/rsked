@@ -113,29 +113,34 @@ spPlayer Player_manager::get_annunciator()
 /// Retrieve the right player for the source.  If the src argument is
 /// null, or the src medium is "Off" then return the silent player.
 /// If no suitable player can be determined, or none is
-/// usable, then return a null shared pointer. This can occur when
-/// the source is an mp3 stream but the internet is unavailable.
+/// usable, then return a null shared pointer.
 ///
 /// TODO: rework this to respect player choice priority defined by
-///    the config file.
+///    the config file. Basically, the logic should be driven by
+///    the declared player capabilities and preferences.
 ///
 spPlayer
 Player_manager::get_player( spSource src )
 {
-    spPlayer pp {};
     if (!src) {
         return m_null_player;;
     }
-    //
-    switch (src->medium()) {
-    case Medium::off:
-        pp = m_null_player;
-        break;
+    spPlayer pp {};
+    Medium medium = src->medium();
+    Encoding encoding = src->encoding();
 
-    case Medium::mp3_stream:
+    if (medium == Medium::off) {
+        pp = m_null_player;
+        return pp;
+    }
+    if (medium == Medium::radio) {
+        pp = m_gqrx;
+        return pp;
+    }
+    if (medium == Medium::stream) {
         if (not c_ichecker.inet_ready()) {
             LOG_WARNING(Lgr) << "Internet seems unavailable, cannot play "
-                          "mp3 stream "   << src->name();
+                          "stream "   << src->name();
             pp.reset();
             return pp;
         }
@@ -143,35 +148,22 @@ Player_manager::get_player( spSource src )
         if (not pp or not pp->is_usable()) { // if MPD is not usble,
             pp = m_mpg321; // mpg321 fallback
         }
-        break;
-
-    case Medium::mp3_file:
-        pp = m_mpd;       // first choice is  MPD
-        if (not pp or not pp->is_usable()) { // if MPD is not usble,
-            pp = m_mpg321; // mpg321 fallback
-        }
-        break;
-
-    case Medium::radio:
-        pp = m_gqrx;
-        break;
-
-    case Medium::ogg_file:
+        return pp;
+    }
+    if (src->localp() and ((encoding== Encoding::mp4) or
+                           (encoding== Encoding::flac)) ) {
+        pp = m_mpd;       // only choice for these encodings is mpd
+        return pp;
+    }
+    if (src->localp() and (encoding== Encoding::ogg)) {
         pp = m_mpd;          // first choice is MPD
         if (not pp or not pp->is_usable()) { // if not usable fallback to ogg123
             pp = m_ogg123;
         }
-        break;
-    default:
-        pp = m_null_player;
-        LOG_ERROR(Lgr) << "No players for medium " << media_name(src->medium());
-    }
-    if (pp and pp->is_usable()) {
         return pp;
     }
-    if (pp) {
-        LOG_ERROR(Lgr) << "Preferred player " << pp->name() << " is UNusable";
-    }
+    pp = m_null_player;
+    LOG_ERROR(Lgr) << "No players for medium " << media_name(medium);
     pp.reset(); // == nullptr
     return pp;
 }
