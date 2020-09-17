@@ -1,0 +1,62 @@
+{
+    "encoding" : "UTF-8",
+    "schema"   : "2.0",
+    "version"  : "2020-09-16T03:55.Bad",
+    "description"   : "Defective test schedule 9: duplicate source name.",
+    "library"       : "../test/Music",
+    "playlists"     : "../test/Playlists",
+    "announcements" : "..",
+
+    "sources" :
+    {
+        "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                    "location" : "master.m3u", "duration": 38253.213},
+
+        "foo"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                   "announcement" : true, "text" : "message of the day",
+                   "location" :  "resource/motd.ogg" },
+
+        "foo"   : {"encoding" : "flac", "medium": "file", "duration": 3,
+                   "announcement" : true, "text" : "message of the day",
+                   "location" :  "resource/motd.ogg" }
+    },
+
+    "dayprograms" : {
+
+        "sunday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "monday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "tuesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "wednesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "thursday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "friday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "saturday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ]
+    }
+}
