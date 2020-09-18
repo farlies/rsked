@@ -16,16 +16,23 @@
  *   limitations under the License.
  */
 
-/// These definitions are shared by components that use
-/// broadcast radio.
+#include <boost/filesystem.hpp>
 
-/// frequency in Hz
-using freq_t = unsigned long;
-
-
-/// Qualitative signal strengths
-enum class Smeter { lowlow, low, good, unavailable };
-
-/// Bounds on radio frequency, MHz, (FM broadcast band)
-constexpr double MinRadioFreqMHz =  65.0;
-constexpr double MaxRadioFreqMHz = 130.0;
+/// Represent root directory paths for various types of local resources
+///
+class ResPathSpec {
+    using path=boost::filesystem::path;
+private:
+    path m_library_path {};  // Music Library
+    path m_announcement_path {};  // Announcements
+    path m_playlist_path {};   // Playlists
+public:
+    void resolve_library(const path&, path&) const;
+    void resolve_announcement(const path&, path&) const;
+    void resolve_playlist(const path&, path&) const;
+    void set_library_base(const path&);
+    void set_playlist_base(const path&);
+    void set_announcement_base(const path&);
+    //
+    ResPathSpec();
+};

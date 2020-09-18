@@ -31,9 +31,7 @@
 
 namespace lt = boost::log::trivial;
 
-typedef
-   boost::log::sources::severity_logger< lt::severity_level >
-   rsked_logger_t;
+using rsked_logger_t=boost::log::sources::severity_logger<lt::severity_level>;
 
 extern rsked_logger_t  Lgr;  // global log source
 

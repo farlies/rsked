@@ -23,52 +23,50 @@
 #include "logging.hpp"
 #include "configutil.hpp"
 
+namespace fs = boost::filesystem;
+
 //////////////////////////// Utility ////////////////////////////////////
 
-/// String canonically naming medium.
+/// String canonically naming medium. Return unknown if the medium
+/// has not been registered here.
+/// * Will not throw
 ///
-const char* media_name(Medium m)
+const char* media_name( const Medium m )
 {
     switch(m) {
-    case Medium::off:
-        return "off";
-        break;
-    case Medium::radio:
-        return "radio";
-        break;
-    case Medium::mp3_stream:
-        return "mp3_stream";
-        break;
-    case Medium::ogg_file:
-        return "ogg_file";
-        break;
-    case Medium::mp3_file:
-        return "mp3_file";
-        break;
-    default:
-        break;
+    case Medium::off:  return "off";
+    case Medium::radio: return "radio";
+    case Medium::stream: return "stream";
+    case Medium::file: return "file";
+    case Medium::directory: return "directory";
+    case Medium::playlist: return "playlist";
+    default: return "unknown";
     };
-    return "Unknown";
 }
 
-/// name a resource type
+/// Name an encoding as a string, returning "unknown" if
+/// for some reason the argument has not been registered here.
+/// * Will not throw
 ///
-const char* restype_name( ResType rt )
+const char* encoding_name( const Encoding enc )
 {
-    switch(rt) {
-    case ResType::None: return "None";
-    case ResType::File: return "File";
-    case ResType::Frequency: return "Frequency";
-    case ResType::Directory: return "Directory";
-    case ResType::Playlist: return "Playlist";
-    case ResType::URL: return "URL";
+    switch(enc) {
+    case Encoding::none: return "none";
+    case Encoding::ogg: return "ogg";
+    case Encoding::mp3: return "mp3";
+    case Encoding::mp4: return "mp4";
+    case Encoding::flac: return "flac";
+    case Encoding::wfm: return "wfm";
+    case Encoding::nfm: return "nfm";
+    case Encoding::mixed: return "mixed";
     default:
-        return "Unknown";
+        return "unknown";
     }
 }
 
 
-/// Convert a medium string to a mode enum. This is case sensitive.
+/// Convert a medium string to a mode enum. This is case *sensitive*.
+/// * May throw Schedule_error
 ///
 Medium strtomedium( const std::string &s )
 {
@@ -76,20 +74,47 @@ Medium strtomedium( const std::string &s )
         return Medium::off;
     } else if (s == "radio") {
         return Medium::radio;
-    } else if (s == "ogg") {
-        return Medium::ogg_file;
-    } else if ((s == "stream") or (s == "mp3_stream")) {
-        return Medium::mp3_stream;
-    } else if (s == "mp3") {
-        return Medium::mp3_file;
+    } else if (s == "stream") {
+        return Medium::stream;
+    } else if (s == "file") {
+        return Medium::file;
+    } else if (s == "directory") {
+        return Medium::directory;
+    } else if (s == "playlist") {
+        return Medium::playlist;
     }
-    LOG_ERROR(Lgr) << "Unknown mode '" << s << "'";
+    LOG_ERROR(Lgr) << "Unknown medium '" << s << "'";
     throw Schedule_error();
-    return Medium::off;         // never
 }
 
+/// Convert an encoding string to an Encoding enum. This is case *sensitive*.
+/// * May throw Schedule_error
+///
+Encoding strtoencoding( const std::string &s )
+{
+    if (s == "none") {
+        return Encoding::none;
+    } else if (s == "ogg") {
+        return Encoding::ogg;
+    } else if (s == "mp3") {
+        return Encoding::mp3;
+    } else if (s == "mp4") {
+        return Encoding::mp4;
+    } else if (s == "flac") {
+        return Encoding::flac;
+    } else if (s == "wfm") {
+        return Encoding::wfm;
+    } else if (s == "nfm") {
+        return Encoding::nfm;
+    } else if (s == "mixed") {
+        return Encoding::mixed;
+    }
+    LOG_ERROR(Lgr) << "Unknown encoding '" << s << "'";
+    throw Schedule_error();
+}
 
 /// Retrieve a boolean from a Json Value, with a given default
+/// * May throw some JSON exception, probably
 ///
 static bool get_bool_option( const Json::Value &bval, bool dflt )
 {
@@ -99,39 +124,29 @@ static bool get_bool_option( const Json::Value &bval, bool dflt )
     return bval.asBool();
 }
 
+
 //////////////////////////// Source ////////////////////////////////////
 
 /// CTOR for Source
 ///  special instance named OFF_SOURCE is always quiet
 ///
-Source::Source( std::string n )
- : m_name(n)
+Source::Source( const std::string &nom )
+    : m_name(nom)
 {
-    if (OFF_SOURCE == n) {
+    if (OFF_SOURCE == nom) {
         m_quiet_okay = true;
     }
 }
 
-/// CTOR for regular files given path.
-/// TODO: presumed OGG for now!
-///
-Source::Source( const std::string &n, const boost::filesystem::path &p )
-    : m_name(n), m_res_path(p)
-{
-    m_medium = Medium::ogg_file;
-    m_res_type = ResType::File;
-    m_resource = p.filename().string();
-    m_quiet_okay = true;
-    m_repeatp = false;
-}
 
 
-/// Is the source on a local disk.
+/// Is the source on the local disk.  >>UNUSED<<
 ///
 bool Source::localp() const
 {
-    return ((m_medium == Medium::mp3_file)
-            or (m_medium == Medium::ogg_file));
+     return ((m_medium == Medium::file)
+             or (m_medium == Medium::directory)
+             or (m_medium == Medium::playlist));
 }
 
 
@@ -183,7 +198,7 @@ bool Source::viable()
 }
 
 
-/// Describe the source in the log.
+/// Describe the source in the log on a single line.
 ///
 void Source::describe() const
 {
@@ -193,49 +208,64 @@ void Source::describe() const
         ftime.erase( ftime.end()-1, ftime.end() );
     }
     if (m_medium==Medium::radio) {     // Frequency
-        LOG_INFO(Lgr) << "Source " << m_name
-                      << ": medium=" << media_name(m_medium)
-                      << ", freq=" << static_cast<double>(m_freq_hz)/1000000.0
-                      << ", alt='" << m_alternate
-                      << "', failed=" << (m_failedp ? "y @ " : "n")
-                      << ftime;
+        LOG_INFO(Lgr)  << "Source " << m_name
+                       << ": medium=" << media_name(m_medium)
+                       << ", encoding=" << encoding_name(m_encoding)
+                       << ", freq=" << static_cast<double>(m_freq_hz)/1000000.0
+                       << ", alt='" << m_alternate
+                       << "', ann=" << (m_announcementp ? 'y' : 'n')
+                       << ", failed=" << (m_failedp ? "y @ " : "n")
+                       << ftime;
     }
-    else if (m_medium==Medium::mp3_stream) { // URLs
-        LOG_INFO(Lgr) << "Source " << m_name
-                      << ": medium=" << media_name(m_medium)
-                      << ", " << restype_name(m_res_type)
-                      << "='" << m_resource
-                      << "', alt='" << m_alternate
-                      << "', repeat=" << (m_repeatp ? 'y' : 'n')
-                      << ", dynamic=" << (m_dynamic ? 'y' : 'n')
-                      << ", failed=" << (m_failedp ? "y @ " : "n")
-                      << ftime;
+    else if (m_medium==Medium::stream) { // URLs
+        LOG_INFO(Lgr)  << "Source " << m_name
+                       << ": medium=" << media_name(m_medium)
+                       << ", encoding=" << encoding_name(m_encoding)
+                       << ", url='" << m_resource
+                       << "', alt='" << m_alternate
+                       << "', repeat=" << (m_repeatp ? 'y' : 'n')
+                       << ", dynamic=" << (m_dynamic ? 'y' : 'n')
+                       << ", ann=" << (m_announcementp ? 'y' : 'n')
+                       << ", failed=" << (m_failedp ? "y @ " : "n")
+                       << ftime;
     }
     else {
-        LOG_INFO(Lgr) << "Source " << m_name   // Local Pathname
-                      << ": medium=" << media_name(m_medium)
-                      << ", " << restype_name(m_res_type)
-                      << "=" << m_res_path
-                      << ", alt='" << m_alternate
-                      << "', repeat=" << (m_repeatp ? 'y' : 'n')
-                      << ", dynamic=" << (m_dynamic ? 'y' : 'n')
-                      << ", failed=" << (m_failedp ? "y @ " : "n")
-                      << ftime;
+        LOG_INFO(Lgr)  << "Source " << m_name
+                       << ": medium=" << media_name(m_medium)
+                       << ", encoding=" << encoding_name(m_encoding)
+                       << ", path=\"" << m_resource   /* relative path */
+                       << "\", alt='" << m_alternate
+                       << "', repeat=" << (m_repeatp ? 'y' : 'n')
+                       << ", dur=" << m_duration
+                       << ", dynamic=" << (m_dynamic ? 'y' : 'n')
+                       << ", ann=" << (m_announcementp ? 'y' : 'n')
+                       << ", failed=" << (m_failedp ? "y @ " : "n")
+                       << ftime;
     }
 }
 
-/// clears the fields of Source
+/// Resets all the fields of Source to default values.
 ///
 void Source::clear()
 {
-    m_name = "";
-    m_medium = Medium::off;
-    m_quiet_okay = true;
-    m_resource = "";
-    m_freq_hz = 0;
+    m_name.clear();
     m_alternate = OFF_SOURCE;
     m_failedp = false;
     m_last_fail = 0;
+    m_src_retry_secs = 60*60;
+    //
+    m_medium = Medium::off;
+    m_encoding = Encoding::none;
+    m_duration = 0;
+    m_announcementp = false;
+    m_text.clear();
+    m_quiet_okay = true;
+    m_repeatp = false;
+    m_dynamic = false;
+    m_freq_hz = 0;
+    m_last_fail = 0;
+    m_resource.clear();
+    m_res_path.clear();
 }
 
 /// Return resource string:  a pathname or a URL.
@@ -268,123 +298,131 @@ bool Source::res_path(boost::filesystem::path &eff_path)
     return pexists;
 }
 
-
-/// True iff exactly one of the boolean arguments is true.
-///
-static bool exactly_one( std::initializer_list<bool> list )
-{
-    bool one=false;
-    for( bool elem : list )
-    {
-        if (elem) {
-            if (one) return false;
-            one = true;
-        }
-    }
-    return one;
-}
-
-/// An ogg or mp3 player expects exactly one of these keywords:
-///   "file"
-///   "directory"
-///   "playlist"   (always along with "path")
-///   "url"
+/// Given m_medium has been established, location is one of:
+/// - stream:  url,
+/// - file:
+///   - relative pathname for a file in the 'resource/' or 'motd/' directory
+///   - relative pathname for a file in the Music directory,
+/// - directory:
+///   - relative pathname for an album in the Music directory,
+/// - playlist: pathname for a playlist in the playlists directory,
 ///
 void Source::extract_local_resource( const Json::Value &slot )
 {
-    const Json::Value &fstr = slot["file"];
-    const Json::Value &dstr = slot["directory"];
-    const Json::Value &pstr = slot["playlist"];
-    const Json::Value &ustr = slot["url"];
-    if (not exactly_one({ !fstr.isNull(), !dstr.isNull(),
-                          !pstr.isNull(), !ustr.isNull()})) {
-        LOG_ERROR(Lgr) << "Source {" << m_name
-        << "} needs exactly ONE of the keys: file, directory, playlist, url";
+    const Json::Value &loc = slot["location"];
+
+    if (loc.isNull()) {
+        LOG_ERROR(Lgr) << "null location for source '" << m_name << "'";
         throw Schedule_error();
     }
+    m_resource = loc.asString();
+    m_res_path.clear();  // to be set after call to validate()
+}
 
-    if (!fstr.isNull()) {       // file
-        m_resource = fstr.asString();
-        m_res_path = expand_home( m_resource );
-        m_res_type = ResType::File;
+/// Compute, check, and record in m_res_path member the full pathname
+/// of a host local resource. (Not applicable to radio or streams.)
+/// The resource is generally a relative path. A relative path is
+/// combined with one of the directory arguments:
+///   - lib_path : the music library directory
+///   - ann_path : the announcements directory
+///   - pl_path : the playlist directory
+///
+/// Checks for existence of a file, directory, or playlist resource *if*
+/// that is possible. Note that dynamic sources have pathnames might not
+/// exist on any given day.  If a directory, it must have a readable file.
+///
+/// * Throws Schedule_error if it finds a provably invalid source.
+///
+void Source::validate(const ResPathSpec &rps ) // rpspec
+{
+    switch (m_medium) {
+    case Medium::off:
+    case Medium::radio:
+    case Medium::stream:
         return;
-    }
-    if (!dstr.isNull()) {       // directory
-        m_resource = dstr.asString();
-        m_res_path = expand_home( m_resource );
-        m_res_type = ResType::Directory;
-        return;
-    }
-    // playlist (named playlist in MPD)
-    if (!pstr.isNull()) {
-        m_resource = pstr.asString();
-        const Json::Value &ppath = slot["path"];
-        if (ppath.isNull()) {
-            LOG_ERROR(Lgr) << "playlist '" << m_resource
-                           << "' does not specify a 'path' entry " << ppath;
-            throw Schedule_error();
+    case Medium::file:
+    case Medium::directory:
+        if (m_announcementp) {
+            rps.resolve_announcement(m_resource, m_res_path);
+        } else {
+            rps.resolve_library(m_resource, m_res_path);
         }
-        m_res_path = expand_home( ppath.asString() );
-        m_res_type = ResType::Playlist;
-        return;
+        break;
+    case Medium::playlist:
+        rps.resolve_playlist(m_resource, m_res_path);
+        break;
+    };
+    try {
+        if (not m_res_path.empty() and not m_dynamic) {
+            verify_readable( m_res_path );
+        }
     }
-    if (!ustr.isNull()) {       // URL
-        m_resource = ustr.asString();
-        m_res_type = ResType::URL;
-        return;
+    catch( std::exception &ex ) {
+        LOG_ERROR(Lgr) << "Source '" << m_name << "': " << ex.what();
+        throw Schedule_error();
     }
 }
 
+/// Read: encoding, medium, location.  All must be present and valid.
+///
+void Source::extract_required_props( const Json::Value &slot )
+{
+    const Json::Value &medstr = slot["medium"];
+    if (medstr.isNull()) {
+        LOG_ERROR(Lgr) << "Source {" << m_name << "} does not specify medium";
+        throw Schedule_error();
+    }
+    m_medium = strtomedium( medstr.asString() );
+    //
+    const Json::Value &encstr = slot["encoding"];
+    if (encstr.isNull()) {
+        LOG_ERROR(Lgr) << "Source {" << m_name << "} does not specify encoding";
+        throw Schedule_error();
+    }
+    m_encoding = strtoencoding( encstr.asString() );
+    //
+    const Json::Value &lstr = slot["location"];
+    if (lstr.isNull()) {
+        LOG_ERROR(Lgr) << "Source {" << m_name << "} is missing a location";
+        throw Schedule_error();
+    }
+    if (Medium::radio == m_medium) {
+        constexpr const unsigned HZ_PER_MHZ = 1'000'000;
+        double mhz = lstr.asDouble();
+        if ((mhz < MinRadioFreqMHz) or (mhz > MaxRadioFreqMHz)) {
+            LOG_ERROR(Lgr) << "Source {" << m_name
+                           << "} invalid frequency: " << mhz;
+            throw Schedule_error();
+        }
+        m_freq_hz = unsigned(HZ_PER_MHZ * mhz);
+    }
+    else if (Medium::stream == m_medium) {
+        m_resource = lstr.asString();
+    }
+    else if ((Medium::file == m_medium) or (Medium::playlist == m_medium)
+             or (Medium::directory == m_medium)) {
+        extract_local_resource(slot);
+    }
+}
 
 /// Load Source from JSON value.  May throw a Schedule_error.
+/// This checks syntax, but does not do resource validation.
+/// *  May throw Schedule_error
 ///
 void Source::load( const Json::Value &slot )
 {
-    // boolean options
     m_repeatp = get_bool_option( slot["repeat"], false );
     m_dynamic = get_bool_option( slot["dynamic"], false );
-
-    m_medium = strtomedium( slot["mode"].asString() );
-    if (Medium::radio == m_medium) {
-        constexpr const unsigned HZ_PER_MHZ = 1'000'000;
-        const Json::Value &fstr = slot["frequency"];
-        if (fstr.isNull()) {
-            LOG_ERROR(Lgr) << "Source {" << m_name
-                           << "}: Missing frequency for radio mode";
-            throw Schedule_error();
-        }
-        m_freq_hz = unsigned(HZ_PER_MHZ * std::stod(fstr.asString()));
-        m_res_type = ResType::Frequency;
-    }
-    else if (Medium::mp3_stream == m_medium) {
-        const Json::Value &ustr = slot["url"];
-        if (ustr.isNull()) {
-            LOG_ERROR(Lgr) << "Source {" << m_name
-                           << "}: Missing url for stream mode";
-            throw Schedule_error();
-        }
-        m_resource = ustr.asString();
-        m_res_type = ResType::URL;
-    }
-    else if ((Medium::ogg_file == m_medium)||(Medium::mp3_file == m_medium)) {
-        extract_local_resource(slot);
-        try { // Check for existence of the file resource if that is possible
-            // symbolic playlists will have an empty path
-            // dynamic paths might not exist on any given day
-            if (not m_res_path.empty() and not m_dynamic) {
-                verify_readable( m_res_path );
-            }
-        }
-        catch( std::exception &ex ) {
-            LOG_ERROR(Lgr) << "Source '" << m_name << "': " << ex.what();
-            throw Schedule_error();
-        }
-    }
-
-    // A *file* source that does not repeat might be silent for a while if
-    // play completes before the next program is scheduled to start.
+    m_announcementp = get_bool_option( slot["announcement"], false );
     //
-    if (((Medium::ogg_file == m_medium)||(Medium::mp3_file == m_medium))
+    extract_required_props(slot);
+    // A local recording that does *not* repeat might be silent for a
+    // while if play completes before the next program is scheduled to
+    // start. We force the m_quiet_okay flag to true in this case.
+    //
+    m_quiet_okay = get_bool_option( slot["quiet"], false );
+    if (((Medium::file == m_medium) or (Medium::directory == m_medium)
+         or (Medium::playlist == m_medium))
         and not m_repeatp) {
         m_quiet_okay = true;
     }
@@ -396,4 +434,10 @@ void Source::load( const Json::Value &slot )
     } else {
         m_alternate = OFF_SOURCE;
     }
+    // duration
+    const Json::Value &durval = slot["duration"];
+    if (! durval.isNull()) {
+        m_duration = durval.asDouble();
+    }
+
 }

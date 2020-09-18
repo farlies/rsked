@@ -1,38 +1,59 @@
-// sked-test5 : Defective--weekday has slots chronologically misordered
 {
     "encoding" : "UTF-8",
-    "schema"   : "1.0",
-    "version"  : "1.0",
+    "schema"   : "2.0",
+    "version"  : "2020-09-15T03:27.Bad",
+    "description"   : "Defective test schedule 5: Sunday slots misordered.",
+    "library"       : "../test/Music",
+    "playlists"     : "../test/Playlists",
+    "announcements" : "..",
 
     "sources" :
     {
-        // playlists
-        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
-                    "path" : "~/.config/mpd/playlists/master.m3u"},
+        "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                    "location" : "master.m3u", "duration": 38253.213},
 
-        "retsam" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
-                    "path" : "~/.config/mpd/playlists/master.m3u"},
-
-        "%motd"   : {"mode" : "ogg",
-                     "file" :  "~/.config/rsked/resource/motd.ogg" }
+        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                     "announcement" : true, "text" : "message of the day",
+                     "location" :  "resource/motd.ogg" }
     },
-
-    // must have 7 entries, Sun->Sat
-    "weekmap" : [
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday" ],
 
     "dayprograms" : {
 
-        "weekday" : [
-            {"start" : "06:00", "program" : "OFF" },
+        "sunday" : [
+            {"start" : "00:00", "announce" : "OFF" },
             {"start" : "08:30", "program" : "master" },
-            {"start" : "07:30", "program" : "retsam" },
+            {"start" : "13:00", "announce" : "OFF" },
+            {"start" : "06:00", "announce" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "monday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "tuesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "wednesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "thursday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "friday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "saturday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
             {"start" : "21:00", "program" : "OFF" }
         ]
     }

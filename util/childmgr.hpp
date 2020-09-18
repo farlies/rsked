@@ -208,4 +208,5 @@ public:
     ~Child_mgr();
 };
 
-typedef std::shared_ptr<Child_mgr> spCM;
+/// smart pointer to a Child_mgr:
+using spCM = std::shared_ptr<Child_mgr>;

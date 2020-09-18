@@ -1,11 +1,9 @@
 {
     "encoding" : "UTF-8",
     "schema"   : "2.0",
-    "version"  : "2020-09-15T16:05",
-    "description" : "This test schedule is valid and illustrates many features.",
-    "library"       : "../test/Music",
-    "playlists"     : "../test/Playlists",
-    "announcements" : "..",
+    "version"  : "2020-09-10T17:35",
+    "library" : "~/Music",
+    "playlists" : "~/.config/mpd",
 
     "sources" :
     {
@@ -31,13 +29,17 @@
         
         "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
                     "location" : "master.m3u", "duration": 38253.213},
-        "weasels" : {
-            "encoding" : "ogg", "location" : "Frank Zappa/Weasels Ripped My Flesh",
-            "medium": "directory", "repeat" : true, "duration": 666.6},
 
-        "timeship" : {"encoding" : "mp4", "medium": "file", 
-                      "location" : "Ash Ra Tempel/Seven Up/01.Timeship.m4a",
-                      "repeat" : false, "duration": 349.44},
+        "gonzo" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                   "location" : "gonzo.m3u", "duration": 1078.45},
+
+        "Herman's Hermits" : {
+            "encoding" : "ogg", "location" : "Herman's Hermits/Retrospective",
+            "medium": "directory", "repeat" : true, "duration": 3992.731},
+
+        "Mr. Broadway" : {"encoding" : "ogg", "medium": "file", "location" :
+            "Oliver Nelson/More Blues and the Abstract Truth/03-Theme from Mr. Broadway.ogg",
+            "repeat" : false, "duration": 349.44},
 
         "dnow" : {"encoding" : "mp3", "medium": "stream",  "duration": 3600,
                   "repeat" : false, "alternate" : "nis", "dynamic" : true,

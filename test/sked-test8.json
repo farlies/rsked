@@ -1,8 +1,8 @@
 {
     "encoding" : "UTF-8",
     "schema"   : "2.0",
-    "version"  : "2020-09-16T03:33.Bad",
-    "description"   : "Defective test schedule 6: Master has undefined alternate.",
+    "version"  : "2020-09-16T03:55.Bad",
+    "description"   : "Defective test schedule 8: empty source name.",
     "library"       : "../test/Music",
     "playlists"     : "../test/Playlists",
     "announcements" : "..",
@@ -10,10 +10,9 @@
     "sources" :
     {
         "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
-                    "location" : "master.m3u", "duration": 38253.213,
-                    "alternate" : "tremas"},
+                    "location" : "master.m3u", "duration": 38253.213},
 
-        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+        ""   : {"encoding" : "ogg", "medium": "file", "duration": 2,
                      "announcement" : true, "text" : "message of the day",
                      "location" :  "resource/motd.ogg" }
     },
