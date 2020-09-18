@@ -1,0 +1,21 @@
+5.9.20
+- Split the CSS content from the style tag to its own file, styles.css
+- Added announcement menu with appropriate new ids + CSS
+- Changed display mode to a 4x4 grid model, with the menus in the left-hand column and the calendar on the right
+6.9.20
+- Created an array of test announcements in testdata.js
+- Started adding calendar table elements to eedit.html, added link to full calendar’s main.js script
+7.9.20
+- Removed edit buttons from announcement menu as discussed
+9.9.20
+- Added remaining calendar elements
+- Adjusted the modal's z-index from 1 to 3 so it will float on top of the calendar events
+- Adjusted some CSS for the calendar toolbar
+11.9.20
+- Added fc-event-draggable class to events in the sourcelist in preparation for drag and drop
+18.9.20
+- Added some dummy buttons to the calendar toolbar that can be used for saving and loading the schedule
+- Halfheartedly added some fullcalendar-esque styling on the source menu and buttons that I'll definitely change later
+- Added some functions to rcal.js to import and display the default announcements in the announcement list
+- Made some small tweaks to the way events look in the fullcalendar main.css - was sick of looking at those blue borders
+- Stripped out some unnecessary features from the calendar html (for instance, specific date data and today/past/future classes)
