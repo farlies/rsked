@@ -12,6 +12,7 @@ var EditSource=undefined;
 ///    "cms"  => <RcalSource cms>
 ///
 var Sources = {};
+var Announcements = {};
 
 const DefaultSrcName='(new name)';
 
@@ -28,6 +29,10 @@ const DefaultSrcName='(new name)';
 ///
 function host_playlists() {
     return gPlaylists;
+}
+
+function host_announcements() {
+    return gAnnouncements;
 }
 
 /// Retrieve the recorded audio resources on the host (nested Objects).
@@ -516,14 +521,14 @@ function editSource( srcobj )
 /// the edit modal dialog named.
 ///
 function addSource( src ) {
-    const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'
+    const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
     const outer=$("<div></div>",
                   {id: "outer_"+src.name,
                    class: xclasses});
     let inner=$('<div></div>',
                 {id: src.suid,
                  class: 'fc-event-main',
-                 click: function(evt) { editSource( src ); 
+                 click: function(evt) { editSource( src );
                                         return false;}}).text(src.name);
     inner[0].style.backgroundColor = src.color;
     outer.append(inner);
@@ -613,6 +618,76 @@ function parse_rsked_sources() {
     }
 }
 
+/// Add default announcements to the announcement list
+// Model for announcements
+
+class RcalAnnounce {
+    name;        // string name, unique in schedule
+    registered;   // bool
+    suid;        // string uuid--unique in session; not in schedule
+    text;        // text form of announcement e.g. "good morning"
+    color;        // dom color spec.
+    //
+    constructor(sname,suid,stext) {
+        var pfile;
+        var parts;
+        this.name = sname;
+        this.registered = false;
+        this.suid = uuidv4();
+        this.color = "#ffcc66";
+        this.text = stext;
+    }
+};
+
+var gAnnouncements = {
+    "motd-ymd" : {"text" : "message of the day - ymd"},
+    "motd-md" : {"text" : "message of the day - md"},
+};
+
+// for every announcement in gAnnouncements, run 'import_announcement' FIX THIS!
+
+function get_announce() {
+  const srcs = gAnnouncements;
+  for (var ann of Object.keys(srcs)) {
+    import_announcement( ann, srcs[ann] );
+    }
+}
+
+function import_announcement(sname, sdef) {
+    const suid = uuidv4();
+    const stext = sdef["text"];
+    console.log("anntext = ",stext)
+    var ann = new RcalAnnounce(sname,suid,stext);
+    console.log("import announcement ", ann.name,ann.suid,ann.text);
+    addAnnounce( ann );
+
+}
+
+//Add announcement to announcement list as an fc event
+
+function addAnnounce( ann ) {
+    console.log("add announcement ",ann.name, ann.suid);
+    const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
+    const outer=$("<div></div>",
+                  {id: "outer_"+ann.name,
+                   class: xclasses});
+    let inner=$('<div></div>',
+                {id: ann.suid,
+                 class: 'fc-event-main',
+               }).text(ann.text);
+    inner[0].style.backgroundColor = "#ffcc66";
+    outer.append(inner);
+    outer.appendTo('#external-announce-list');
+    //
+    ann.registered = true;
+    Announcements[ann.name] = ann;
+}
+
+
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////
 //// EVENT Edit Dialog
@@ -648,7 +723,7 @@ init_modals();
 init_source_pane();
 //load_test_sources();
 parse_rsked_sources();
-
+get_announce();
 
 ///////// TODO:
 /// [x] - Add an "alternate" selector to pick an alternate source.

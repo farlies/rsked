@@ -23,7 +23,7 @@ var gFiles = {
                     "08-Yellow Hyper Balls.mp3"]},
     },
 
-    "Ravi Coltrane": 
+    "Ravi Coltrane":
     {"Spirit Fiction":
      {"encoding" : "ogg",
       "totalsecs" : "39:16",
@@ -109,6 +109,15 @@ var gPlaylists = [
     "master.m3u"
 ];
 
+/// Available announcements (these files don't actually exist, they're just test examples).
+/// Default location $HOME/.config/rsked/resource/
+/// Give these different filepaths as if they're located in different places on the hard drive?
+var gAnnouncements = [
+    "goodam.ogg",
+    "goodaf.ogg",
+    "goodev.ogg",
+];
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var rsked_schedule = {
@@ -133,11 +142,11 @@ var rsked_schedule = {
         "cms"  : {"encoding" : "mp3", "medium" : "stream",
                   "location" : "http://cms.stream.publicradio.org/cms.mp3",
                   "alternate" : "ksjn",  "repeat" : true},
-        
-        "nis"  : {"encoding" : "mp3", "medium": "stream", 
+
+        "nis"  : {"encoding" : "mp3", "medium": "stream",
                   "location" : "http://nis.stream.publicradio.org/nis.mp3",
                   "alternate" : "know",  "repeat" : true},
-        
+
         "master" : {"encoding" : "ogg", "medium": "playlist", "repeat" : true,
                     "location" : "master.m3u"},
 
@@ -150,21 +159,21 @@ var rsked_schedule = {
         "easylivin" : {"encoding" : "ogg", "medium": "file", "repeat" : false,
                        "location" : "Uriah Heep/Demons and Wizards/03-Easy Livin.ogg"},
 
-        "dnow" : {"encoding" : "mp3", "medium": "stream",  
+        "dnow" : {"encoding" : "mp3", "medium": "stream",
                   "repeat" : false, "alternate" : "nis", "dynamic" : true,
                   "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"},
-        
+
         "%snooze1" : {"encoding" : "ogg", "medium": "file",
                       "location" : "~/.config/rsked/resource/snooze-1hr.ogg" },
         "%resume" : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/resuming.ogg" },
-        "%revert" : {"encoding" : "ogg", "medium": "file", 
+        "%revert" : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/reverting.ogg" },
         "%goodam" : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/goodam.ogg" },
         "%goodaf" : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/goodaf.ogg" },
-        "%goodev" : {"encoding" : "ogg", "medium": "file", 
+        "%goodev" : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/goodev.ogg" },
         "%motd"   : {"encoding" : "ogg", "medium": "file",
                      "location" :  "~/.config/rsked/resource/motd.ogg" }
