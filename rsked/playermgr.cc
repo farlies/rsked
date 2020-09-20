@@ -155,6 +155,13 @@ Player_manager::get_player( spSource src )
         pp = m_mpd;       // only choice for these encodings is mpd
         return pp;
     }
+    if (src->localp() and (encoding== Encoding::mp3)) {
+        pp = m_mpd;          // first choice is MPD
+        if (not pp or not pp->is_usable()) { // if not usable fallback to mpg321
+            pp = m_mpg321;
+        }
+        return pp;
+    }
     if (src->localp() and (encoding== Encoding::ogg)) {
         pp = m_mpd;          // first choice is MPD
         if (not pp or not pp->is_usable()) { // if not usable fallback to ogg123
