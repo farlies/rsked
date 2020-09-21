@@ -203,9 +203,10 @@ void Mpd_player::shutdown_mpd()
 /// validate that the external process is mpd, just that something is
 /// sitting on the resource. This condition is undesirable if we have not
 /// started mpd intend to, since mpd will loop forever attempting to
-/// to grab the port/socket, thereby breaking rsked.
+/// to grab the port/socket, thereby breaking rsked. Note that mpd fails
+/// to clean up its unix socket which may yield false positives.
 ///
-/// * Will NOT throw. (unless system runs out of memory while checking)
+/// * Will NOT throw, Except: system runs out of memory while checking
 ///
 bool Mpd_player::any_mpd_running()
 {
@@ -288,7 +289,7 @@ void Mpd_player::check_not_stalled()
 /// Returns true if MPD is not actually playing, or the connection to the
 /// process is broken.
 ///
-/// * This will NOT throw.
+/// * Will NOT throw.
 ///
 bool Mpd_player::completed()
 {
@@ -306,13 +307,13 @@ bool Mpd_player::completed()
 /// -- player is in the wrong state (e.g. stopped, paused)
 /// -- cannot communicate successfully with MPD
 ///
-/// * May THROW a Player_exception if there is something basically
-///   wrong with the player.  Player should have marked itself unusable.
-///
 /// It is up to the caller to rectify the problem if false is
 /// returned.  Unfortunately it seems impossible to tell whether mpd is
 /// playing a named playlist--if this type of source is encountered
 /// we just verify the name of the source is the last one we enqueued.
+///
+/// * May THROW a Player_exception if there is something basically
+///   wrong with the player.  Player should have marked itself unusable.
 ///
 bool Mpd_player::currently_playing( spSource src )
 {
@@ -404,7 +405,13 @@ void Mpd_player::initialize( Config &cfg, bool testp )
                      FileCond::MustExist, m_bin_path);
     m_cm->set_binary( m_bin_path );
     m_cm->set_name( m_name );
-    //
+    // If not enabled, stop here, do not check whether it is running
+    if (not m_enabled) {
+        return;
+    }
+    // Check whether a rogue mpd process is running when rsked is
+    // supposed to be the mpd parent; this is a common misconfiguration.
+    // Also, mpd fails to clean up its unix socket on exit.
     if (m_run_mpd and not m_cm->running()) {
         if (any_mpd_running()) {   // No throw.
             LOG_ERROR(Lgr) << "Mpd_player found a non-child mpd running!";
@@ -424,6 +431,7 @@ void Mpd_player::initialize( Config &cfg, bool testp )
 /// Evaluates whether we can use MPD (only if enabled).
 /// If this daemon has not been tried for m_recheck_secs since
 /// last being marked unusable, attempt to start it again.
+///
 /// *  Will NOT throw.
 ///
 bool Mpd_player::is_usable()
@@ -497,17 +505,23 @@ void Mpd_player::play( spSource src )
     switch (medium) {
     case Medium::off:
     case Medium::radio:
-    case Medium::directory:
         LOG_ERROR(Lgr) << m_name << " does not handle this medium: "
                        << media_name(src->medium());
         throw Player_media_exception();
         break;
 
     case Medium::stream:
+    case Medium::directory:
     case Medium::file:
         LOG_INFO(Lgr) << m_name << " play: {" << src->name() << "}";
         try {
-            m_remote->enqueue(src->resource());
+            if (src->dynamic()) {
+                std::string dynstr;
+                uri_expand_time( src->resource(), dynstr );
+                m_remote->enqueue(dynstr);
+            } else {
+                m_remote->enqueue(src->resource());
+            }
         } catch (Mpd_queue_exception&) {
             throw Player_media_exception();
         }
@@ -548,7 +562,8 @@ void Mpd_player::resume()
 }
 
 /// Return current state.
-/// * Throws NO exceptions.
+///
+/// * Will NOT throw :-)
 ///
 PlayerState Mpd_player::state()
 {

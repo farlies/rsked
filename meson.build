@@ -9,7 +9,7 @@
 
 
 project('rsked','cpp',
-        version: '1.0.0',
+        version: '1.0.2',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -100,6 +100,7 @@ tncheck_srcs = ['test/tncheck.cc', 'rsked/inetcheck.cc']+utils
 
 ttimeout_srcs = ['test/ttimeout.cc']
 
+mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
 
 #------------------------------------------------------------------------------
 
@@ -180,6 +181,13 @@ executable('tncheck',
 #             include_directories : [shared_incdirs,rsked_incdirs],
 #             dependencies : [ boost_dep ])
 
+
+# 11. Tests for Mpd_client
+executable('mpdtest',
+            sources: mpdtest_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep, mpd_dep, json_dep ])
 
 ##########
 

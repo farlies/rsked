@@ -23,24 +23,6 @@
 
 class Config;
 
-/// Modes a player may be in at any given time.
-///   Stopped : not playing anything right now
-///   Playing : actively playing a Source
-///   Paused  : stopped, but may resume where it was interrupted
-///   Broken  : not currently usable
-///
-enum class PlayerState {
-    Stopped,
-    Playing,
-    Paused,
-    Broken
-};
-
-
-/// Thrown on problem with players
-struct Player_exception : public std::exception {
-    const char* what() const throw() { return "Generic Player exception"; }
-};
 
 /// Problem configuring player
 struct Player_config_exception : public Player_exception {

@@ -22,7 +22,7 @@
 #include <vector>
 #include <mpd/client.h>
 
-#include "player.hpp"
+#include "common.hpp"
 
 //////////////////////////////////////////////////////////////////////////
 /// Some Exception classes--all derived from Player_exception.
@@ -63,6 +63,14 @@ struct mpd_song;
 
 enum class Mpd_opt { NoPrint, Print };
 
+/// some classes of error status for our mpd client
+enum class Mpd_err {
+    NoError,                    // (there was no error :-)
+    NoConnection,               // not connected to server
+    NoStatus,                   // did not get status back from server
+    NoExist                     // mpd could not access the resource
+};
+
 //////////////////////////////////////////////////////////////////////////
 
 /// Class to manage MPD
@@ -76,6 +84,8 @@ private:
     unsigned m_elapsed_secs {0};
     PlayerState m_obs_state {PlayerState::Stopped};
     unsigned m_server_vers[4] {0,0,0,0};
+    Mpd_err m_last_err {Mpd_err::NoError};
+    void assert_connected();
     void log_status( mpd_status *);
 public:
     bool check_status( Mpd_opt );
@@ -86,9 +96,11 @@ public:
     enum mpd_server_error diag_server_error( const char* );
     void disconnect();
     unsigned elapsed_secs() const { return m_elapsed_secs; }
-    int enqueue( const std::string & );
+    void enqueue( const std::string & );
     int enqueue( const mpd_song* );
+    int enqueue_id( const std::string & );
     void enqueue_playlist( const std::string & );
+    Mpd_err last_err() const { return m_last_err; };
     PlayerState obs_state() const { return m_obs_state; }
     void pause();
     void play();

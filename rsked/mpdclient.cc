@@ -27,8 +27,6 @@
 #include <mpd/connection.h>
 #include <mpd/status.h>
 
-const char* SocketPath= "/home/sharp/.config/mpd/socket";
-
 
 /// CTOR with default TCP port on localhost
 ///
@@ -80,10 +78,24 @@ void Mpd_client::set_connection_params( const std::string &host, unsigned port )
     m_socket_path = host;
 }
 
+/// Throw unless the client has a connection in m_conn. It does not attempt
+/// to validate the connection.
+/// * May throw
+///
+void Mpd_client::assert_connected()
+{
+    if (nullptr == m_conn) {
+        m_last_err = Mpd_err::NoConnection;
+        throw Mpd_connect_exception();
+    }
+}
+
 
 /// Attempt to connect if not connected; it will throw an
 /// Mpd_connect_exception unless a connection can be opened after
 /// MAX_TRIES attempts. If it returns the connection m_conn is valid.
+///
+/// * May throw.
 ///
 void Mpd_client::connect()
 {
@@ -139,15 +151,20 @@ void Mpd_client::connect()
 bool Mpd_client::check_status(Mpd_opt printopt)
 {
     mpd_status *status {nullptr};
+    m_last_err = Mpd_err::NoError;
     try {
         enum mpd_server_error serr;
         connect();
-        assert(m_conn);         // !!!!
+        if (nullptr == m_conn) {
+            m_last_err = Mpd_err::NoConnection;
+            return false;
+        }
         // Get status:
         status = mpd_run_status( m_conn );
         if (!status) {
             LOG_ERROR(Lgr) << "Mpd_client: Did not get a status object from MPD";
             diag_error("Mpd_client::check_status/1: ",serr);
+            m_last_err = Mpd_err::NoStatus;
             return false;
         }
         m_elapsed_secs = mpd_status_get_elapsed_time(status);
@@ -368,7 +385,7 @@ void Mpd_client::stop()
 {
     unsigned tries=1;
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     while (not mpd_run_stop(m_conn)) {
         enum mpd_server_error serr;
         auto perr = diag_error("Mpd_client::stop: ",serr);
@@ -377,21 +394,64 @@ void Mpd_client::stop()
     }
 }
 
-/// Add a URI to the end of the queue. May throw.
-/// @returns id of the added URI
+/// Add a local file, directory, or URL to the end of the queue.
+/// The string should be relative to the music directory, and
+/// should not have a trailing slash.
 ///
-int Mpd_client::enqueue( const std::string &uri )
+/// * May throw.
+///
+void Mpd_client::enqueue( const std::string &uri )
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
+    int id = mpd_run_add( m_conn, uri.c_str() );
+    if (-1 == id) {
+        enum mpd_server_error serr;
+        diag_error("Mpd_client::enqueue: ",serr);
+        LOG_ERROR(Lgr) << "Failed to enqueue resource '" << uri << "'";
+        m_last_err = Mpd_err::NoExist;
+        throw Mpd_queue_exception();
+    }
+}
+
+
+/// Enqueue a song given a pointer to its mpd_song song struct.
+/// @return id of the added song
+/// *  May throw.
+///
+int Mpd_client::enqueue( const mpd_song* song )
+{
+    int id=(-1);
+    const char *uri = mpd_song_get_uri( song );
+    if (uri) {
+        id = enqueue_id( uri );
+    }
+    return id;
+}
+
+
+/// Add a URI or a single file to the end of the queue.
+/// Note well: this will not handle directories!
+/// Not currently used in rsked.
+/// @returns id of the added URI
+///
+/// *  May throw.
+///
+int Mpd_client::enqueue_id( const std::string &uri )
+{
+    connect();
+    assert_connected();
     int id = mpd_run_add_id( m_conn, uri.c_str() );
     if (-1 == id) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::enqueue: ",serr);
+        LOG_ERROR(Lgr) << "Failed to enqueue resource '" << uri << "'";
+        m_last_err = Mpd_err::NoExist;
         throw Mpd_queue_exception();
     }
     return id;
 }
+
 
 /// Adds a named playlist to the end of the queue. May throw.
 /// @returns id of the added URI
@@ -399,7 +459,7 @@ int Mpd_client::enqueue( const std::string &uri )
 void Mpd_client::enqueue_playlist( const std::string &plname )
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     bool ok = mpd_run_load( m_conn, plname.c_str() );
     if (not ok) {
         enum mpd_server_error serr;
@@ -407,21 +467,11 @@ void Mpd_client::enqueue_playlist( const std::string &plname )
         if ((MPD_ERROR_SERVER==err) and (MPD_SERVER_ERROR_NO_EXIST==serr)) {
             LOG_ERROR(Lgr) << "Playlist '" << plname << "' was not found";
         }
+        m_last_err = Mpd_err::NoExist;
         throw Mpd_queue_exception();
     }
 }
 
-/// Enqueue a song given its song struct.
-/// @return id of the added song
-int Mpd_client::enqueue( const mpd_song* song )
-{
-    int id=(-1);
-    const char *uri = mpd_song_get_uri( song );
-    if (uri) {
-        id = enqueue( uri );
-    }
-    return id;
-}
 
 /// Pause playing the current track. No effect if already paused or
 /// stopped. May throw.
@@ -429,7 +479,7 @@ int Mpd_client::enqueue( const mpd_song* song )
 void Mpd_client::pause()
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_pause( m_conn, true )) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::pause: ",serr);
@@ -443,7 +493,7 @@ void Mpd_client::pause()
 void Mpd_client::unpause()
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_pause( m_conn, false )) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::unpause: ",serr);
@@ -456,7 +506,7 @@ void Mpd_client::unpause()
 void Mpd_client::play()
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_play( m_conn )) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::play: ",serr);
@@ -470,7 +520,7 @@ void Mpd_client::play()
 void Mpd_client::play_pos(unsigned p)
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_play_pos( m_conn, p )) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::play_pos: ",serr);
@@ -484,7 +534,7 @@ void Mpd_client::play_pos(unsigned p)
 void Mpd_client::play( unsigned id )
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_play_id( m_conn, id )) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::play(id): ",serr);
@@ -497,7 +547,7 @@ void Mpd_client::play( unsigned id )
 void Mpd_client::set_repeat_mode(bool repeatp)
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_repeat(m_conn, repeatp)) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::set_repeat_mode: ",serr);
@@ -513,7 +563,7 @@ void Mpd_client::set_volume(unsigned pct)
         pct = 100;
     }
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_set_volume(m_conn, pct)) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::set_volume: ",serr);
@@ -527,7 +577,7 @@ void Mpd_client::set_volume(unsigned pct)
 void Mpd_client::clear_queue()
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     if (not mpd_run_clear(m_conn)) {
         enum mpd_server_error serr;
         diag_error("Mpd_client::clear_queue: ",serr);
@@ -542,7 +592,7 @@ void Mpd_client::clear_queue()
 bool Mpd_client::verify_playing_uri( const std::string &uri)
 {
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     mpd_song *song = mpd_run_current_song(m_conn);
     if (!song) { return false; }
     if (const char* puri=mpd_song_get_uri(song)) {
@@ -560,7 +610,7 @@ unsigned Mpd_client::search_album(const std::string &name,
 {
     unsigned ns=0;
     connect();
-    assert(m_conn != nullptr);
+    assert_connected();
     mpd_search_cancel(m_conn);
     bool rc =
         mpd_search_db_songs(m_conn,true)
