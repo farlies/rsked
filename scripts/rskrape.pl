@@ -167,7 +167,8 @@ sub skrape_an_album {
     my $ogg_count = 0;
     my $mp3_count = 0;
     my $mp4_count = 0;
-    my $enc = "unknown";
+    my $flac_count = 0;
+    my $enc = "mixed";
     my @songs;
     my @durs;
     my $total_dur = 0.0;
@@ -199,16 +200,29 @@ sub skrape_an_album {
                 push(@songs, $song);
                 push(@durs, $dur);
             }
+            if ($song =~ /\.flac$/) {
+                $flac_count += 1;
+                my $dur= track_duration_sec($fpsong);
+                $total_dur += $dur;
+                push(@songs, $song);
+                push(@durs, $dur);
+            }
         }
     }
-    my $ncuts = $ogg_count + $mp3_count + $mp4_count;
+    my $ncuts = $ogg_count + $mp3_count + $mp4_count + $flac_count;
     if ($ncuts == 0) {
-        print "   \"$album/\": $enc $ncuts !!!\n";
+        print STDERR "   \"$album/\": $enc $ncuts !!!\n";
         return;
     }
-    if ($ogg_count == 0 && $mp3_count==0 && $mp4_count > 0) { $enc = "mp4";}
-    if ($ogg_count == 0 && $mp3_count > 0 && $mp4_count == 0) { $enc = "mp3";}
-    if ($ogg_count > 0 && $mp3_count==0 && $mp4_count == 0) { $enc = "ogg";}
+    if ($ogg_count == 0 && $mp3_count==0
+        && $mp4_count > 0 && $flac_count==0) { $enc = "mp4";}
+    if ($ogg_count == 0 && $mp3_count > 0
+        && $mp4_count == 0 && $flac_count==0) { $enc = "mp3";}
+    if ($ogg_count > 0 && $mp3_count==0
+        && $mp4_count == 0 && $flac_count==0) { $enc = "ogg";}
+    if ($ogg_count==0 && $mp3_count==0
+        && $mp4_count == 0 && $flac_count > 0) { $enc = "flac";}
+
     $resources{$artist}{$album} = {"tracks" => \@songs, "encoding" => $enc,
                                        "durations" => \@durs,
                                        "totalsecs" => $total_dur};
