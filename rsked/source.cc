@@ -276,6 +276,27 @@ const std::string& Source::resource() const
     return m_resource;
 }
 
+
+/// Expand any strftime symbols in the path and return in dst.
+/// Returns true on success, false on failure.
+/// * will NOT throw
+///
+bool uri_expand_time( const std::string &src, std::string &dst )
+{
+    time_t rawtime;
+    time(&rawtime);
+    tm *timeinfo = localtime(&rawtime);
+    char timebuf[320] = {0};
+    if (strftime(timebuf,sizeof(timebuf)-1, src.c_str(), timeinfo)) {
+        dst = std::string(timebuf);
+        return true;
+    } else {
+        dst = src;
+        LOG_WARNING(Lgr) << "failed to expand time in string--too long";
+        return false;
+    }
+}
+
 /// Set argument ref to the fully expanded pathname.
 /// If dynamic we must expand any strftime symbols in the path
 /// Return true if this path exists, false otherwise.  No throw.
@@ -294,7 +315,9 @@ bool Source::res_path(boost::filesystem::path &eff_path)
         }
     }
     bool pexists = exists(eff_path);
-    LOG_INFO(Lgr) << eff_path << (pexists ? " exists" : " is not found");
+    if (not pexists) {
+        LOG_WARNING(Lgr) << eff_path << " is not found";
+    }
     return pexists;
 }
 

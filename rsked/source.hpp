@@ -19,6 +19,7 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <memory>
+#include "common.hpp"
 #include "radio.hpp"
 #include "respath.hpp"
 
@@ -125,3 +126,4 @@ extern Medium strtomedium( const std::string & );
 extern Encoding strtoencoding( const std::string & );
 extern const char* encoding_name(const Encoding);
 extern const char* media_name(const Medium);
+extern bool uri_expand_time( const std::string&, std::string&);
