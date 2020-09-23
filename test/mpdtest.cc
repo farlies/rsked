@@ -26,6 +26,8 @@
 #include "logging.hpp"
 #include "mpdclient.hpp"
 
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 
 
 /// an mp4 file
@@ -36,6 +38,9 @@ std::string g_track4 { "Dub Apocalypse/Live at 3S Artspace/03 Track04.flac" };
 
 /// a directory with mp4 tracks
 std::string g_agworld { "Brian Eno/Another Green World" };
+
+/// a playlist (.m3u)  Any extension like .m3u will be stripped for mpd.
+std::string g_master { "master.m3u" };
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -80,6 +85,30 @@ void test1( Mpd_client &client,  const std::string &resource )
 }
 
 
+void testp( Mpd_client &client,  const std::string &plist )
+{
+    // strip any trailing extension, like .m3u, if present
+    fs::path plfile { plist };
+    std::string plstem { plfile.stem().native() };
+    LOG_DEBUG(Lgr) << "playlist stem: '" << plstem << "'";
+    client.connect();
+    //
+    client.stop();
+    client.clear_queue();
+    client.set_repeat_mode(false);
+    client.enqueue_playlist( plstem );
+    client.check_status(Mpd_opt::Print);
+    if (client.last_err() == Mpd_err::NoError) {
+        client.play();
+        sleep(10);
+        client.check_status(Mpd_opt::Print);
+        client.stop();
+    }
+    //
+    client.disconnect();
+}
+
+
 int main(int, char **)
 {
     init_logging("mpdtest","mpdtest_%5N.log",LF_FILE|LF_DEBUG|LF_CONSOLE);
@@ -88,7 +117,8 @@ int main(int, char **)
     try {
         // test1( client, g_reptiles );   // .mp4
         // test1( client, g_track4 );     // .flac
-        test1( client, g_agworld );        // mp4 directory
+        // test1( client, g_agworld );        // mp4 directory
+        testp( client, g_master );        // playlist
     }
     catch (std::exception &xxx) {
         LOG_ERROR(Lgr) << "Exit on exception: " << xxx.what();

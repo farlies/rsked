@@ -37,6 +37,7 @@ constexpr const unsigned Default_mpd_volume = 100;
 constexpr const char *Default_mpd_hostname = "localhost";
 const boost::filesystem::path Default_mpd_socket {"~/.config/mpd/socket"};
 
+namespace fs = boost::filesystem;
 
 
 /// CTOR - create an Mpd_client right away, but don't connect yet.
@@ -537,8 +538,11 @@ void Mpd_player::play( spSource src )
         break;
     case Medium::playlist:
         LOG_INFO(Lgr) << m_name << " play: {" << src->name() << "}";
+        // strip any trailing extension, like .m3u, if present
+        fs::path plfile { src->name() };
+        std::string plstem { plfile.stem().native() };
         try {
-            m_remote->enqueue_playlist(src->resource());
+            m_remote->enqueue_playlist( plstem );
         } catch (Mpd_queue_exception&) {
             throw Player_media_exception();
         }
