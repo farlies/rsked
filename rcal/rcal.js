@@ -675,7 +675,7 @@ function addAnnounce( ann ) {
                 {id: ann.suid,
                  class: 'fc-event-main',
                }).text(ann.text);
-    inner[0].style.backgroundColor = "#ffcc66";
+    inner[0].style.backgroundColor = "#663399";
     outer.append(inner);
     outer.appendTo('#external-announce-list');
     //
