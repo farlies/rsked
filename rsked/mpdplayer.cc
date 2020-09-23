@@ -33,6 +33,7 @@
 
 /// Default MDP network port and host/socket
 constexpr const unsigned Default_mpd_port = 6600;
+constexpr const unsigned Default_mpd_volume = 100;
 constexpr const char *Default_mpd_hostname = "localhost";
 const boost::filesystem::path Default_mpd_socket {"~/.config/mpd/socket"};
 
@@ -46,6 +47,7 @@ Mpd_player::Mpd_player()
       m_socket(expand_home(Default_mpd_socket)),
       m_hostname(Default_mpd_hostname),
       m_port(Default_mpd_port),
+      m_volume(Default_mpd_volume),
       m_cm(Child_mgr::create(m_name))
 
 {
@@ -62,6 +64,7 @@ Mpd_player::Mpd_player(const char *name)
       m_socket(expand_home(Default_mpd_socket)),
       m_hostname(Default_mpd_hostname),
       m_port(Default_mpd_port),
+      m_volume(Default_mpd_volume),
       m_cm(Child_mgr::create(name))
 {
     LOG_INFO(Lgr) << "Created an Mpd_player named " << m_name;
@@ -397,6 +400,11 @@ void Mpd_player::initialize( Config &cfg, bool testp )
     // additional configuration only if enabled:
     cfg.get_bool(m_name.c_str(),"run_mpd",m_run_mpd);
     cfg.get_unsigned(m_name.c_str(),"port",m_port);
+    cfg.get_unsigned(m_name.c_str(),"volume",m_volume);
+    if (m_volume > 100) {
+        LOG_WARNING(Lgr) << "Mpd volume capped at 100%";
+        m_volume = 100;
+    }
     cfg.get_string(m_name.c_str(),"host", m_hostname);
     cfg.get_bool(m_name.c_str(),"debug", m_debug);
     // depending on timing, the socket might not exist (yet)
@@ -476,7 +484,7 @@ void Mpd_player::pause()
 /// cleared and only the source will be scheduled to play.  It will
 /// verify that MPD is usable; if the process or connection had not
 /// been initiated, it will be launched now: this is the normal way to
-/// start the MPD process/connection. The volume is set to 100%.
+/// start the MPD process/connection. The volume is set to m_volume%.
 ///
 /// * May throw Player_media_exception(), Player_comm_exception
 ///
@@ -495,7 +503,7 @@ void Mpd_player::play( spSource src )
         }
         m_remote->stop();
         m_remote->clear_queue();
-        m_remote->set_volume(100);
+        m_remote->set_volume(m_volume);
     } catch (const Mpd_run_exception &) {
         throw Player_media_exception();
     }
