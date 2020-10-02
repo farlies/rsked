@@ -12,6 +12,8 @@
 #    setup.sh -ar     # armv7l release
 #    setyp.sh -ad     # armv7l debug
 
+# Part of the rsked project. Copyright 2020 Steven A. Harp
+
 USAGE="Usage:  setup.sh [-d|-r] [-a|-x] [-c|-g] [builddir]"
 
 sCC=gcc
