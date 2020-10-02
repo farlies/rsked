@@ -19,8 +19,11 @@ set -e
 
 print_usage()
 {
-echo <<EOF
-Usage:  pack_rsked.sh [-n] [-c confdir] {debug|release} {armv7l|x86_64}"
+cat <<EOF
+Usage:  ./pack_rsked.sh [-n] [-c confdir] {debug|release} {armv7l|x86_64}
+
+This script will prepare a compressed archive with rsked binaries, sripts
+and configuration files.
 
 Options:
  -n 
@@ -28,6 +31,7 @@ Options:
 
  -c confdir
     use configuration from config/confdir instead of config/example-ARCH
+
 EOF
 }
 

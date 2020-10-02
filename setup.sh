@@ -10,11 +10,43 @@
 #    setup.sh -xr     # x86_64 release
 #    setup.sh -xd     # x86_64 debug
 #    setup.sh -ar     # armv7l release
-#    setyp.sh -ad     # armv7l debug
+#    setup.sh -ad     # armv7l debug
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
 
-USAGE="Usage:  setup.sh [-d|-r] [-a|-x] [-c|-g] [builddir]"
+
+print_usage()
+{
+cat <<EOF
+Usage:  ./setup.sh [-d|-r] [-a|-x] [-c|-g] [builddir]"
+
+This script will invoke meson to prepare a build directory.
+Without arguments, will prepare a build directory for a debug
+build on the native architecture using gcc.
+
+Options:
+ -a
+    build for armv7l architecture
+
+ -d
+    select a debug build
+
+ -c
+    use the clang compiler
+
+ -g
+    use the gcc compiler
+
+ -r
+    select a release build
+
+ -x
+    build for x86_64 architecture
+
+ builddir
+    optional name for the build directory
+EOF
+}
 
 sCC=gcc
 sCXX=g++
@@ -29,7 +61,7 @@ while getopts ":acdgrx" opt ; do
         g ) sCC=gcc; sCXX=g++ ;;
         r ) BTYPE=release ;;
         x ) TMACH=x86_64 ;;
-        \? ) echo $USAGE
+        \? ) print_usage
              exit 1
     esac
 done
@@ -37,7 +69,7 @@ shift $(($OPTIND - 1))
 
 if [[ $# > 1 ]]; then
     echo "Invalid argument list."
-    echo $USAGE
+    print_usage
     exit 1
 fi
 
