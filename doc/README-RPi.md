@@ -214,7 +214,7 @@ circuitry to protect the RPi. An example schematic is shown below:
 
 ![hardware]
 
-[hardware]: doc/hardware.png
+[hardware]: hardware.png
 
 
 **Permissions** The operating user for cooling must have permissions
