@@ -210,8 +210,12 @@ The pin mapping used in the `rsked` prototypes is:
 
 **WARNING**: GPIO pins can provide only minimal drive current (OUT) and can
 tolerate only a limited range of voltages (IN). Use suitable buffer
-circuitry to protect the RPi. An example schematic (pdf) accompanies
-this file (*coming soon*).
+circuitry to protect the RPi. An example schematic is shown below:
+
+![hardware]
+
+[hardware]: doc/hardware.png
+
 
 **Permissions** The operating user for cooling must have permissions
 to read and write to the GPIO devices. One way to achieve this is to
