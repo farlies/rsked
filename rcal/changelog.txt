@@ -19,3 +19,10 @@
 - Added some functions to rcal.js to import and display the default announcements in the announcement list
 - Made some small tweaks to the way events look in the fullcalendar main.css - was sick of looking at those blue borders
 - Stripped out some unnecessary features from the calendar html (for instance, specific date data and today/past/future classes)
+???
+- Changed the announcement colour from yellow to purple for legibility
+7.10.20
+- Decided to replace the static HTML calendar with a dynamically generated one using the fullcalendar scripts
+(cleans up the HTML significantly, and makes other calendar functions work properly without as much faff)
+- Calendar now is generated on page load into the calendar-widget div and automatically scrolls to 6am
+- Toolbar buttons (Save, Load, Clear) also now generated on load using FC's custom button script - currently they just generate a little pop-up that does nothing
