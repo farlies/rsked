@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href='styles.css' rel='stylesheet' />
 <link href='fullcalendar/main.css' rel='stylesheet' />
+<title>rcal - rsked schedule calendar</title>
 </head>
 <body>
 
@@ -71,21 +72,23 @@
   </div>
 </div>
 
-<div id='external-events'>
-  <h4>Audio Sources</h4>
-  <div class='src-controls fc-button-group'>
-    <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Define a new audio source'
-            id='new-audio-source'>new</button>
-    <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Validate current source set'
-            id='check-sources'>check</button>
+<div id='external-events' class='src-container'>
+  <div id='external-source'>
+    <h4>Audio Sources</h4>
+    <div class='src-controls fc-button-group'>
+      <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Define a new audio source'
+              id='new-audio-source'>new</button>
+      <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Validate current source set'
+              id='check-sources'>check</button>
+    </div>
+    <div id='external-events-list'>
+    </div>
   </div>
-  <div id='external-events-list'>
-  </div>
-</div>
 
-<div id='external-announce'>
-  <h4>Announcements</h4>
-  <div id='external-announce-list'>
+  <div id='external-announce'>
+    <h4>Announcements</h4>
+    <div id='external-announce-list'>
+    </div>
   </div>
 </div>
 
