@@ -36,8 +36,16 @@ EOF
 }
 
 
-# use this tar
-TAR=${TAR:-/usr/bin/tar}
+# Find a real tar
+if [[ -e /usr/bin/tar ]]; then
+    TAR=/usr/bin/tar
+elif [[ -e /bin/tar ]]; then
+    TAR=/bin/tar
+else
+    echo "Unable to locate a canonical tar command"
+    exit 1
+fi
+       
 
 ALTCONFDIR=
 NOCOMPRESS=0
