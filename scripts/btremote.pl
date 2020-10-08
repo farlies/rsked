@@ -49,6 +49,7 @@ my $Iface = "wlan0";
 my $Iwlist = "/sbin/iwlist";
 my $Iwconfig = "/sbin/iwconfig";
 my $Ip = "/sbin/ip";
+my $Shutdown = "/sbin/shutdown";
 
 # The inet checker script produces a netstat script here:
 my $CheckerUid = 1000;
@@ -67,10 +68,13 @@ my $TailLines = 10;
 my $Help = <<"EOH";
 Supported commands:
   help   : this command
+  boot   : reboot now
+  halt   : power off device now
   last <log> [<n>] : tail logfile
   quit   : end session
   status : network status
   scan   : scans WiFi networks
+  time   : print date/time
   warn <log> [<n>] : tail warnings
 EOH
 
@@ -236,7 +240,8 @@ open my $serial, '+<', $device
 # autoflush the output
 select((select($serial),$|=1)[0]);
 
-print $serial "rsked bt-monitor v0.01\n";
+print $serial "rsked BTremote v0.1\n";
+print $serial scalar(localtime),"\n";
 print $serial $prompt;
 
 while (my $line = <$serial>) {
@@ -257,6 +262,19 @@ while (my $line = <$serial>) {
     }
     elsif ($line=~m/^help/) {
 	print $serial $Help;
+    }
+    elsif ($line=~m/^halt/) {
+	print $serial "Halting system NOW\n";
+	my $result = qx{$Shutdown -h now};
+	print $serial $result;
+    }
+    elsif ($line=~m/^boot/) {
+	print $serial "Rebooting system NOW\n";
+	my $result = qx{$Shutdown -r now};
+	print $serial $result;
+    }
+    elsif ($line=~m/^time/) {
+	print $serial scalar(localtime),"\n";
     }
     elsif ($line=~m/^quit/) {
 	print "quit btremote\n";
