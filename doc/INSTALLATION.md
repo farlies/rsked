@@ -7,7 +7,7 @@
 5. Create configuration files for your application (templates provided)
 6. Install `rsked` binaries and configuration files
 7. Install start-up script to run on boot (optional)
-8. Install a crontab to perform any periodic maintenance tasks
+8. Install a crontab to perform any periodic maintenance tasks (optional)
 
 If you are building on Raspberry Pi, be sure to read
 [README-RPi](README-RPi.md) too.
@@ -19,23 +19,49 @@ systems, but we give details for two platforms regularly tested and
 known to work:
 
 - Ubuntu 20.04  on x86_64
-- Raspbian 10 on RPi-3B
+- Raspbian 10 (Buster) on Raspberry Pi 3B+
 
-# Tools and Libraries
+# Release Dependencies
 
-The **rsked** applications are  C++ programs, and require
-the following development tools and libraries:
+To run a binary ARM release begin with at least a minimal desktop
+installation of Debian 10 Buster (Raspbian).  The following additional
+deb packages are required for a typical installation:
+- vorbis-tools
+- mpd, mpc
+- mpg321
+- pulseaudio
+- dnsutils
+- gnuradio, libgnuradio-osmosdr0.1.4, libvolk1-bin
+- libboost-program-options1.67.0
+- libboost-log1.67.0
+- libgpiod2
+- libjsoncpp1
 
-- **gcc** C++ compiler suitable for C++ 17 (clang will work too)
-- **meson** build system
-- **ninja** build tool
-- **boost** version at least 1.67, tested up to 1.71
-- **libjsoncpp**
-- **libpulse**
-- **libusb**
+You may omit the gnuradio packages if there is no need to play FM
+radio via `gqrx` (and the sdr player is disabled in the
+configuration.)  You may omit `mpd`, `mpc`, and `mpg321` if there is
+no need to play MP3 files or streams (and these players are disabled
+in the configuration).  You may omit `dnsutils` if the application
+will not use the IP network at all, or will not need to run
+`check_inet`.
+
+(Aside: On Ubuntu 20.04, replace boost1.67 packages with boost1.71.)
+
+# Build Tools and Libraries
+
+To build the `rsked` applications (C++ programs) from source, you will
+additionally require the following development tools and libraries:
+
+- gcc    : C++ compiler suitable for C++ 17 (clang will work too)
+- meson  : build system
+- ninja  :  build tool
+- boost  : version at least 1.67, tested up to 1.71
+- libjsoncpp-dev
+- libpulse-dev
+- libusb-dev
 
 
-On Ubuntu 20.04:
+##  Ubuntu 20.04:
 
 ```
 sudo apt install build-essential gcc
@@ -50,8 +76,23 @@ sudo apt install libusb-1.0-0-dev
 sudo apt install libmpdclient-dev
 ```
 
-The particular version of libboost may be different (not 1.71)
+The particular version of `libboost` may be different (not 1.71)
 on your system--check what is available and substitute accordingly.
+
+## Raspbian Buster
+
+```
+sudo apt install build-essential gcc
+sudo apt install git meson
+sudo apt install libboost1.67-dev libboost-system1.67-dev
+sudo apt install libboost-log1.67-dev libboost-program-options1.67-dev
+sudo apt install libboost-test1.67-dev
+sudo apt install libjsoncpp-dev
+sudo apt install libpulse-dev
+sudo apt install libgpiod-dev
+sudo apt install libusb-1.0-0-dev
+sudo apt install libmpdclient-dev
+```
 
 # Player Installation
 
