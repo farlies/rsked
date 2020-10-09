@@ -96,8 +96,8 @@ cp $builddir/rsked $bindir
 cp $builddir/cooling $bindir
 cp $builddir/vumonitor $bindir
 
-SCRIPTS="check_inet.sh btremote.pl check_playlist.sh gpiopost.py\
- rskrape.pl startup_rsked synclogs.sh"
+SCRIPTS="check_inet.sh btremote.pl btremote.service check_playlist.sh\
+  gpiopost.py rskrape.pl startup_rsked synclogs.sh"
 
 for scr in $SCRIPTS; do
     cp scripts/$scr $bindir
