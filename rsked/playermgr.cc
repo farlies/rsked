@@ -71,6 +71,8 @@ bool Player_manager::inet_available()
 /// Inet_checker. If argument testp is true, the configuration will
 /// avoid side effects on the system.
 ///
+/// * May throw various player errors
+///
 void Player_manager::configure( Config& config, bool testp )
 {
     m_annunciator = std::make_shared<Ogg_player>("Annunciator",0);
@@ -89,6 +91,8 @@ void Player_manager::configure( Config& config, bool testp )
     m_mpd->initialize(config,testp);
     //
     c_ichecker.configure( config );
+    //
+    check_minimally_usable();
 }
 
 /// Retrieve the annunciator (usually *ogg* player), which is used
@@ -191,6 +195,34 @@ Player_manager::get_player( spSource src )
     return pp;
 }
 
+
+/// Check that at least one player is potentially usable.
+/// * May throw a Player_startup_exception if none usable.
+///
+void Player_manager::check_minimally_usable()
+{
+    unsigned nu=0;
+    if (m_ogg123)      { if (m_ogg123->is_usable()) { ++nu; } }
+    if (m_mpg321)      { if (m_mpg321->is_usable()) { ++nu; } }
+    if (m_gqrx)        { if (m_gqrx->is_usable()) { ++nu; } }
+    if (m_mpd)         { if (m_mpd->is_usable()) { ++nu; } }
+    //
+    if (not m_annunciator or
+        not m_annunciator->is_usable()) {
+            LOG_WARNING(Lgr) << "Annunciator is not usable, "
+                "which is highly undesirable.";
+    }
+    if (nu) {
+        if (1 == nu) {
+            LOG_WARNING(Lgr) << "Just 1 apparently usable player";
+        } else {
+            LOG_INFO(Lgr) << nu << " apparently usable players";
+        }
+    } else {
+        LOG_ERROR(Lgr) << "None of the players seems usable.";
+        throw Player_startup_exception();
+    }
+}
 
 /// Invoked periodically to check if any players are in the wrong
 /// state.  The check method of the player is responsible for taking
