@@ -260,7 +260,7 @@ The `ninja install` step will *not*:
 
 ## Runtime Directory
 
-Although `rsked` is designed to run *without* a user interface,
+Although `rsked` is designed to run *without* a graphical user interface,
 it does need a place for certain temporary files. It looks
 for this in the user's XDG runtime directory, as identified
 by environment variable `XDG_RUNTIME_DIR`.  Verify that this
@@ -278,6 +278,19 @@ For testing, one can just run `rsked` from the command line, or run
 `cooling` and let it start `rsked`. Check that log files appear in
 the `$HOME/log` directory.
 
+There is also a *test mode* so that configuration may be tested
+*without* operationally running the programs. Start the programs
+individually with the option `--test`:
+
+```
+~/bin/rsked --test
+~/bin/cooling --test
+```
+
+They will check their configurations and exit (in a few seconds).  The
+log will appear on the console: scan it for any errors or warnings.
+Like other Linux programs, the program exit code will be 0 if no fatal
+problems were detected.
 
 ## Embedded
 
