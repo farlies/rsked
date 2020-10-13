@@ -135,6 +135,9 @@ Player_manager::get_player( spSource src )
     }
     if (medium == Medium::radio) {
         pp = m_gqrx;
+        if (not pp or not pp->is_usable()) { // might be disabled or broken
+            pp.reset();
+        }
         return pp;
     }
     if (medium == Medium::stream) {
@@ -148,17 +151,26 @@ Player_manager::get_player( spSource src )
         if (not pp or not pp->is_usable()) { // if MPD is not usble,
             pp = m_mpg321; // mpg321 fallback
         }
+        if (not pp or not pp->is_usable()) { // if mpg321 unusable,
+            pp.reset();                      // no fallback
+        }
         return pp;
     }
     if (src->localp() and ((encoding== Encoding::mp4) or
                            (encoding== Encoding::flac)) ) {
         pp = m_mpd;       // only choice for these encodings is mpd
+        if (not pp or not pp->is_usable()) {
+            pp.reset();   // no fallback
+        }
         return pp;
     }
     if (src->localp() and (encoding== Encoding::mp3)) {
         pp = m_mpd;          // first choice is MPD
         if (not pp or not pp->is_usable()) { // if not usable fallback to mpg321
             pp = m_mpg321;
+        }
+        if (not pp or not pp->is_usable()) {
+            pp.reset();      // no fallback beyond mpg321
         }
         return pp;
     }
@@ -167,11 +179,15 @@ Player_manager::get_player( spSource src )
         if (not pp or not pp->is_usable()) { // if not usable fallback to ogg123
             pp = m_ogg123;
         }
+        if (not pp or not pp->is_usable()) {
+            pp.reset();      // no fallback beyond mpg321
+        }
         return pp;
     }
+    // handle unexpected media by returning nullptr
     pp = m_null_player;
     LOG_ERROR(Lgr) << "No players for medium " << media_name(medium);
-    pp.reset(); // == nullptr
+    pp.reset();
     return pp;
 }
 

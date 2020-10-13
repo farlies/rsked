@@ -228,7 +228,7 @@ bool Base_player::attempt_restart()
     if (ChildPhase::running == m_cm->cmd_phase())
     {
         if (m_cm->fails_since(time(0) - _restart_interval) < _max_restarts) {
-            LOG_INFO(Lgr) << m_name << " Attempt to restart Ogg player on source {"
+            LOG_INFO(Lgr) << m_name << " Attempt to restart player on {"
                           << m_src->name() << "}";
             play( m_src );
         } else {
