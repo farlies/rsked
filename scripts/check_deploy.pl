@@ -21,6 +21,8 @@ my $BIN = "$HOME/bin";
 my $CFG = "$HOME/.config";
 
 
+print "$ProgVersion\n";
+
 ########################################################################
 # Configuration parameters that might change per deployment
 # ***   Override these in ~/.config/rsked/deploy_check.pl    ***
@@ -28,31 +30,31 @@ my $CFG = "$HOME/.config";
 # Should this deployment have WiFi internet? (Some deployments wish no
 # network connections.)
 #
-my $WANTS_INET = 1;
+our $WANTS_INET = 1;
 
-my $ESSID = "Guest Wifi";
+our $ESSID = "Guest Wifi";
 
-my $WIFI = "wlan0";
+our $WIFI = "wlan0";
 
 # quietest allowed master volume setting (%)
-my $MinVol = 50;
+our $MinVol = 50;
 
 # real time clock (battery backup CMOS clock)
-my $RTC = "/dev/rtc0";
+our $RTC = "/dev/rtc0";
 
 # Minimum free space allowed on root device
-my $MinMB = 100;
+our $MinMB = 100;
 
 # Use this gqrx
-my $GQRXBIN = "$BIN/gqrx";
+our $GQRXBIN = "$BIN/gqrx";
 
 
 # vendor:product hex code for the USB radio device
-my $SDR = "0bda:2838";   # Realtek Semiconductor Corp. RTL2838 DVB-T
+our $SDR = "0bda:2838";   # Realtek Semiconductor Corp. RTL2838 DVB-T
 
 # This file should have an entry to run startup_rsked == ASINVOKE
-my $AUTOSTART="$CFG/lxsession/LXDE-pi/autostart";
-my $ASINVOKE="\@${BIN}/startup_rsked";
+our $AUTOSTART="$CFG/lxsession/LXDE-pi/autostart";
+our $ASINVOKE="\@${BIN}/startup_rsked";
 
 
 # This file can override any of the above options:
@@ -107,7 +109,7 @@ sub print_passed {
 
 sub print_warning {
     my ($test, $message) = @_;
-    print BOLD YELLOW "Warning", RESET, " [$test] $message\n";
+    print BOLD YELLOW "Notice", RESET, " [$test] $message\n";
 }
 
 sub print_failed {
@@ -444,6 +446,7 @@ sub verify_sdr {
         return;
     }
     my ($a,$dev) = split(/$SDR/,$sdr);
+    chomp($dev);
     print_passed("sdr","Found device: $dev");
 }
 
@@ -624,8 +627,6 @@ sub verify_cooling {
 }
 
 #######################################################################
-
-print "$ProgVersion\n";
 
 verify_no_rfkill();
 verify_binaries();
