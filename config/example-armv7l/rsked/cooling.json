@@ -1,11 +1,11 @@
-// cooling-rpi.json: Install in $HOME/.config/rsked/cooling.json
 {
     "encoding"   : "UTF-8",
     "schema"     : "1.1",
 
     "General" : {
         "application" : "cooling",
-        "version"  : "2.3",
+        "version"  : "2020-10-13T12:00",
+        "description" : "for RPi",
         "poll_msec"   : 250,
         "poll_trace" : 300
     },

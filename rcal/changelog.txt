@@ -2,20 +2,42 @@
 - Split the CSS content from the style tag to its own file, styles.css
 - Added announcement menu with appropriate new ids + CSS
 - Changed display mode to a 4x4 grid model, with the menus in the left-hand column and the calendar on the right
+
 6.9.20
 - Created an array of test announcements in testdata.js
 - Started adding calendar table elements to eedit.html, added link to full calendar’s main.js script
+
 7.9.20
 - Removed edit buttons from announcement menu as discussed
+
 9.9.20
 - Added remaining calendar elements
 - Adjusted the modal's z-index from 1 to 3 so it will float on top of the calendar events
 - Adjusted some CSS for the calendar toolbar
+
 11.9.20
 - Added fc-event-draggable class to events in the sourcelist in preparation for drag and drop
+
 18.9.20
 - Added some dummy buttons to the calendar toolbar that can be used for saving and loading the schedule
 - Halfheartedly added some fullcalendar-esque styling on the source menu and buttons that I'll definitely change later
 - Added some functions to rcal.js to import and display the default announcements in the announcement list
 - Made some small tweaks to the way events look in the fullcalendar main.css - was sick of looking at those blue borders
 - Stripped out some unnecessary features from the calendar html (for instance, specific date data and today/past/future classes)
+
+???
+- Changed the announcement colour from yellow to purple for legibility
+
+7.10.20
+- Decided to replace the static HTML calendar with a dynamically generated one using the fullcalendar scripts
+(cleans up the HTML significantly, and makes other calendar functions work properly without as much faff)
+- Calendar now is generated on page load into the calendar-widget div and automatically scrolls to 6am
+- Toolbar buttons (Save, Load, Clear) also now generated on load using FC's custom button script - currently they just generate a little pop-up that does nothing
+
+7.10.20 ROUND 2!
+- Implemented drag-and-drop for sources and announcements. Currently you can drag events onto the calendar, but you cannot
+delete them by dragging them off. Have not added any default settings for these events, so they're using FC defaults.
+- Made the 'Clear' button functional, it now will clear all the events off the calendar.
+- Added a title tag to the head of the HTML doc - feel free to change it
+- Slightly changed the HTML structure of the source panel to simplify the drag-and-drop script - have nested both
+the standard source list and the announcement list into one div called external-events - updated CSS to match

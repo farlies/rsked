@@ -684,6 +684,102 @@ function addAnnounce( ann ) {
 }
 
 
+/// CALENDAR SCRIPTS (relies on fullcalendar)
+///
+/// TODO: Add event menu add as well as event drag and drop add
+
+
+/// Initialise and render the calendar.
+
+
+document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar-widget');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'timeGridWeek',
+          initialDate: '2018-10-04',  // FC requires initial date value, otherwise it defaults to the current day, which we don't want (adds some weird 'today' formatting).
+          titleFormat: function(date) {
+              return 'RCAL - programme scheduler for rsked';
+          },  //Important! FC's built-in title format only displays dates.
+          customButtons: {
+            saveButton: {
+              text: 'save',
+              click: function() {
+                alert('saving the schedule'); // STUB! This button will run the function that converts calendar data to JSON file
+              }
+            },
+            clearButton: {
+                text: 'clear',
+                click: function() {
+                  const EvList = calendar.getEvents(Event);
+                  EvList.forEach((Event) => Event.remove()); // Removes all events from calendar
+               }
+            },
+            loadButton: {
+              text: 'load',
+              click: function() {
+                alert('loading the schedule'); // STUB! This button will run the function that converts JSON file from rsked to calendar data
+                }
+              }
+            },
+          headerToolbar: {
+            left: 'clearButton',
+            center: 'title',
+            right: 'saveButton,loadButton'
+          },
+          allDaySlot: false, //Disallow all-day events
+          dayHeaderFormat: { weekday: 'short' }, //Display only day of the week, no date
+          slotDuration: '00:30:00', // Add time slots every thirty minutes
+          slotLabelInterval: '01:00:00', // Display text labels every hour
+          droppable: true, // Bool - User can drag and drop events
+          editable: true // Bool - User can edit calendar
+        });
+
+        // Allow dragging from external event source lists
+        var Draggable = FullCalendar.Draggable;
+        var containerEl = document.getElementById('external-events');
+        var announceEl = document.getElementById('external-announcements');
+
+        // Initialise the external events
+        // -----------------------------------------------------------------
+        new Draggable(containerEl, {
+        itemSelector: '.fc-event',
+        eventData: function(eventEl) {
+          return {
+            title: eventEl.innerText,
+            eventBackgroundColor: eventEl.style.backgroundColor
+          };
+        }
+      });
+
+
+        calendar.render();
+      });
+
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//// EVENT Edit Dialog
+////    when the user clicks on an event in the calendar, raise this
+////  dialog that allows some tweeking, e.g. repeat pattern days of week.
+
+/// TODO:   !STUB! This is quite INCOMPLETE at the moment
+
+function init_evt_modal(evname) {
+    let emodal = document.getElementById("evtModal");
+    // When the user clicks the event button, adjust header color and open
+    let ebtn = document.getElementById("evtBtn");
+    ebtn.onclick = function() {
+        mdheader = emodal.childNodes[1].childNodes[1];
+        mdheader.style.backgroundColor = "blue";
+        emodal.style.display = "block";
+    }
+    // When the user clicks on a close element, close the dialog
+    let eclose = document.getElementById("eclose");
+    eclose.onclick = function() {
+        emodal.style.display = "none";
+    }
+    return emodal;
+}
 
 
 

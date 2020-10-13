@@ -53,6 +53,7 @@ struct Cooling_runtime_exception  : public std::exception {
 /// Misc operational parameters (not in config file)
 enum {
     Max_rsked_restarts = 3,       // how many times to attempt rsked start
+    Lowest_cool_secs = 5,         // must ran fan at least this long
     Min_intercrash_secs = 180,    // should not crash this frequently
     Rsked_restart_cooldown_secs = 3600, // gap between restart phases--hourly
     Wait_for_rsked_start_secs = 2 // max time for rsked child to start
@@ -61,6 +62,10 @@ enum {
 /// Constants for configuring/using GPIO lines
 enum class Gpio { IN, OUT };
 enum { GPIO_NC=(-1), GPIO_OFF=0, GPIO_ON=1 };
+
+/// Fan temp limits
+constexpr const double Fan_lowest_stop_temp { 25.0 };
+constexpr const double Fan_highest_start_temp { 80.0 };
 
 /// This application is useful when running rsked on an embedded device
 /// like RPi.  It will monitor core temperature and turn on an external
@@ -83,7 +88,8 @@ private:
     key_t m_sh_token {0};        // shared memory token
     int m_shm_id {0};            // id of shared memory
     uint32_t *m_shm_word {nullptr}; // address of shared memory word
-    std::string m_cfgversion {"?"}; // from config file
+    std::string m_cfgversion {"?"}; // version from config file
+    std::string m_cfgdesc {"?"}; // description from config file
     //
     //////// GPIO ////////
     unsigned m_gpio_errors=0;    // count GPIO failures

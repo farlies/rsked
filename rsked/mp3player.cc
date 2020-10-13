@@ -59,8 +59,6 @@ void Mp3_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool(section, "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Mp3_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuraiton
-        return;
     }
 
     boost::filesystem::path binpath { DefaultBinPath };
@@ -104,6 +102,7 @@ void Mp3_player::play( spSource src )
     }
     if (rt==Medium::stream) {
         m_cm->add_arg( m_src->resource().c_str() );
+        LOG_DEBUG(Lgr) << "Stream URL: " << m_src->resource();
     } else {
         boost::filesystem::path path;
         m_src->res_path( path );       // returns false if not exist...

@@ -21,11 +21,9 @@ body {
   grid-template-rows: 400px 300px;
 }
 
-
-
 /* Source and Announcement Lists */
 
-  #external-events {
+  #external-source {
     grid-column: 1;
     grid-row: 1;
     padding: 0 10px;
@@ -43,7 +41,7 @@ body {
     text-align: left;
   }
 
-  #external-events h4,
+  #external-source h4,
 #external-announce h4   {
     font-size: 16px;
     margin-top: 0;
@@ -51,21 +49,21 @@ body {
     text-align: center;
   }
 
-  #external-events .fc-event,
+  #external-source .fc-event,
   #external-announce .fc-event   {
     margin: 3px 0;
     /* cursor: move; */
   }
 
-  #external-events p,
+  #external-source p,
   #external-announce p {
     margin: 1.5em 0;
     font-size: 11px;
     color: #666;
   }
 
-  #external-events p input,
-  #external-events p input {
+  #external-source p input,
+  #external-announce p input {
     margin: 0;
     vertical-align: middle;
   }

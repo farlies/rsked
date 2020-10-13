@@ -1,11 +1,11 @@
-// Install as $HOME/.config/rsked/cooling.json
 {
     "encoding"   : "UTF-8",
     "schema"     : "1.1",
 
     "General" : {
         "application" : "cooling",
-        "version"  : "2.3",
+        "version"  : "2020-10-13T12:00",
+        "description" : "for x86 workstation",
         "poll_msec"   : 1000,
         "poll_trace" : 300
     },
