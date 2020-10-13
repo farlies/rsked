@@ -5,7 +5,8 @@
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2020-09-23T14:41"
+        "version" : "2020-09-23T14:41",
+        "description" : "for RPi"
     },
 
     "Inet_checker" : {
