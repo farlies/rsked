@@ -8,7 +8,7 @@
 #
 # Usage examples:
 #   ./pack_rsked.sh debug x86_64
-#   ./pack_rsked.sh release armv7l
+#   ./pack_rsked.sh -c armv7l  release armv7l
 #   ./pack_rsked.sh -n debug x86_64
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
@@ -68,7 +68,7 @@ fi
 
 # Establish builddir and confdir:
 builddir="$1-$2"
-if [[ ALTCONFDIR == "" ]]; then
+if [[ $ALTCONFDIR == "" ]]; then
     confdir="config/example-$2"
 else
     confdir="config/$ALTCONFDIR"
@@ -105,7 +105,7 @@ cp $builddir/cooling $bindir
 cp $builddir/vumonitor $bindir
 
 SCRIPTS="check_inet.sh btremote.pl btremote.service check_playlist.sh\
-  gpiopost.py rskrape.pl startup_rsked synclogs.sh"
+  check_deploy.pl gpiopost.py rskrape.pl startup_rsked synclogs.sh"
 
 for scr in $SCRIPTS; do
     cp scripts/$scr $bindir
@@ -114,6 +114,7 @@ done
 # populate config/rsked
 rctarget=$tgtdir/.config/rsked
 cp $confdir/rsked/*.json $rctarget/
+cp $confdir/rsked/*.pl $rctarget/
 cp $confdir/rsked/crontab $rctarget/
 cp $confdir/rsked/ci.conf $rctarget/
 cp doc/*  $rctarget/
