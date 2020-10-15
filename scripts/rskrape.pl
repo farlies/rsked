@@ -146,13 +146,14 @@ sub track_duration_sec {
 # given by the full path.  If not found, return arg3: defaultstr.
 # The utility 'vorbiscomment' may be used to set or retrieve user
 # comments in a vorbis file.  Rsked uses the "Text" comment to
-# provide a text version of the audio comment.
+# provide a text version of the audio comment. The alphabetic
+# case of the keyword is ignored in matching.
 #
 sub get_vorbis_comment {
     my ($path,$keyword,$defaultstr) = @_;
     $path =~ s/(["`])/\\$1/g;  # cleanup pathname for shell
     my $comments = qx/$VorbisComment -l "$path"/;
-    if ( $comments=~m{ ^ $keyword = (.+) $ }xm ) {
+    if ( $comments=~m{ ^ $keyword = (.+) $ }xmi ) {
         return $1;
     }
     print STDERR "; failed to get text for: $path\n";
