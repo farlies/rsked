@@ -32,6 +32,12 @@ print "$ProgVersion\n";
 #
 our $WANTS_INET = 1;
 
+# Using bluetooth?
+our $WANTS_BT = 1;
+
+# using software defined radio for FM
+our $WANTS_SDR = 1;
+
 our $ESSID = "Guest Wifi";
 
 our $WIFI = "wlan0";
@@ -70,7 +76,6 @@ my @LOGDIRS = ("$HOME/logs", "$HOME/logs_old");
 my @Req_binaries=( "$BIN/check_inet.sh", 
                    "$BIN/cooling",
                    "$BIN/gpiopost.py",
-                   "$GQRXBIN",
                    "$BIN/rsked",
                    "$BIN/startup_rsked",
                    "$BIN/vumonitor",
@@ -82,6 +87,10 @@ my @Req_binaries=( "$BIN/check_inet.sh",
                    "/usr/bin/ogg123",
                    "/usr/bin/pkill" );
 
+if ($WANTS_SDR) {
+    push(@Req_binaries, $GQRXBIN);
+}
+
 # canonical mpd config file
 my $MPDCONF="$CFG/mpd/mpd.conf";
 
@@ -90,8 +99,12 @@ my @Req_configs=( "$CFG/rsked/rsked.json",
                   "$CFG/rsked/schedule.json",
                   "$CFG/rsked/ci.conf",
                   "$CFG/rsked/cooling.json",
-                  "$CFG/gqrx/gold.conf",
                   $MPDCONF);
+
+if ($WANTS_SDR) {
+    push(@Req_configs, "$CFG/gqrx/gold.conf");
+}
+
 
 # required directories
 my @Req_dirs=( @LOGDIRS,
@@ -188,21 +201,44 @@ sub can_connect_tcp {
 
 #######################################################################
 
-# check that rfkill has not blocked wifi or bluetooth
+# Check that rfkill has not blocked wifi or bluetooth.  However if
+# Wi-Fi (Bluetooth) is not wanted, this may be preferred--issue a
+# warning if Wi-Fi (Bluetooth) is still enabled.
 #
 sub verify_no_rfkill {
+    my $test="rfkill";
     my $rfko = qx/rfkill/;
+    # Wi-Fi
     if ($rfko=~m{wlan \s+ phy0 \s+ unblocked \s+ unblocked}xms) {
-        print_passed("rfkill","WiFi radio: enabled")
+	if ($WANTS_INET) {
+	    print_passed($test,"WiFi radio: enabled");
+	} else {
+	    print_warning($test,"WiFi enabled but not wanted");
+	    $Deploy_warnings++;
+	}
     } else {
-        print_failed("rfkill","WiFi radio: disabled or absent");
-        $Deploy_errors += 1;
+	if ($WANTS_INET) {
+	    print_failed($test,"WiFi radio: disabled or absent");
+	    $Deploy_errors += 1;
+	} else {
+	    print_passed($test,"WiFi radio disabled--WiFi not wanted");
+	}
     }
+    # Bluetooth
     if ($rfko=~m{bluetooth \s+ hci0 \s+ unblocked \s+ unblocked}xms) {
-        print_passed("rfkill","Bluetooth radio: enabled")
+	if ($WANTS_BT) {
+	    print_passed($test,"Bluetooth radio: enabled");
+	} else {
+	    print_warning($test,"Bluetooth radio enabled but not wanted");
+	    $Deploy_warnings++;
+	}
     } else {
-        print_failed("rfkill","Bluetooth radio: disabled or absent");
-        $Deploy_errors += 1;
+	if ($WANTS_BT) {
+	    print_failed($test,"Bluetooth radio: disabled or absent");
+	    $Deploy_errors += 1;
+	} else {
+	    print_passed($test,"Bluetooth radio disabled--not wanted");
+	}
     }
 }
 
@@ -229,16 +265,27 @@ sub verify_xvfb {
 sub verify_wifi {
     my $iwc = qx{iwconfig $WIFI 2>/dev/null};
     if (! $iwc) {
-        print_failed("wifi","No such device: $WIFI");
-        return;
+	if ($WANTS_INET) {
+	    print_failed("wifi","No such device: $WIFI");
+	} else {
+	    print_passed("wifi","No WiFi device $WIFI");
+	}
+	return;
     }
     my ($essid) = $iwc=~m/ESSID:"(\S+)"/;
     if (defined($essid) && ($essid eq $ESSID)) {
-        print_passed("wifi","Interface $WIFI is connected: '$essid'");
+	if ($WANTS_INET) {
+	    print_passed("wifi","Interface $WIFI is connected: '$essid'");
+	} else {
+	    print_warning("wifi","$WIFI connected to '$ESSID' but not wanted?");
+	    $Deploy_warnings += 1;
+	}
     } else {
-        print_warning("wifi","$WIFI exists, but not connected to '$ESSID'");
+        print_warning("wifi","$WIFI exists, not connected to '$ESSID'");
         $Deploy_warnings += 1;
-        verify_wpa();
+	if ($WANTS_INET) {
+	    verify_wpa();
+	}
     }
 }
 
@@ -398,6 +445,10 @@ sub verify_logs {
 #
 sub verify_gqrx {
     my $test="gqrx";
+    if (! $WANTS_SDR) {
+	print_info($test,"SDR not wanted, not testing $GQRXBIN");
+	return;
+    }
     if (! -x $GQRXBIN) {
         print_failed($test,"Missing SDR player: $GQRXBIN");
         $Deploy_errors++;
@@ -439,6 +490,10 @@ sub verify_hwclock {
 # Verify that the radio device is plugged into USB.
 #
 sub verify_sdr {
+    if (! $WANTS_SDR) {
+	print_info("sdr","No SDR is desired in this deployment");
+	return;
+    }
     my $sdr = qx/lsusb -d $SDR/;
     if (! defined($sdr) || ! $sdr) {
         print_failed("sdr","failed to find SDR device $SDR");
@@ -483,6 +538,7 @@ sub verify_autostart {
     my $test="autostart";
     if (! -r $AUTOSTART) {
         print_failed($test,"Missing autostart file: $AUTOSTART");
+        $Deploy_errors += 1;
         return;
     }
     my $ascontent = slurp_file($AUTOSTART);
@@ -512,7 +568,7 @@ sub verify_crontab {
         }
     } else {
         if ($running_chk) {
-            print_failed($test,"running check_inet in a NO-inet deployment");
+            print_failed($test,"running check_inet but no WiFi wanted");
             $Deploy_errors++;
             return;
         } else {
