@@ -323,7 +323,7 @@ sub skrape_playlists {
 
 ###########################################################################
 
-# add an announcment named rname from subdirectory rdir.
+# add an announcement named rname from subdirectory rdir.
 #
 sub add_announcement {
     my ($rdir, $rname) = @_;

@@ -22,7 +22,7 @@
 #include "util/config.hpp"
 #include "util/configutil.hpp"
 
-/// CTOR. Contruct a VU_runner with the default binary path for vumonitor.
+/// CTOR. Construct a VU_runner with the default binary path for vumonitor.
 /// This will not start the vumonitor--call configure to do so.
 ///
 VU_runner::VU_runner()

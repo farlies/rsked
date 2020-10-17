@@ -262,7 +262,7 @@ This is handy to fetch internet resources that are date-named or
 files to be played on particular days.
 
 `announcement` sources are intended to be *briefly* interrupt normal
-programs, which resume when the annoucement finishes. Default: `false`.
+programs, which resume when the announcement finishes. Default: `false`.
 NOTE: currently announcements must use **ogg** encoding.
 
 `duration` indicates the number of seconds (and fractions thereof) that
@@ -367,7 +367,7 @@ program start time. Announcements are sources that interrupt programs
 at specified start times--the regularly scheduled program is resumed
 when an announcement finishes. In the example above, the source "cms"
 will commence playing at 07:30 and play until 14:00, when source "nis"
-begins. However at 09:00 an announcment "motd-ymd" will interrupt
+begins. However at 09:00 an announcement "motd-ymd" will interrupt
 "cms". Announcements are intended to be brief asides, e.g. a message
 of the day.
 
@@ -552,7 +552,7 @@ The example `mpd/` configuration directory includes a subdirectory
 
 `gqrx` uses an "ini" file syntax, with sections denoted by names in
 square brackets.  The `gqrx` application generates this file, and
-running it is the best way to obtain a usable configuraton.  The
+running it is the best way to obtain a usable configuration.  The
 parameters values may *vary considerably* based on the SDR hardware
 you have attached.  Run `gqrx` from the desktop and make adjustments
 as needed, e.g. selecting the right SDR hardware. Pay particular

@@ -33,7 +33,7 @@ Ogg_player::Ogg_player() : Base_player("Ogg_player")
 }
 
 /// CTOR with name.
-/// You may set a shortest run length, which might be 0 for a brief announcment.
+/// You may set a shortest run length, which might be 0 for a brief announcement.
 ///
 Ogg_player::Ogg_player( const char* nm, time_t min_run_secs )
     : Base_player( nm )

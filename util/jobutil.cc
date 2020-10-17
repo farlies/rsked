@@ -1,4 +1,4 @@
-/* Mange PID files inthe users home directory
+/* Mange PID files in the users home directory
  */
 
 /*   Part of the rsked package.

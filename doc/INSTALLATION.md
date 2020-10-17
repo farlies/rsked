@@ -264,7 +264,7 @@ Although `rsked` is designed to run *without* a graphical user interface,
 it does need a place for certain temporary files. It looks
 for this in the user's XDG runtime directory, as identified
 by environment variable `XDG_RUNTIME_DIR`.  Verify that this
-variable has been set when the emedded user (e.g. `pi`) logs in:
+variable has been set when the embedded user (e.g. `pi`) logs in:
 
 ```
 echo $XDG_RUNTIME_DIR
@@ -294,7 +294,7 @@ problems were detected.
 
 ## Embedded
 
-In the embedded evironment, the application should start automatically
+In the embedded environment, the application should start automatically
 after boot since there is typically no user interface.
 The installed script `startup_rsked` will do this.
 See the Startup section in [README-RPi](README-RPi.md)

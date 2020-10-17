@@ -96,7 +96,7 @@ void Player_manager::configure( Config& config, bool testp )
 }
 
 /// Retrieve the annunciator (usually *ogg* player), which is used
-/// exclusively for announcments. This player should be distinct from
+/// exclusively for announcements. This player should be distinct from
 /// any of the operational players, since they may be suspended during
 /// announcements.
 ///
@@ -226,7 +226,7 @@ void Player_manager::check_minimally_usable()
 
 /// Invoked periodically to check if any players are in the wrong
 /// state.  The check method of the player is responsible for taking
-/// any corrective action as approriate. Typically, a player may be
+/// any corrective action as appropriate. Typically, a player may be
 /// restarted (up to a certain number of times) on a given source
 /// before that source is marked as "failed" (making it taboo for a while).
 /// In some cases the player itself may be marked as defective.

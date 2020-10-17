@@ -679,7 +679,7 @@ bool Cooling::start_rsked()
 
 /// This will kill any rsked owned by this process or any rogue copy
 /// that can be identified by its pid file.  Shared memory is released.
-/// Any auxilliary processes will also be killed.
+/// Any auxiliary processes will also be killed.
 ///
 void Cooling::terminate_rsked()
 {
