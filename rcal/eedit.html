@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href='styles.css' rel='stylesheet' />
+<link href='fullcalendar/main.css' rel='stylesheet' />
+<title>rcal - rsked schedule calendar</title>
+</head>
+<body>
+
+<!-- Event Modal: user clicks on event in DayGrid This is only a stub! -->
+<div id="evtModal" class="modal">
+  <div id="content" class="modal-content">
+    <div id="mheader" class="modal-header">
+      <span class="close" id="eclose">&times;</span>
+      <h4>KSJN</h4>
+    </div>
+    Days:
+    <label><input type="checkbox" name="Sun">Sun</label>&nbsp;
+    <label><input type="checkbox" name="Mon">Mon</label>&nbsp;
+    <label><input type="checkbox" name="Tue">Tue</label>&nbsp;
+    <label><input type="checkbox" name="Wed">Wed</label>&nbsp;
+    <label><input type="checkbox" name="Thu">Thu</label>&nbsp;
+    <label><input type="checkbox" name="Fri">Fri</label>&nbsp;
+    <label><input type="checkbox" name="Sat">Sat</label>&nbsp;
+  </div>
+</div>
+
+<!-- Source Modal: user clicks on a Source in Sidebar to Edit -->
+<div id="srcModal" class="modal">
+  <div id="scontent" class="modal-content">
+    <div id="sheader" class="modal-header">
+      <span id="sm_staticname" class="staticname">Source Name Here</span>
+      <label id="sm_editlabel">Source&nbsp;<input type="text" id="sname"
+                                                 required></label>&nbsp;
+      <span class="close" id="ssave" title="save and close">&nbsp;&#10004;</span>
+      <span class="cancel" id="scancel" title="cancel and close">&times;&nbsp;</span>
+    </div><br>
+    <p>
+      <label for="smedium">Type:</label>
+      <select id="smedium">
+        <option value="radio">radio</option>
+        <option value="stream">stream</option>
+        <option value="file">file</option>
+        <option value="directory">directory</option>
+        <option value="playlist">playlist</option>
+      </select>&nbsp;
+      <label for="sencoding">Encoding:</label>
+      <select id="sencoding">
+        <option value="wfm">wfm</option>
+        <option value="ogg">ogg</option>
+        <option value="mp3">mp3</option>
+        <option value="mp4">mp4</option>
+        <option value="mixed">mixed</option>
+      </select>&nbsp;
+      <input type="color" id="scolor" name="scolor">
+    </p>
+    <label id="lfreq">Frequency &nbsp;
+      <input type="number"id="sfreq" required  maxlength=5
+              min=76 max=108.0 step=0.1><br></label>
+    <label id="lurl">URL &nbsp; <input type="url" id="iurl" required><br></label>
+    <label id="lart">Artist &nbsp;<select id="sartselect"></select><br></label>
+    <label id="lalb">Album  &nbsp;<select id="salbselect"></select><br></label>
+    <label id="lfile">Track &nbsp;<select id="strackselect"></select><br></label>
+    <label id="lplist">Playlist&nbsp;<select id="splist"></select><br></label>
+    <label id="lalt">Alternate &nbsp;<select id="salternate"></select><br></label>
+    <label id='lrepeat'>
+        <input type="checkbox" id="srepeat" name="Repeat">Repeat</label>&nbsp;
+    <label id='ldynamic'>
+        <input type="checkbox" id="sdynamic" name="Dynamic">Dynamic</label>&nbsp;
+  </div>
+</div>
+
+<div id='external-events' class='src-container'>
+  <div id='external-source'>
+    <h4>Audio Sources</h4>
+    <div class='src-controls fc-button-group'>
+      <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Define a new audio source'
+              id='new-audio-source'>new</button>
+      <button type='button' class='src-control fc-button fc-button-primary fc-button-active' title='Validate current source set'
+              id='check-sources'>check</button>
+    </div>
+    <div id='external-events-list'>
+    </div>
+  </div>
+
+  <div id='external-announce'>
+    <h4>Announcements</h4>
+    <div id='external-announce-list'>
+    </div>
+  </div>
+</div>
+
+<!-- FullCalendar widget -->
+
+<div id='calendar-container'>
+  <div id='calendar-widget' class='demo-calendar fc fc-media-screen fc-direction-ltr fc-theme-standard fc-liquid-hack'>
+
+  </div> <!-- calendar-widget -->
+</div> <!-- calendar-container -->
+
+<!-- Page scripts -->
+
+<script src="fullcalendar/main.js"></script>
+<script src="jquery.js"></script>
+<script src="testdata.js" type="text/javascript"></script>
+<script src="rcal.js" type="text/javascript"></script>
+
+</body>
+</html>

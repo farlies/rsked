@@ -1,0 +1,9 @@
+# example crontab for the x86 platform
+# Prior to installing with crontab:
+# 1. disable any jobs you do not need
+# 2. customize these environment variables for your site:
+#LOGHOST=loghost
+#
+#min      hr   dom   mon   dow   cmd
+0-59/5   6-21    *     *     *    $HOME/bin/check_inet.sh
+#1     7,14,22    *     *     *    $HOME/bin/synclogs.sh $LOGHOST >$HOME/logs/synclogs.out 2>&1

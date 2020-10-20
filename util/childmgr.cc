@@ -580,7 +580,7 @@ void Child_mgr::start_child()
     // by the parent process.
     if (execv( m_bin_path.c_str(), const_cast<char* const*>(&argv[0]) )) {
         LOG_ERROR(Lgr) << "Child_mgr for " << m_name
-                       << " failed to execute " << m_bin_path ;
+                       << " failed to exec binary '" << m_bin_path  << "'";
         exit(1);
     }
 }

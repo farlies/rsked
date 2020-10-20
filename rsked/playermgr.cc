@@ -71,6 +71,8 @@ bool Player_manager::inet_available()
 /// Inet_checker. If argument testp is true, the configuration will
 /// avoid side effects on the system.
 ///
+/// * May throw various player errors
+///
 void Player_manager::configure( Config& config, bool testp )
 {
     m_annunciator = std::make_shared<Ogg_player>("Annunciator",0);
@@ -89,10 +91,12 @@ void Player_manager::configure( Config& config, bool testp )
     m_mpd->initialize(config,testp);
     //
     c_ichecker.configure( config );
+    //
+    check_minimally_usable();
 }
 
 /// Retrieve the annunciator (usually *ogg* player), which is used
-/// exclusively for announcments. This player should be distinct from
+/// exclusively for announcements. This player should be distinct from
 /// any of the operational players, since they may be suspended during
 /// announcements.
 ///
@@ -113,29 +117,37 @@ spPlayer Player_manager::get_annunciator()
 /// Retrieve the right player for the source.  If the src argument is
 /// null, or the src medium is "Off" then return the silent player.
 /// If no suitable player can be determined, or none is
-/// usable, then return a null shared pointer. This can occur when
-/// the source is an mp3 stream but the internet is unavailable.
+/// usable, then return a null shared pointer.
 ///
 /// TODO: rework this to respect player choice priority defined by
-///    the config file.
+///    the config file. Basically, the logic should be driven by
+///    the declared player capabilities and preferences.
 ///
 spPlayer
 Player_manager::get_player( spSource src )
 {
-    spPlayer pp {};
     if (!src) {
         return m_null_player;;
     }
-    //
-    switch (src->medium()) {
-    case Medium::off:
-        pp = m_null_player;
-        break;
+    spPlayer pp {};
+    Medium medium = src->medium();
+    Encoding encoding = src->encoding();
 
-    case Medium::mp3_stream:
+    if (medium == Medium::off) {
+        pp = m_null_player;
+        return pp;
+    }
+    if (medium == Medium::radio) {
+        pp = m_gqrx;
+        if (not pp or not pp->is_usable()) { // might be disabled or broken
+            pp.reset();
+        }
+        return pp;
+    }
+    if (medium == Medium::stream) {
         if (not c_ichecker.inet_ready()) {
             LOG_WARNING(Lgr) << "Internet seems unavailable, cannot play "
-                          "mp3 stream "   << src->name();
+                          "stream "   << src->name();
             pp.reset();
             return pp;
         }
@@ -143,43 +155,78 @@ Player_manager::get_player( spSource src )
         if (not pp or not pp->is_usable()) { // if MPD is not usble,
             pp = m_mpg321; // mpg321 fallback
         }
-        break;
-
-    case Medium::mp3_file:
-        pp = m_mpd;       // first choice is  MPD
-        if (not pp or not pp->is_usable()) { // if MPD is not usble,
-            pp = m_mpg321; // mpg321 fallback
+        if (not pp or not pp->is_usable()) { // if mpg321 unusable,
+            pp.reset();                      // no fallback
         }
-        break;
-
-    case Medium::radio:
-        pp = m_gqrx;
-        break;
-
-    case Medium::ogg_file:
+        return pp;
+    }
+    if (src->localp() and ((encoding== Encoding::mp4) or
+                           (encoding== Encoding::flac)) ) {
+        pp = m_mpd;       // only choice for these encodings is mpd
+        if (not pp or not pp->is_usable()) {
+            pp.reset();   // no fallback
+        }
+        return pp;
+    }
+    if (src->localp() and (encoding== Encoding::mp3)) {
+        pp = m_mpd;          // first choice is MPD
+        if (not pp or not pp->is_usable()) { // if not usable fallback to mpg321
+            pp = m_mpg321;
+        }
+        if (not pp or not pp->is_usable()) {
+            pp.reset();      // no fallback beyond mpg321
+        }
+        return pp;
+    }
+    if (src->localp() and (encoding== Encoding::ogg)) {
         pp = m_mpd;          // first choice is MPD
         if (not pp or not pp->is_usable()) { // if not usable fallback to ogg123
             pp = m_ogg123;
         }
-        break;
-    default:
-        pp = m_null_player;
-        LOG_ERROR(Lgr) << "No players for medium " << media_name(src->medium());
-    }
-    if (pp and pp->is_usable()) {
+        if (not pp or not pp->is_usable()) {
+            pp.reset();      // no fallback beyond mpg321
+        }
         return pp;
     }
-    if (pp) {
-        LOG_ERROR(Lgr) << "Preferred player " << pp->name() << " is UNusable";
-    }
-    pp.reset(); // == nullptr
+    // handle unexpected media by returning nullptr
+    pp = m_null_player;
+    LOG_ERROR(Lgr) << "No players for medium " << media_name(medium);
+    pp.reset();
     return pp;
 }
 
 
+/// Check that at least one player is potentially usable.
+/// * May throw a Player_startup_exception if none usable.
+///
+void Player_manager::check_minimally_usable()
+{
+    unsigned nu=0;
+    if (m_ogg123)      { if (m_ogg123->is_usable()) { ++nu; } }
+    if (m_mpg321)      { if (m_mpg321->is_usable()) { ++nu; } }
+    if (m_gqrx)        { if (m_gqrx->is_usable()) { ++nu; } }
+    if (m_mpd)         { if (m_mpd->is_usable()) { ++nu; } }
+    //
+    if (not m_annunciator or
+        not m_annunciator->is_usable()) {
+            LOG_WARNING(Lgr) << "Annunciator is not usable, "
+                "which is highly undesirable.";
+    }
+    if (nu) {
+        if (1 == nu) {
+            LOG_WARNING(Lgr) << "Just 1 apparently usable player";
+        } else {
+            LOG_INFO(Lgr) << nu << " apparently usable players";
+        }
+    } else {
+        LOG_ERROR(Lgr) << "None of the players seems usable.";
+        throw Player_startup_exception();
+    }
+}
+
 /// Invoked periodically to check if any players are in the wrong
 /// state.  The check method of the player is responsible for taking
-/// any corrective action as approriate. Typically, a player may be
+/// any corrective action as appropriate. Typically, a player may be
 /// restarted (up to a certain number of times) on a given source
 /// before that source is marked as "failed" (making it taboo for a while).
 /// In some cases the player itself may be marked as defective.

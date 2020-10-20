@@ -20,8 +20,12 @@
 /// broadcast radio.
 
 /// frequency in Hz
-typedef unsigned long   freq_t;
+using freq_t = unsigned long;
 
 
 /// Qualitative signal strengths
 enum class Smeter { lowlow, low, good, unavailable };
+
+/// Bounds on radio frequency, MHz, (FM broadcast band)
+constexpr double MinRadioFreqMHz =  65.0;
+constexpr double MaxRadioFreqMHz = 130.0;

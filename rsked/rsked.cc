@@ -295,7 +295,7 @@ bool Rsked::check_playback_level()
 /// This is for very brief rsked internal announcements. It does not pause
 /// any current program, so do this prior to calling if necessary.
 /// Play a single announcement given its name.  This uses an exclusive
-/// ogg player so the announcment source must be ogg mode.
+/// ogg player so the announcement source must be ogg mode.
 /// Do not play any announcements before 7am or after 9pm.
 ///
 /// * Will not throw
@@ -360,7 +360,7 @@ void Rsked::play_announcement( spPlay_slot slot )
                       << "}: content not available, mark complete";
         return;
     }
-    // If the announcment is already playing, determine if it is
+    // If the announcement is already playing, determine if it is
     // complete. If not complete, just return.  If complete, (or the
     // player is mysteriously gone) mark it so for today, resume the
     // previous player (if paused) then return.

@@ -1,35 +1,58 @@
-// sked-test6 : Defective--undefined alternate to master
 {
     "encoding" : "UTF-8",
-    "schema"   : "1.0",
-    "version"  : "1.0",
+    "schema"   : "2.0",
+    "version"  : "2020-09-16T03:33.Bad",
+    "description"   : "Defective test schedule 6: Master has undefined alternate.",
+    "library"       : "../test/Music",
+    "playlists"     : "../test/Playlists",
+    "announcements" : "..",
 
     "sources" :
     {
-        // playlists
-        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
-                    "path" : "~/.config/mpd/playlists/master.m3u",
-                    "alternate" : "IamUndefined"},
+        "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                    "location" : "master.m3u", "duration": 38253.213,
+                    "alternate" : "tremas"},
 
-        "%motd"   : {"mode" : "ogg",
-                     "file" :  "~/.config/rsked/resource/motd.ogg" }
+        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                     "announcement" : true, "text" : "message of the day",
+                     "location" :  "resource/motd.ogg" }
     },
-
-    // must have 7 entries, Sun->Sat
-    "weekmap" : [
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday" ],
 
     "dayprograms" : {
 
-        "weekday" : [
-            {"start" : "06:00", "program" : "OFF" },
-            {"start" : "08:30", "program" : "master" },
+        "sunday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "monday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "tuesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "wednesday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "thursday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "friday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
+            {"start" : "21:00", "program" : "OFF" }
+        ],
+        "saturday" : [
+            {"start" : "00:00", "program" : "OFF" },
+            {"start" : "07:30", "program" : "master" },
             {"start" : "21:00", "program" : "OFF" }
         ]
     }

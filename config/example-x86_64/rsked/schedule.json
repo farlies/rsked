@@ -1,94 +1,134 @@
-// Example schedule for the week. This file refers to radio stations
-// and recorded music files that are unlikely to be useful to you.
-// Delete or alter them to suit your local needs. The stock messages
-// should be retained--these files will be automatically installed.
 {
     "encoding" : "UTF-8",
-    "schema"   : "1.0",
-    "version"  : "1.0",
+    "schema"   : "2.0",
+    "version"  : "2020-09-15T16:05",
+    "description" : "Example schedule. Adjust this for your needs.",
 
     "sources" :
     {
-        // FM radio
-        "kbem" : {"mode" : "radio", "frequency" : "88.5", "alternate" : "master"},
-        "kfai" : {"mode" : "radio", "frequency" : "90.3", "alternate" : "master"},
-        "know" : {"mode" : "radio", "frequency" : "91.1", "alternate" : "master"},
-        "ksjn" : {"mode" : "radio", "frequency" : "99.5", "alternate" : "master"},
+        "know" : {"encoding" : "wfm", "medium": "radio", "location" : 91.1,
+                  "alternate" : "master"},
+
+        "ksjn" : {"encoding" : "wfm", "medium": "radio", "location" : 99.5,
+                  "alternate" : "master"},
+
+        "cms"  : {"encoding" : "mp3", "medium" : "stream",
+                  "location" : "http://cms.stream.publicradio.org/cms.mp3",
+                  "alternate" : "ksjn",  "repeat" : true},
         
-        // Internet streams
-        "cms"  : {"mode" : "stream", "url" : "http://cms.stream.publicradio.org/cms.mp3",
-                  "alternate" : "ksjn", "repeat" : true},
-        "nis"  : {"mode" : "stream", "url" : "http://nis.stream.publicradio.org/nis.mp3",
-                  "alternate" : "know", "repeat" : true},
+        "nis"  : {"encoding" : "mp3", "medium": "stream", 
+                  "location" : "http://nis.stream.publicradio.org/nis.mp3",
+                  "alternate" : "know",  "repeat" : true},
+        
+        "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                    "location" : "master.m3u", "duration": 38253.213},
 
-        // stock messages
-        "%snooze1" : {"mode" : "ogg", "file" : "~/.config/rsked/resource/snooze-1hr.ogg" },
-        "%resume" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/resuming.ogg" },
-        "%revert" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/reverting.ogg" },
-        "%goodam" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodam.ogg" },
-        "%goodaf" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodaf.ogg" },
-        "%goodev" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodev.ogg" },
+        "dnow" : {"encoding" : "mp3", "medium": "stream",  "duration": 3600,
+                  "repeat" : false, "alternate" : "nis", "dynamic" : true,
+                  "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"},
+        
+        "motd-md" : {"encoding" : "ogg", "medium" : "file",
+                     "location" : "motd/each-%m-%d.ogg",
+                     "dynamic" : true, "duration" : 10, 
+                     "announcement" : true,
+                     "text" : "(content based on calendar day/month)"},
 
-        "%motd"   : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/motd.ogg" },
+        "motd-ymd" : {"encoding" : "ogg", "medium" : "file",
+                      "location" : "motd/%Y-%m-%d.ogg",
+                      "dynamic" : true, "duration" : 10,
+                      "announcement" : true,
+                      "text" : "(content based on calendar day/month/year)"},
 
-        // playlists
-        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
-                    "path" : "~/.config/mpd/playlists/master.m3u"},
-
-        // dynamic content examples
-        "motd-ymd" : {"mode" : "ogg", "dynamic" : true, "alternate" : "motd-md",
-                      "file" : "~/.config/rsked/motd/%Y-%m-%d.ogg"},
-
-        "motd-md" : {"mode" : "ogg", "dynamic" : true,
-                     "file" : "~/.config/rsked/motd/each-%m-%d.ogg"},
-
-        "dnow" : {"mode" : "stream",  "repeat" : false, "alternate" : "nis",
-                  "dynamic" : true,
-                  "url" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"}
+        "%snooze1" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                      "announcement" : true, "text" : "snooze for one hour",
+                      "location" : "resource/snooze-1hr.ogg" },
+        "%resume" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "resuming program",
+                     "location" :  "resource/resuming.ogg" },
+        "%revert" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "reverting to alternate program",
+                      "location" :  "resource/reverting.ogg" },
+        "%goodam" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good morning",
+                     "location" :  "resource/goodam.ogg" },
+        "%goodaf" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good afternoon",
+                     "location" :  "resource/goodaf.ogg" },
+        "%goodev" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good evening",
+                     "location" :  "resource/goodev.ogg"},
+        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                     "text" : "message of the day",
+                     "location" :  "resource/motd.ogg", "announcement" : true  }
     },
 
-    // must have 7 entries, Sun->Sat
-    "weekmap" : [
-         "sunday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "weekday",
-         "saturday" ],
-
     "dayprograms" : {
-    "weekday" : [
+    "sunday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "08:00", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "monday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-md" },
+        {"start" : "12:00", "program" : "dnow" },
+        {"start" : "13:00", "program" : "cms" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
         {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
+    "tuesday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "14:00", "program" : "nis" },
+        {"start" : "15:00", "program" : "cms" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "wednesday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "13:30", "announce" : "motd-md" },
+        {"start" : "14:00", "program" : "nis" },
+        {"start" : "15:00", "program" : "cms" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "thursday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "14:00", "program" : "nis" },
+        {"start" : "15:00", "program" : "cms" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
+    "friday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "14:00", "program" : "nis" },
+        {"start" : "15:00", "program" : "cms" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
     "saturday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "08:00", "program" : "cms" },
-        {"start" : "09:30", "announce" : "motd-ymd" },
+        {"start" : "09:30", "announce" : "motd-md" },
         {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
-    ],
-
-    "sunday" : [
-        {"start" : "00:00", "program" : "OFF" },
-        {"start" : "08:00", "program" : "cms" },
-        {"start" : "10:30", "announce" : "motd-ymd" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
-        {"start" : "21:00", "program" : "OFF" }
-    ],
-
-    "recorded" : [
-        {"start" : "00:00", "program" : "OFF" },
-        {"start" : "07:30", "program" : "master"},
-        {"start" : "12:00", "announce" : "motd-ymd" },
-        {"start" : "21:00", "program" : "OFF" }
-        ]
+    ]
     }
 }

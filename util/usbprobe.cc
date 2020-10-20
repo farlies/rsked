@@ -84,7 +84,7 @@ void Usb_probe::describe_dev( libusb_device *dev, uint8_t idx )
 }
 
 /// This is used to look for any of the vendor/product pairs. Return
-/// the number of matches discovered on the USB busses.
+/// the number of matches discovered on the USB buses.
 ///
 size_t Usb_probe::count_devices(bool verbose)
 {

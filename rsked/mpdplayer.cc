@@ -33,9 +33,11 @@
 
 /// Default MDP network port and host/socket
 constexpr const unsigned Default_mpd_port = 6600;
+constexpr const unsigned Default_mpd_volume = 100;
 constexpr const char *Default_mpd_hostname = "localhost";
 const boost::filesystem::path Default_mpd_socket {"~/.config/mpd/socket"};
 
+namespace fs = boost::filesystem;
 
 
 /// CTOR - create an Mpd_client right away, but don't connect yet.
@@ -46,6 +48,7 @@ Mpd_player::Mpd_player()
       m_socket(expand_home(Default_mpd_socket)),
       m_hostname(Default_mpd_hostname),
       m_port(Default_mpd_port),
+      m_volume(Default_mpd_volume),
       m_cm(Child_mgr::create(m_name))
 
 {
@@ -62,6 +65,7 @@ Mpd_player::Mpd_player(const char *name)
       m_socket(expand_home(Default_mpd_socket)),
       m_hostname(Default_mpd_hostname),
       m_port(Default_mpd_port),
+      m_volume(Default_mpd_volume),
       m_cm(Child_mgr::create(name))
 {
     LOG_INFO(Lgr) << "Created an Mpd_player named " << m_name;
@@ -203,9 +207,10 @@ void Mpd_player::shutdown_mpd()
 /// validate that the external process is mpd, just that something is
 /// sitting on the resource. This condition is undesirable if we have not
 /// started mpd intend to, since mpd will loop forever attempting to
-/// to grab the port/socket, thereby breaking rsked.
+/// to grab the port/socket, thereby breaking rsked. Note that mpd fails
+/// to clean up its unix socket which may yield false positives.
 ///
-/// * Will NOT throw. (unless system runs out of memory while checking)
+/// * Will NOT throw, Except: system runs out of memory while checking
 ///
 bool Mpd_player::any_mpd_running()
 {
@@ -288,7 +293,7 @@ void Mpd_player::check_not_stalled()
 /// Returns true if MPD is not actually playing, or the connection to the
 /// process is broken.
 ///
-/// * This will NOT throw.
+/// * Will NOT throw.
 ///
 bool Mpd_player::completed()
 {
@@ -306,13 +311,13 @@ bool Mpd_player::completed()
 /// -- player is in the wrong state (e.g. stopped, paused)
 /// -- cannot communicate successfully with MPD
 ///
-/// * May THROW a Player_exception if there is something basically
-///   wrong with the player.  Player should have marked itself unusable.
-///
 /// It is up to the caller to rectify the problem if false is
 /// returned.  Unfortunately it seems impossible to tell whether mpd is
 /// playing a named playlist--if this type of source is encountered
 /// we just verify the name of the source is the last one we enqueued.
+///
+/// * May THROW a Player_exception if there is something basically
+///   wrong with the player.  Player should have marked itself unusable.
 ///
 bool Mpd_player::currently_playing( spSource src )
 {
@@ -350,7 +355,7 @@ bool Mpd_player::currently_playing( spSource src )
         return false;
     }
 
-    if (src->res_type() == ResType::Playlist) {
+    if (src->medium() == Medium::playlist) {
         return true;
     }
     // this checks that the song or the URL is the same as resource()
@@ -396,6 +401,11 @@ void Mpd_player::initialize( Config &cfg, bool testp )
     // additional configuration only if enabled:
     cfg.get_bool(m_name.c_str(),"run_mpd",m_run_mpd);
     cfg.get_unsigned(m_name.c_str(),"port",m_port);
+    cfg.get_unsigned(m_name.c_str(),"volume",m_volume);
+    if (m_volume > 100) {
+        LOG_WARNING(Lgr) << "Mpd volume capped at 100%";
+        m_volume = 100;
+    }
     cfg.get_string(m_name.c_str(),"host", m_hostname);
     cfg.get_bool(m_name.c_str(),"debug", m_debug);
     // depending on timing, the socket might not exist (yet)
@@ -404,7 +414,13 @@ void Mpd_player::initialize( Config &cfg, bool testp )
                      FileCond::MustExist, m_bin_path);
     m_cm->set_binary( m_bin_path );
     m_cm->set_name( m_name );
-    //
+    // If not enabled, stop here, do not check whether it is running
+    if (not m_enabled) {
+        return;
+    }
+    // Check whether a rogue mpd process is running when rsked is
+    // supposed to be the mpd parent; this is a common misconfiguration.
+    // Also, mpd fails to clean up its unix socket on exit.
     if (m_run_mpd and not m_cm->running()) {
         if (any_mpd_running()) {   // No throw.
             LOG_ERROR(Lgr) << "Mpd_player found a non-child mpd running!";
@@ -424,6 +440,7 @@ void Mpd_player::initialize( Config &cfg, bool testp )
 /// Evaluates whether we can use MPD (only if enabled).
 /// If this daemon has not been tried for m_recheck_secs since
 /// last being marked unusable, attempt to start it again.
+///
 /// *  Will NOT throw.
 ///
 bool Mpd_player::is_usable()
@@ -453,7 +470,7 @@ bool Mpd_player::is_usable()
 void Mpd_player::pause()
 {
     assure_connected();
-    if (m_src->res_type()==ResType::URL) {
+    if (m_src->medium()==Medium::stream) {
         LOG_DEBUG(Lgr) << m_name << " stopping network stream";
         m_remote->stop();
     } else {
@@ -468,7 +485,7 @@ void Mpd_player::pause()
 /// cleared and only the source will be scheduled to play.  It will
 /// verify that MPD is usable; if the process or connection had not
 /// been initiated, it will be launched now: this is the normal way to
-/// start the MPD process/connection. The volume is set to 100%.
+/// start the MPD process/connection. The volume is set to m_volume%.
 ///
 /// * May throw Player_media_exception(), Player_comm_exception
 ///
@@ -487,50 +504,50 @@ void Mpd_player::play( spSource src )
         }
         m_remote->stop();
         m_remote->clear_queue();
-        m_remote->set_volume(100);
+        m_remote->set_volume(m_volume);
     } catch (const Mpd_run_exception &) {
         throw Player_media_exception();
     }
 
+    Medium medium = src->medium();
     // validate medium
-    switch (src->medium()) {
-    case Medium::mp3_stream:
-    case Medium::ogg_file:
-    case Medium::mp3_file:
-        break;
-    default:
+    switch (medium) {
+    case Medium::off:
+    case Medium::radio:
         LOG_ERROR(Lgr) << m_name << " does not handle this medium: "
                        << media_name(src->medium());
         throw Player_media_exception();
-    }
-    // validate resource type
-    switch (src->res_type()) {
-    case ResType::URL:
-    case ResType::File:
+        break;
+
+    case Medium::stream:
+    case Medium::directory:
+    case Medium::file:
         LOG_INFO(Lgr) << m_name << " play: {" << src->name() << "}";
         try {
-            m_remote->enqueue(src->resource());
+            if (src->dynamic()) {
+                std::string dynstr;
+                uri_expand_time( src->resource(), dynstr );
+                m_remote->enqueue(dynstr);
+            } else {
+                m_remote->enqueue(src->resource());
+            }
         } catch (Mpd_queue_exception&) {
             throw Player_media_exception();
         }
         m_src = src;
         break;
-    case ResType::Playlist:
+    case Medium::playlist:
         LOG_INFO(Lgr) << m_name << " play: {" << src->name() << "}";
+        // strip any trailing extension, like .m3u, if present
+        fs::path plfile { src->name() };
+        std::string plstem { plfile.stem().native() };
         try {
-            m_remote->enqueue_playlist(src->resource());
+            m_remote->enqueue_playlist( plstem );
         } catch (Mpd_queue_exception&) {
             throw Player_media_exception();
         }
         m_src = src;
         break;
-    case ResType::Directory:
-    case ResType::Frequency:
-    default:
-        LOG_ERROR(Lgr) << m_name
-                       << " currently only handles files, playlists, and urls";
-        throw Player_media_exception();
-        return;
     };
     //
     m_stall_counter = 0;
@@ -547,7 +564,7 @@ void Mpd_player::play( spSource src )
 void Mpd_player::resume()
 {
     assure_connected();
-    if (m_src->res_type()==ResType::URL) {
+    if (m_src->medium()==Medium::stream) {
         LOG_DEBUG(Lgr) << m_name << " restarting network stream";
         play(m_src);
     } else {
@@ -557,7 +574,8 @@ void Mpd_player::resume()
 }
 
 /// Return current state.
-/// * Throws NO exceptions.
+///
+/// * Will NOT throw :-)
 ///
 PlayerState Mpd_player::state()
 {
@@ -593,7 +611,7 @@ bool Mpd_player::check()
 
     // If we are playing an MP3 stream but the internet becomes
     // unavailable, then return false.
-    if (m_src and m_src->medium()==Medium::mp3_stream) {
+    if (m_src and m_src->medium()==Medium::stream) {
         if (not Player_manager::inet_available()) {
             // oops -- abort playing this stream if we are trying to play
             if (m_state == PlayerState::Playing) try { stop(); } catch(...) {}

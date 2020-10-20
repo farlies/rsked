@@ -1,0 +1,236 @@
+{
+   "version" : "2020-09-08Z17:17",
+   "schema" : "1.0",
+   "announcements" : {
+      "%motd" : {
+         "text" : "message of the day",
+         "encoding" : "ogg",
+         "location" : "resource/motd.ogg",
+         "duration" : 1.368
+      },
+      "%snooze-1hr" : {
+         "duration" : 1.656,
+         "location" : "resource/snooze-1hr.ogg",
+         "text" : "snooze one hour",
+         "encoding" : "ogg"
+      },
+      "%reverting" : {
+         "duration" : 2.136,
+         "location" : "resource/reverting.ogg",
+         "text" : "reverting to alternate program",
+         "encoding" : "ogg"
+      },
+      "motd-ymd" : {
+         "dynamic" : true,
+         "duration" : 10,
+         "location" : "motd/%Y-%m-%d.ogg",
+         "text" : "(content based on calendar day/month/year)",
+         "encoding" : "ogg"
+      },
+      "%goodaf" : {
+         "location" : "resource/goodaf.ogg",
+         "duration" : 1.176,
+         "encoding" : "ogg",
+         "text" : "good afternoon"
+      },
+      "motd-md" : {
+         "dynamic" : true,
+         "duration" : 10,
+         "location" : "motd/each-%m-%d.ogg",
+         "encoding" : "ogg",
+         "text" : "(content based on calendar day/month)"
+      },
+      "%resuming" : {
+         "location" : "resource/resuming.ogg",
+         "duration" : 1.536,
+         "encoding" : "ogg",
+         "text" : "resuming program"
+      },
+      "%goodev" : {
+         "location" : "resource/goodev.ogg",
+         "duration" : 0.888,
+         "encoding" : "ogg",
+         "text" : "good evening"
+      },
+      "%goodam" : {
+         "duration" : 0.984,
+         "location" : "resource/goodam.ogg",
+         "text" : "good morning",
+         "encoding" : "ogg"
+      }
+   },
+   "encoding" : "UTF-8",
+   "library" : {
+      "Oliver Nelson" : {
+         "More Blues and the Abstract Truth" : {
+            "encoding" : "ogg",
+            "tracks" : [
+               "01-Blues and the Abstract Truth.ogg",
+               "02-Blues O'Mighty.ogg",
+               "03-Theme from Mr. Broadway.ogg",
+               "04-Midnight Blue.ogg",
+               "05-The Critic's Choice.ogg",
+               "06-One for Bob.ogg",
+               "07-Blues for Mr. Broadway.ogg",
+               "08-Goin' to Chicago Blues.ogg"
+            ],
+            "durations" : [
+               314.227,
+               408.4,
+               349.44,
+               247.36,
+               141.2,
+               367.507,
+               492.933,
+               274.533
+            ],
+            "totalsecs" : 2595.6
+         }
+      },
+      "Itzhak Perlman & BSO (Ozawa)" : {
+         "The American Album" : {
+            "totalsecs" : 3889.867,
+            "durations" : [
+               393.707,
+               263.4,
+               91.56,
+               420.133,
+               639.107,
+               621.027,
+               490.867,
+               230.04,
+               297,
+               273.933,
+               169.093
+            ],
+            "encoding" : "ogg",
+            "tracks" : [
+               "01 - Serenade 1: Phaedrus.ogg",
+               "02 - Serenade 2: Aristophanes.ogg",
+               "03 - Serenade 3: Eyrximachus.ogg",
+               "04 - Serenade 4: Agathon.ogg",
+               "05 - Serenade 5: Socrates-Alcibiades.ogg",
+               "06 - Violin Concerto 14-I.ogg",
+               "07 - Violin Concerto 14--II.ogg",
+               "08 - Violin Concerto 14-III.ogg",
+               "09 - 3 American Pieces: Early Song.ogg",
+               "10 - 3 American Pieces: Dedication.ogg",
+               "11 - 3 American Pieces: Composer's Holiday.ogg"
+            ]
+         }
+      },
+      "Herman's Hermits" : {
+         "Retrospective" : {
+            "encoding" : "ogg",
+            "tracks" : [
+               "Disc 1 - 1 - I'm into Something Good.ogg",
+               "Disc 1 - 10 - Leaning on a Lamp Post.ogg",
+               "Disc 1 - 11 - End of the World.ogg",
+               "Disc 1 - 12 - Listen People.ogg",
+               "Disc 1 - 13 - There's a Kind of Hush.ogg",
+               "Disc 1 - 14 - East West.ogg",
+               "Disc 1 - 15 - No Milk Today.ogg",
+               "Disc 1 - 16 - It's Nice to be Out in the Morning.ogg",
+               "Disc 1 - 17 - This Door Swings Both Ways.ogg",
+               "Disc 1 - 18 - Dandy.ogg",
+               "Disc 1 - 19 - Sleepy Joe.ogg",
+               "Disc 1 - 2 - Can't You Hear My Heartbeat.ogg",
+               "Disc 1 - 20 - Don't go out into the Rain.ogg",
+               "Disc 1 - 21 - Sunshine Girl.ogg",
+               "Disc 1 - 22 - Museum.ogg",
+               "Disc 1 - 23 - I Can Take or Leave Your Loving.ogg",
+               "Disc 1 - 24 - Something's Happening.ogg",
+               "Disc 1 - 25 - My Sentimental Friend.ogg",
+               "Disc 1 - 26 - Here Comes the Star.ogg",
+               "Disc 1 - 3 - Silhouettes.ogg",
+               "Disc 1 - 4 - Mrs. Brown, You've got a Lovely Daughter.ogg",
+               "Disc 1 - 5 - (What A) Wonderful World.ogg",
+               "Disc 1 - 6 - Hold On.ogg",
+               "Disc 1 - 7 - I'm Henry The VIII, I Am.ogg",
+               "Disc 1 - 8 - Juat a Little Bit Better.ogg",
+               "Disc 1 - 9 - A Must to Avoid.ogg"
+            ],
+            "durations" : [
+               156.603,
+               162.91,
+               182.4,
+               152.22,
+               155.799,
+               121.805,
+               179.605,
+               146.545,
+               129.531,
+               124.132,
+               195.972,
+               137.313,
+               134.242,
+               158.858,
+               161.746,
+               156.164,
+               193.305,
+               196.947,
+               203.934,
+               122.391,
+               169.615,
+               121.799,
+               121.944,
+               112.83,
+               176.145,
+               117.976
+            ],
+            "totalsecs" : 3992.731
+         }
+      },
+      "Adrienne Soos and Ivo Haag" : {
+         "D'Allessandro and Honegger: Piano Duos" : {
+            "tracks" : [
+               "1 - Theme and Variations op. 48.ogg",
+               "10 - Trois contrepoints-3.ogg",
+               "11 - Chant de joie.ogg",
+               "2 - Le partage de midi-1.ogg",
+               "3 - Le partage de midi-2.ogg",
+               "4 - Le partage de midi-3.ogg",
+               "5 - Le partage de midi-4.ogg",
+               "6 - Partita.ogg",
+               "7 - Pastorale d'ete.ogg",
+               "8 - Trois contrepoints-1.ogg",
+               "9 - Trois contrepoints-2.ogg"
+            ],
+            "encoding" : "ogg",
+            "totalsecs" : 3464.027,
+            "durations" : [
+               763.213,
+               69.133,
+               342.387,
+               121.827,
+               193.293,
+               162.987,
+               292.12,
+               752.987,
+               469.133,
+               87.027,
+               209.92
+            ]
+         }
+      }
+   },
+   "playlists" : {
+      "gonzo.m3u" : {
+         "duration" : 1078.45,
+         "encoding" : "mixed"
+      },
+      "begegnungen.m3u" : {
+         "encoding" : "mp3",
+         "duration" : 2484.633
+      },
+      "master.m3u" : {
+         "duration" : 38253.213,
+         "encoding" : "mixed"
+      },
+      "mpr.m3u" : {
+         "duration" : 0,
+         "encoding" : "mp3"
+      }
+   }
+}
+

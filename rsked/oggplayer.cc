@@ -33,7 +33,7 @@ Ogg_player::Ogg_player() : Base_player("Ogg_player")
 }
 
 /// CTOR with name.
-/// You may set a shortest run length, which might be 0 for a brief announcment.
+/// You may set a shortest run length, which might be 0 for a brief announcement.
 ///
 Ogg_player::Ogg_player( const char* nm, time_t min_run_secs )
     : Base_player( nm )
@@ -56,8 +56,6 @@ void Ogg_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool("Ogg_player", "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Ogg_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuration
-        return;
     }
 
     fs::path binpath { DefaultBinPath };
@@ -87,9 +85,9 @@ void Ogg_player::play( spSource src )
         stop();
         return;
     }
-    if (src->medium() != Medium::ogg_file) {
+    if (src->encoding() != Encoding::ogg) {
         LOG_ERROR(Lgr) << m_name <<  " cannot play this type of source: "
-                       << media_name( src->medium() );
+                       << encoding_name( src->encoding() );
         return;
     }
     m_src = src;
@@ -104,10 +102,10 @@ void Ogg_player::play( spSource src )
         m_cm->add_arg( "--repeat" );  // repeat this indefinitely
         LOG_INFO(Lgr) << m_name << " will repeat the program for entire period";
     }
-    if (m_src->res_type()==ResType::Playlist) {
+    if (m_src->medium()==Medium::playlist) {
         m_cm->add_arg("--list");      // for playlist
     }
-    if (m_src->res_type()==ResType::URL) {
+    if (m_src->medium()==Medium::stream) {
         m_cm->add_arg( m_src->resource().c_str() );
     } else {
         boost::filesystem::path path;

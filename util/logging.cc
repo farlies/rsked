@@ -74,7 +74,7 @@ void rlog_formatter(logging::record_view const& rec,
     strm << rec[expr::smessage];
 }
 
-typedef sinks::synchronous_sink< sinks::text_file_backend > sink_t;
+using sink_t = sinks::synchronous_sink< sinks::text_file_backend >;
 
 /// Setup for logs to be collected into a directory.
 ///
@@ -139,7 +139,7 @@ init_console_logging( boost::shared_ptr< logging::core > core )
 
     // Wrap it into the frontend and register in the core.
     // The backend requires synchronization in the frontend.
-    typedef sinks::synchronous_sink< sinks::text_ostream_backend > os_sink_t;
+    using os_sink_t = sinks::synchronous_sink< sinks::text_ostream_backend >;
     boost::shared_ptr< os_sink_t > os_sink(new os_sink_t(os_backend));
     // Add a formatter
     os_sink->set_formatter(&rlog_formatter);

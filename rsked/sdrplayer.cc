@@ -155,7 +155,7 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool(myname, "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Sdr_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuraiton
+        // if not enabled, we do not check the rest of the configuration
         return;
     }
 

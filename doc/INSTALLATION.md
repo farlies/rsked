@@ -3,11 +3,11 @@
 1. Configure target hardware and operating system
 2. Install prerequisite tools and libraries
 3. Install and test external source players on the target system
-4. Download and compile `rsked`
+4. Download sources and compile `rsked` or download a release archive
 5. Create configuration files for your application (templates provided)
 6. Install `rsked` binaries and configuration files
 7. Install start-up script to run on boot (optional)
-8. Install a crontab to perform any periodic maintenance tasks
+8. Install a crontab to perform any periodic maintenance tasks (optional)
 
 If you are building on Raspberry Pi, be sure to read
 [README-RPi](README-RPi.md) too.
@@ -19,23 +19,81 @@ systems, but we give details for two platforms regularly tested and
 known to work:
 
 - Ubuntu 20.04  on x86_64
-- Raspbian 10 on RPi-3B
+- Raspbian 10 (Buster) on Raspberry Pi 3B+
 
-# Tools and Libraries
+# Release
 
-The **rsked** applications are  C++ programs, and require
-the following development tools and libraries:
+## Dependencies
 
-- **gcc** C++ compiler suitable for C++ 17 (clang will work too)
-- **meson** build system
-- **ninja** build tool
-- **boost** version at least 1.67, tested up to 1.71
-- **libjsoncpp**
-- **libpulse**
-- **libusb**
+To run a binary ARM release begin with at least a minimal desktop
+installation of Debian 10 Buster (Raspbian).  The following additional
+deb packages are required for a typical installation:
+- vorbis-tools
+- mpd, mpc
+- mpg321
+- pulseaudio
+- dnsutils
+- gnuradio, libgnuradio-osmosdr0.1.4, libvolk1-bin
+- libboost-program-options1.67.0
+- libboost-log1.67.0
+- libgpiod2
+- libjsoncpp1
+
+You may omit the gnuradio packages if there is no need to play FM
+radio via `gqrx` (and the sdr player is disabled in the
+configuration.)  You may omit `mpd`, `mpc`, and `mpg321` if there is
+no need to play MP3 files or streams (and these players are disabled
+in the configuration).  You may omit `dnsutils` if the application
+will not use the IP network at all, or will not need to run
+`check_inet`.
+
+(Aside: On Ubuntu 20.04, replace boost1.67 packages with boost1.71.)
+
+## Installing a Binary Release
+
+Download a release and signature from GitHub. Verify integrity using the 
+signature and key for farlies@gmail.com available from https://keys.openpgp.org
+with fingerprint:
+
+```
+2B0B 435B 1522 A8ED 2E54  E44E 4B14 253F 7681 B2A2
+```
+
+The `tgz` file is designed to be expanded into the *home directory* of
+the user that will run `rsked`, e.g. "pi".  **Note well** that
+depending on options given to `tar`, unpacking the archive might
+overwrite (or fail to overwrite) any identically named files from a
+previous installation in `~/bin` or `~/.config/{rsked,gqrx,mpd}`. If
+you wish to preserve such files, e.g. an existing schedule, *move
+them* to a safe place before expanding.
+
+```
+cd
+tar xzf ~/Downloads/rsked1.0.3-armv7l-release.tgz
+```
+
+Replace the pathname above with one corresponding to whatever release
+you downloaded.
+
+Edit the files in the `~/.config` directories per instructions in
+[CONFIGURATION](CONFIGURATION.md).
 
 
-On Ubuntu 20.04:
+# Build Tools and Libraries
+
+To build the `rsked` applications (C++ programs) from source, you will
+additionally require the following development tools and libraries:
+
+- gcc    : C++ compiler suitable for C++ 17 (clang will work too)
+- meson  : build system
+- ninja  :  build tool
+- boost  : version at least 1.67, tested up to 1.71
+- libjsoncpp-dev
+- libpulse-dev
+- libusb-dev
+
+
+##  Ubuntu 20.04:
 
 ```
 sudo apt install build-essential gcc
@@ -50,8 +108,23 @@ sudo apt install libusb-1.0-0-dev
 sudo apt install libmpdclient-dev
 ```
 
-The particular version of libboost may be different (not 1.71)
+The particular version of `libboost` may be different (not 1.71)
 on your system--check what is available and substitute accordingly.
+
+## Raspbian Buster
+
+```
+sudo apt install build-essential gcc
+sudo apt install git meson
+sudo apt install libboost1.67-dev libboost-system1.67-dev
+sudo apt install libboost-log1.67-dev libboost-program-options1.67-dev
+sudo apt install libboost-test1.67-dev
+sudo apt install libjsoncpp-dev
+sudo apt install libpulse-dev
+sudo apt install libgpiod-dev
+sudo apt install libusb-1.0-0-dev
+sudo apt install libmpdclient-dev
+```
 
 # Player Installation
 
@@ -219,11 +292,11 @@ The `ninja install` step will *not*:
 
 ## Runtime Directory
 
-Although `rsked` is designed to run *without* a user interface,
+Although `rsked` is designed to run *without* a graphical user interface,
 it does need a place for certain temporary files. It looks
 for this in the user's XDG runtime directory, as identified
 by environment variable `XDG_RUNTIME_DIR`.  Verify that this
-variable has been set when the emedded user (e.g. `pi`) logs in:
+variable has been set when the embedded user (e.g. `pi`) logs in:
 
 ```
 echo $XDG_RUNTIME_DIR
@@ -237,10 +310,23 @@ For testing, one can just run `rsked` from the command line, or run
 `cooling` and let it start `rsked`. Check that log files appear in
 the `$HOME/log` directory.
 
+There is also a *test mode* so that configuration may be tested
+*without* operationally running the programs. Start the programs
+individually with the option `--test`:
+
+```
+~/bin/rsked --test
+~/bin/cooling --test
+```
+
+They will check their configurations and exit (in a few seconds).  The
+log will appear on the console: scan it for any errors or warnings.
+Like other Linux programs, the program exit code will be 0 if no fatal
+problems were detected.
 
 ## Embedded
 
-In the embedded evironment, the application should start automatically
+In the embedded environment, the application should start automatically
 after boot since there is typically no user interface.
 The installed script `startup_rsked` will do this.
 See the Startup section in [README-RPi](README-RPi.md)

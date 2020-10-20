@@ -36,13 +36,14 @@ private:
     spPlayer m_mpd {};
     spPlayer m_null_player {};
     //
-    bool check_inet();
     static Inet_checker c_ichecker;
 public:
     Player_manager();
     ~Player_manager();
-    void configure( Config& config, bool testp );
     //
+    bool check_inet();
+    void check_minimally_usable();
+    void configure( Config& config, bool testp );
     bool check_players();
     void exit_players();
     spPlayer get_annunciator();

@@ -40,6 +40,7 @@ private:
     boost::filesystem::path m_socket;
     std::string m_hostname;
     unsigned m_port;
+    unsigned m_volume;     // as a percentage [0-100]
     bool m_enabled {true};
     bool m_run_mpd  {true};
     bool m_usable {true};

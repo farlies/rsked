@@ -59,8 +59,6 @@ void Mp3_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool(section, "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Mp3_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuraiton
-        return;
     }
 
     boost::filesystem::path binpath { DefaultBinPath };
@@ -80,8 +78,8 @@ void Mp3_player::play( spSource src )
         stop();
         return;
     }
-    if ((src->medium() != Medium::mp3_stream) 
-        and (src->medium() != Medium::mp3_file)) {
+    if ((src->medium() != Medium::stream) 
+        and (src->medium() != Medium::file)) {
         LOG_ERROR(Lgr) << m_name << " cannot play this type of slot: "
                        << media_name(src->medium());
         return;
@@ -95,15 +93,16 @@ void Mp3_player::play( spSource src )
         m_cm->add_arg( "100" );     // since it might be a bad resource
         LOG_INFO(Lgr) << "Mp3_player will repeat the program up to 100x";
     }
-    const ResType rt = m_src->res_type();
-    if (rt==ResType::Directory) {
+    const Medium rt = m_src->medium();
+    if (rt==Medium::directory) {
         m_cm->add_arg( "-B" );  // recursively descend directories
     }
-    if (rt==ResType::Playlist) {
+    if (rt==Medium::playlist) {
         m_cm->add_arg( "--list" );  // this resource is a playlist
     }
-    if (rt==ResType::URL) {
+    if (rt==Medium::stream) {
         m_cm->add_arg( m_src->resource().c_str() );
+        LOG_DEBUG(Lgr) << "Stream URL: " << m_src->resource();
     } else {
         boost::filesystem::path path;
         m_src->res_path( path );       // returns false if not exist...

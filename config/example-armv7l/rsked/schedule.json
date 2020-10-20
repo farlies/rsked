@@ -1,114 +1,82 @@
-// Example schedule for the week. This file refers to radio stations
-// and recorded music files that are unlikely to be useful to you.
-// Delete or alter them to suit your local needs. The stock messages
-// should be retained--these files will be automatically installed.
 {
     "encoding" : "UTF-8",
-    "schema"   : "1.0",
-    "version"  : "1.0",
+    "schema"   : "2.0",
+    "version"  : "2020-09-15T16:05",
+    "description" : "Example schedule. Adjust this for your needs.",
 
     "sources" :
     {
-        // FM Radio
-        "kbem" : {"mode" : "radio", "frequency" : "88.5", "alternate" : "master"},
-        "kfai" : {"mode" : "radio", "frequency" : "90.3", "alternate" : "master"},
-        "know" : {"mode" : "radio", "frequency" : "91.1", "alternate" : "master"},
-        "ksjn" : {"mode" : "radio", "frequency" : "99.5", "alternate" : "master"},
-        // Internet Streams
-        "cms"  : {"mode" : "stream", "url" : "http://cms.stream.publicradio.org/cms.mp3",
-                  "alternate" : "ksjn", "repeat" : true},
-        "nis"  : {"mode" : "stream", "url" : "http://nis.stream.publicradio.org/nis.mp3",
-                  "alternate" : "know", "repeat" : true},
-        // Stock messages
-        "%snooze1" : {"mode" : "ogg", "file" : "~/.config/rsked/resource/snooze-1hr.ogg" },
-        "%resume" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/resuming.ogg" },
-        "%revert" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/reverting.ogg" },
-        "%goodam" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodam.ogg" },
-        "%goodaf" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodaf.ogg" },
-        "%goodev" : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/goodev.ogg" },
-        "%motd"   : {"mode" : "ogg", "file" :  "~/.config/rsked/resource/motd.ogg" },
-        // Playlists
-        "master" : {"playlist" : "master", "mode" : "ogg", "repeat" : true,
-                    "path" : "~/.config/mpd/playlists/master.m3u"},
+        "know" : {"encoding" : "wfm", "medium": "radio", "location" : 91.1,
+                  "alternate" : "master"},
 
+        "ksjn" : {"encoding" : "wfm", "medium": "radio", "location" : 99.5,
+                  "alternate" : "master"},
 
-        "arcades" : {"mode" : "ogg", "repeat" : true,   "duration" : "00:41:52",
-                     "path" : "~/.config/mpd/playlists/budd_arcades.m3u",
-                     "playlist" : "arcades"},
+        "cms"  : {"encoding" : "mp3", "medium" : "stream",
+                  "location" : "http://cms.stream.publicradio.org/cms.mp3",
+                  "alternate" : "ksjn",  "repeat" : true},
+        
+        "nis"  : {"encoding" : "mp3", "medium": "stream", 
+                  "location" : "http://nis.stream.publicradio.org/nis.mp3",
+                  "alternate" : "know",  "repeat" : true},
+        
+        "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
+                    "location" : "master.m3u", "duration": 38253.213},
 
-        "chopincello" : {"mode" : "ogg", "repeat" : true,   "duration" : "00:56:26",
-                         "path" : "~/.config/mpd/playlists/chopin_cello.m3u",
-                         "playlist" : "chopin_cello"},
+        "dnow" : {"encoding" : "mp3", "medium": "stream",  "duration": 3600,
+                  "repeat" : false, "alternate" : "nis", "dynamic" : true,
+                  "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"},
+        
+        "motd-md" : {"encoding" : "ogg", "medium" : "file",
+                     "location" : "motd/each-%m-%d.ogg",
+                     "dynamic" : true, "duration" : 10, 
+                     "announcement" : true,
+                     "text" : "(content based on calendar day/month)"},
 
-        "images" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:02:12",
-                    "path" : "~/.config/mpd/playlists/debussy_images.m3u",
-                    "playlist" : "debussy_images"},
+        "motd-ymd" : {"encoding" : "ogg", "medium" : "file",
+                      "location" : "motd/%Y-%m-%d.ogg",
+                      "dynamic" : true, "duration" : 10,
+                      "announcement" : true,
+                      "text" : "(content based on calendar day/month/year)"},
 
-        "pearl" : {"mode" : "ogg", "repeat" : true,   "duration" : "00:42:49",
-                   "path" : "~/.config/mpd/playlists/eno_thepearl.m3u",
-                   "playlist" : "eno_thepearl"},
-
-        "bachcello" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:15:04",
-                       "path" : "~/.config/mpd/playlists/jsbach_cellosuites.m3u",
-                       "playlist" : "jsbach_cellosuites"},
-
-        "korsakov" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:19:05",
-                      "path" : "~/.config/mpd/playlists/korsakov_scheherazade.m3u",
-                      "playlist" : "korsakov_scheherazade"},
-
-        "mozartsonatas" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:08:50",
-                           "path" : "~/.config/mpd/playlists/mozart_sonatas.m3u",
-                           "playlist" : "mozart_sonatas"},
-
-        "ravelchamber" : {"mode" : "ogg", "repeat" : true,   "duration" : "00:48:15",
-                          "path" : "~/.config/mpd/playlists/ravel_chambermusic.m3u",
-                          "playlist" : "ravel_chambermusic"},
-
-        "ravelpiano" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:07:22",
-                        "path" : "~/.config/mpd/playlists/ravel_piano.m3u",
-                        "playlist" : "ravel_piano"},
-
-        "sudwind" : {"mode" : "ogg", "repeat" : true,   "duration" : "00:40:51",
-                     "path" : "~/.config/mpd/playlists/roedelius_sudwind.m3u",
-                    "playlist" : "roedelius_sudwind"},
-
-        "satiepiano" : {"mode" : "ogg", "repeat" : true,   "duration" : "02:08:03",
-                        "path" : "~/.config/mpd/playlists/satie_piano.m3u",
-                        "playlist" : "satie_piano"},
-
-        "scarlatti" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:14:23",
-                       "path" : "~/.config/mpd/playlists/scarlatti_sonatas.m3u",
-                       "playlist" : "scarlatti_sonatas"},
-
-        "schubertstrings" : {"mode" : "ogg", "repeat" : true,   "duration" : "01:06:02",
-                             "path" : "~/.config/mpd/playlists/schubert_strings.m3u",
-                             "playlist" : "schubert_strings"},
-
-        // dynamic content
-        "motd-ymd" : {"mode" : "ogg", "dynamic" : true, "alternate" : "motd-md",
-                      "file" : "~/.config/rsked/motd/%Y-%m-%d.ogg"},
-
-        "motd-md" : {"mode" : "ogg", "dynamic" : true,
-                     "file" : "~/.config/rsked/motd/each-%m-%d.ogg"}
+        "%snooze1" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                      "announcement" : true, "text" : "snooze for one hour",
+                      "location" : "resource/snooze-1hr.ogg" },
+        "%resume" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "resuming program",
+                     "location" :  "resource/resuming.ogg" },
+        "%revert" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "reverting to alternate program",
+                      "location" :  "resource/reverting.ogg" },
+        "%goodam" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good morning",
+                     "location" :  "resource/goodam.ogg" },
+        "%goodaf" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good afternoon",
+                     "location" :  "resource/goodaf.ogg" },
+        "%goodev" : {"encoding" : "ogg", "medium": "file", "duration": 1,
+                     "announcement" : true, "text" : "good evening",
+                     "location" :  "resource/goodev.ogg"},
+        "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
+                     "text" : "message of the day",
+                     "location" :  "resource/motd.ogg", "announcement" : true  }
     },
 
-    // must have 7 entries, Sun->Sat
-    "weekmap" : [
-         "sunday",
-         "monday",
-         "tuesday",
-         "wednesday",
-         "thursday",
-         "friday",
-         "saturday" ],
-
     "dayprograms" : {
+    "sunday" : [
+        {"start" : "00:00", "program" : "OFF" },
+        {"start" : "08:00", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "21:00", "program" : "OFF" }
+    ],
+
     "monday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "chopincello" },
-        {"start" : "12:56:26", "program" : "cms" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:00", "announce" : "motd-md" },
+        {"start" : "12:00", "program" : "dnow" },
+        {"start" : "13:00", "program" : "cms" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
         {"start" : "15:30", "announce" : "motd-ymd" },
@@ -117,75 +85,49 @@
 
     "tuesday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00:00", "program" : "images" },
-        {"start" : "13:02:12", "program" : "cms" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
     "wednesday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "bachcello" },
-        {"start" : "13:15", "program" : "cms" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "13:30", "announce" : "motd-md" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
-     "thursday" : [
+    "thursday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "mozartsonatas" },
-        {"start" : "13:08:50", "program" : "cms" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
-     "friday" : [
+    "friday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "ravelchamber" },
-        {"start" : "12:48:15", "program" : "cms" },
+        {"start" : "07:30", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "13:30", "announce" : "motd-ymd" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
     "saturday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "scarlatti" },
-        {"start" : "13:14:23", "program" : "cms" },
+        {"start" : "08:00", "program" : "cms" },
+        {"start" : "09:30", "announce" : "motd-md" },
         {"start" : "15:30", "announce" : "motd-ymd" },
-        {"start" : "21:00", "program" : "OFF" }
-    ],
-
-    "sunday" : [
-        {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "cms" },
-        {"start" : "07:30", "announce" : "motd-ymd" },
-        {"start" : "12:00", "program" : "schubertstrings" },
-        {"start" : "13:06:02", "program" : "cms" },
-        {"start" : "15:30", "announce" : "motd-ymd" },
-        {"start" : "21:00", "program" : "OFF" }
-    ],
-
-    "recorded" : [
-        {"start" : "00:00", "program" : "OFF" },
-        {"start" : "06:30", "program" : "master"},
         {"start" : "21:00", "program" : "OFF" }
     ]
     }

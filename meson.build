@@ -9,7 +9,7 @@
 
 
 project('rsked','cpp',
-        version: '0.6.5',
+        version: '1.0.3',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -63,6 +63,7 @@ cooling_incdirs = include_directories('cooling')
 # RSKED application
 #    TODO: configure to build with only certain players
 rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
+              'rsked/respath.cc',
               'rsked/source.cc',
               'rsked/schedule.cc',
               'rsked/baseplayer.cc',
@@ -84,7 +85,10 @@ vu_srcs = ['vumonitor/vumonitor.cc', 'util/jobutil.cc',
 
 
 # Unit tests
-tsked_srcs = ['test/tsked.cc', 'rsked/source.cc', 'rsked/schedule.cc']+utils
+tsrc_srcs = ['test/tsrc.cc', 'rsked/respath.cc', 'rsked/source.cc']+utils
+
+tsked_srcs = ['test/tsked.cc', 'rsked/source.cc', 
+              'rsked/respath.cc', 'rsked/schedule.cc']+utils
 
 tproc_srcs = ['test/tproc.cc','util/logging.cc',
               'util/childmgr.cc','util/configutil.cc']
@@ -95,6 +99,8 @@ tconfig_srcs = ['test/tconfig.cc','util/logging.cc',
 tncheck_srcs = ['test/tncheck.cc', 'rsked/inetcheck.cc']+utils
 
 ttimeout_srcs = ['test/ttimeout.cc']
+
+mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
 
 #------------------------------------------------------------------------------
 
@@ -126,20 +132,19 @@ executable('vumonitor',
            include_directories : [shared_incdirs],
            dependencies : [ boost_dep, pulse_dep ])
 
-# 4. Tests for the rsked schedule class.
+# 4. Tests for the rsked Source class.
+executable('tsrc',
+           sources: tsrc_srcs,
+           cpp_args : my_cpp_args,
+           include_directories : [shared_incdirs,rsked_incdirs],
+           dependencies : [ boost_dep, boost_utest_dep, json_dep])
+
+# 5. Tests for the rsked schedule class.
 executable('tsked',
            sources: tsked_srcs,
            cpp_args : my_cpp_args,
            include_directories : [shared_incdirs,rsked_incdirs],
            dependencies : [ boost_dep, boost_utest_dep, json_dep])
-
-
-# 5. Tests for Child_mgr
-# executable('tproc',
-#             sources: tproc_srcs,
-#             cpp_args : my_cpp_args,
-#             include_directories : [shared_incdirs,rsked_incdirs],
-#             dependencies : [ boost_dep ])
 
 # 6. Tests for Config
 executable('tconfig',
@@ -168,6 +173,21 @@ executable('tncheck',
 #            cpp_args : my_cpp_args,
 #            include_directories : [shared_incdirs],
 #            dependencies : [ boost_dep ])
+
+# 10. Tests for Child_mgr
+# executable('tproc',
+#             sources: tproc_srcs,
+#             cpp_args : my_cpp_args,
+#             include_directories : [shared_incdirs,rsked_incdirs],
+#             dependencies : [ boost_dep ])
+
+
+# 11. Tests for Mpd_client
+executable('mpdtest',
+            sources: mpdtest_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep, mpd_dep, json_dep ])
 
 ##########
 

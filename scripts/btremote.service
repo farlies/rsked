@@ -1,0 +1,19 @@
+# Install this file in /usr/lib/systemd/system/
+# then:
+#    sudo systemctl enable btremote.service
+#    sudo systemctl start  btremote.service
+
+[Unit]
+Description=Service provides bluetooth controls to rsked users
+After=bluetooth.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60s
+User=root
+ExecStart=/usr/bin/rfcomm watch hci0 1 /home/pi/bin/btremote.pl {}
+
+[Install]
+WantedBy=multi-user.target
