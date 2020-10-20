@@ -68,6 +68,7 @@ fi
 
 # Establish builddir and confdir:
 builddir="$1-$2"
+build_type=$1
 if [[ $ALTCONFDIR == "" ]]; then
     confdir="config/example-$2"
 else
@@ -104,9 +105,18 @@ cp $builddir/rsked $bindir
 cp $builddir/cooling $bindir
 cp $builddir/vumonitor $bindir
 
+if [[ "$build_type" == "release" ]]; then
+    strip $bindir/cooling
+    strip $bindir/rsked
+    strip $bindir/vumonitor
+    echo "; stripped release binaries"
+fi
+
 gqrxbin="../gqrx/build/gqrx"
+# Note: assume gqrx binary is already stripped if it needs to be!
 if [[ -e $gqrxbin ]] ; then
     cp $gqrxbin $bindir
+    strip $bindir/gqrx
     echo "; found gqrx binary, installing"
 else
     echo "; did Not find gqrx binary: $gqrxbin"
