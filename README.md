@@ -139,9 +139,10 @@ internet streaming source.
 
 ## Compilation and Installation
 
-Currently `rsked` is *not* distributed in binary form, so it must
-be compiled from source.
-For details, see: [INSTALLATION](doc/INSTALLATION.md)
+For installation instructions see: [INSTALLATION](doc/INSTALLATION.md)
+
+We hope to provide occasional binary releases; check the releases link.
+Compilation from source should be straightforward.
 
 For a reference to the configuration files and command line
 options for `rsked` and `cooling`, 
