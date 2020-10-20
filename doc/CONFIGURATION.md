@@ -392,14 +392,13 @@ and may be used to validate a schedule with your favorite validator,
 e.g. https://github.com/neilpa/yajsv
 
 ```
-$ yajsv -s scripts/schedule_schema.json ~/.config/rsked/schedule.json 
+$ yajsv -s scripts/sked_schema-2.0.json ~/.config/rsked/schedule.json 
 /home/qrhacker/.config/rsked/schedule.json: pass
 
 ```
 
 The schema check covers syntax and basic semantics. The test mode of
-`rsked` (run with `--test`) does a more thorough validation of settings.
-
+`rsked` (run with `--test`) does functional validation of settings.
 
 
 ## cooling
