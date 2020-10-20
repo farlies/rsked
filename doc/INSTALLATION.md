@@ -3,7 +3,7 @@
 1. Configure target hardware and operating system
 2. Install prerequisite tools and libraries
 3. Install and test external source players on the target system
-4. Download and compile `rsked`
+4. Download sources and compile `rsked` or download a release archive
 5. Create configuration files for your application (templates provided)
 6. Install `rsked` binaries and configuration files
 7. Install start-up script to run on boot (optional)
@@ -21,7 +21,9 @@ known to work:
 - Ubuntu 20.04  on x86_64
 - Raspbian 10 (Buster) on Raspberry Pi 3B+
 
-# Release Dependencies
+# Release
+
+## Dependencies
 
 To run a binary ARM release begin with at least a minimal desktop
 installation of Debian 10 Buster (Raspbian).  The following additional
@@ -46,6 +48,36 @@ will not use the IP network at all, or will not need to run
 `check_inet`.
 
 (Aside: On Ubuntu 20.04, replace boost1.67 packages with boost1.71.)
+
+## Installing a Binary Release
+
+Download a release and signature from GitHub. Verify integrity using the 
+signature and key for farlies@gmail.com available from https://keys.openpgp.org
+with fingerprint:
+
+```
+2B0B 435B 1522 A8ED 2E54  E44E 4B14 253F 7681 B2A2
+```
+
+The `tgz` file is designed to be expanded into the *home directory* of
+the user that will run `rsked`, e.g. "pi".  **Note well** that
+depending on options given to `tar`, unpacking the archive might
+overwrite (or fail to overwrite) any identically named files from a
+previous installation in `~/bin` or `~/.config/{rsked,gqrx,mpd}`. If
+you wish to preserve such files, e.g. an existing schedule, *move
+them* to a safe place before expanding.
+
+```
+cd
+tar xzf ~/Downloads/rsked1.0.3-armv7l-release.tgz
+```
+
+Replace the pathname above with one corresponding to whatever release
+you downloaded.
+
+Edit the files in the `~/.config` directories per instructions in
+[CONFIGURATION](CONFIGURATION.md).
+
 
 # Build Tools and Libraries
 
