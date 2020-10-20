@@ -104,6 +104,14 @@ cp $builddir/rsked $bindir
 cp $builddir/cooling $bindir
 cp $builddir/vumonitor $bindir
 
+gqrxbin="../gqrx/build/gqrx"
+if [[ -e $gqrxbin ]] ; then
+    cp $gqrxbin $bindir
+    echo "; found gqrx binary, installing"
+else
+    echo "; did Not find gqrx binary: $gqrxbin"
+fi
+
 SCRIPTS="check_inet.sh btremote.pl btremote.service check_playlist.sh\
   check_deploy.pl gpiopost.py rskrape.pl startup_rsked synclogs.sh"
 
@@ -118,7 +126,7 @@ cp $confdir/rsked/*.pl $rctarget/
 cp $confdir/rsked/crontab $rctarget/
 cp $confdir/rsked/ci.conf $rctarget/
 cp doc/*  $rctarget/
-cp scripts/schedule_schema.json $rctarget/
+cp scripts/sked_schema-2.0.json $rctarget/
 cp -R resource $rctarget/
 mkdir $rctarget/motd
 cp motd/each* $rctarget/motd/
