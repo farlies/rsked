@@ -54,6 +54,7 @@ use warnings;
 use English;
 use Carp;
 use Text::ParseWords;
+use POSIX qw(strftime);
 
 #-----------------------------------------------------
 #                  Configurable Options
@@ -115,7 +116,7 @@ Supported commands:
   last <lg> [<n>] : tail logfile
   quit   : end session
   status : network status
-  time   : print date/time
+  time [<date>] <time>  : get/set time
   warn <lg> [<n>] : tail warnings
   wadd <ssid> <psk>  : add WiFi net
   watt    : attach WiFi
@@ -140,6 +141,11 @@ sub check_kit {
 
 #-----------------------------------------------------
 
+# return true if this process has euid 0 (root)
+#
+sub im_not_root {
+    return ($> != 0);
+}
 
 
 # return code output. If not 0, print message
@@ -530,6 +536,39 @@ sub known_wifi_nets {
 }
 
 
+# The time command can get or set time and date. It uses the
+# timedatectl systemd command.  Possible forms:
+#   time
+#   time hh:mm:ss
+#   time yyyy-mm-dd hh:mm:ss
+#
+# NOTE: Time setting with this util will not work if NTP is enabled
+#    and the kernel is synchronized.
+# timedatectl set-ntp no
+#
+sub do_time_cmd {
+    my ($line) = @_;
+    chomp $line;
+    if ($line=~m{^ time $}xms) {
+        return strftime("%Y-%m-%d %H:%M:%S\n", localtime); 
+    }
+    elsif ($line=~m{^ time \s+ (\d\d:\d\d:\d\d) $}xms) {
+	if (im_not_root()) { return "Permission denied\n"; }
+        my $res = qx{timedatectl set-time '$1'};
+    }
+    elsif ($line=~m{^ time \s+ (\d\d\d\d-\d\d-\d\d \s+ \d\d:\d\d:\d\d) $}xms) {
+	if (im_not_root()) { return "Permission denied\n"; }
+        my $res = qx{timedatectl set-time '$1'};
+    }
+    else {
+        return "Usage:\n time [yyyy-mm-dd] HH:MM:SS\n> ";
+    }
+    if (diag_child()) {
+	return "failed to set date/time\n";
+    }
+    return strftime("%Y-%m-%d %H:%M:%S\n", localtime); 
+}
+
 #-------------------------------------------------------------------------------
 
 check_kit();
@@ -544,7 +583,7 @@ open my $serial, '+<', $device
 # autoflush the output
 select((select($serial),$|=1)[0]);
 
-print $serial "rsked BTremote v0.1\n";
+print $serial "rsked BTremote v0.2\n";
 print $serial scalar(localtime),"\n";
 print $serial $prompt;
 
@@ -579,17 +618,25 @@ while (my $line = <$serial>) {
 	print $serial $wnetworks;
     }
     elsif ($line=~m/^halt/) {
-	print $serial "Halting system NOW\n";
-	my $result = qx{$Shutdown -h now};
-	print $serial $result;
+	if (im_not_root()) {
+	    print $serial "Permission denied\n";
+	} else {
+	    print $serial "Halting system NOW\n";
+	    my $result = qx{$Shutdown -h now};
+	    print $serial $result;
+	}
     }
     elsif ($line=~m/^boot/) {
-	print $serial "Rebooting system NOW\n";
-	my $result = qx{$Shutdown -r now};
-	print $serial $result;
+	if (im_not_root()) {
+	    print $serial "Permission denied\n";
+	} else {
+	    print $serial "Rebooting system NOW\n";
+	    my $result = qx{$Shutdown -r now};
+	    print $serial $result;
+	}
     }
     elsif ($line=~m/^time/) {
-	print $serial scalar(localtime),"\n";
+	print $serial do_time_cmd($line);
     }
     elsif ($line=~m/^quit/) {
 	print "quit btremote\n";
