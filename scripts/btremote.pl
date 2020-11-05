@@ -59,6 +59,8 @@ use POSIX qw(strftime);
 #-----------------------------------------------------
 #                  Configurable Options
 
+my $Banner = "rsked BTremote v0.3";
+
 # This is the default serial device, if not provided.
 my $device = "/dev/rfcomm0";
 
@@ -114,6 +116,7 @@ Supported commands:
   boot   : reboot now
   halt   : power off device now
   last <lg> [<n>] : tail logfile
+  ls     : log dir list
   quit   : end session
   status : network status
   time [<date>] <time>  : get/set time
@@ -231,6 +234,49 @@ sub tail_file {
     my @tail = splice(@lines,-$nlines);
     return join('',@tail);
 }
+
+#-----------------------------------------------------
+
+# do a log directory listing, with file size
+sub do_ls {
+    my ($line) = @_;
+    my $dir = $Logdir;
+    my $res=qx{ls -sh1t $dir};
+    return $res;
+}
+
+#-----------------------------------------------------
+
+# list all warnings or errors from log file
+#    warn cooling
+#    warn vumonitor 10
+#
+sub do_warn {
+    my ($cmdstr) = @_;
+    $cmdstr =~ s/^\s+//;
+    my ($cmd, $nom, $lim) = split(/\s+/,$cmdstr);
+    if (!defined($nom)) { $nom = "rsked"; }
+    if ($nom=~m/[^A-Za-z0-9_-]/) { return "(Illegal log stem)";}
+    if (!defined($lim)) {
+	$lim = $TailLines;
+    } else {
+	if (! $lim=~m/^\d+$/xms) {
+	    return "bad limit: '$lim'\n";
+	}
+	$lim = int($lim);
+	$lim = 1 if ($lim < 1);
+    }
+    my $filename = latest_file($Logdir,$nom);
+    if (!defined($filename)) {
+	return "(none)\n";
+    }
+    my $res = qx{grep --color=never -m $lim -E '<(warning|error)>' $filename};
+    if (diag_child()) {
+	return "file search failed";
+    }
+    return $res;
+}
+
 
 #-----------------------------------------------------
 
@@ -583,7 +629,7 @@ open my $serial, '+<', $device
 # autoflush the output
 select((select($serial),$|=1)[0]);
 
-print $serial "rsked BTremote v0.2\n";
+print $serial "$Banner\n";
 print $serial scalar(localtime),"\n";
 print $serial $prompt;
 
@@ -597,8 +643,14 @@ while (my $line = <$serial>) {
     elsif ($line=~m/^last/) {
 	print $serial do_last($line);
     }
+    elsif ($line=~m/^ls/) {
+	print $serial do_ls($line);
+    }
     elsif ($line=~m/^help/) {
 	print $serial $Help;
+    }
+    elsif ($line=~m/^warn/) {
+	print $serial do_warn($line);
     }
     elsif ($line=~m/^wadd/) {
 	print $serial add_wifi_cmd( $line );
