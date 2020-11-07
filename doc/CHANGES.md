@@ -1,3 +1,5 @@
+Usable version of the Bluetooth utility, with documentation.
+
 ## Version 1.0.3,  2020-10-20
 
 This release fixes bugs and introduces some significant enhancements
@@ -20,7 +22,7 @@ sets the stage for a web-based graphical editor for schedules, which
 is under development, to be released "soon".
 
 The experimental Bluetooth service allows operators to check the
-status and perfom some administrative actions on a unit in
+status and perform some administrative actions on a unit in
 environments with restricted or nonexistent Wi-Fi or Ethernet. It is
 intended to eventually support more full-featured configuration
 capabilities.

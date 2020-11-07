@@ -8,6 +8,7 @@
 6. Install `rsked` binaries and configuration files
 7. Install start-up script to run on boot (optional)
 8. Install a crontab to perform any periodic maintenance tasks (optional)
+9. Enable bluetooth if using btmonitor service (optional)
 
 If you are building on Raspberry Pi, be sure to read
 [README-RPi](README-RPi.md) too.
@@ -351,3 +352,75 @@ LOGHOST=loghost
 1     7,14,22    *     *     *    $HOME/bin/synclogs.sh $LOGHOST >$HOME/logs/synclogs.out 2>&1
 ```
 
+# Bluetooth
+
+If you wish to use the optional Bluetooth monitor service to
+interact with the embedded device via a phone or tablet, some
+additional setup is required.
+
+## Enable bluetooth
+
+Unblock bluetooth if needed:
+
+    rfkill unblock bluetooth
+
+Enable the *serial port protocol* in bluez. There are some online
+guides for this, but in brief:
+
+Edit as root the Bluetooth desktop service configuration file:
+`/etc/systemd/system/dbus-org.bluez.service`
+
+Look for the line that starts with `ExecStart`; add the compatibility flag
+"-C" at the end of the command like:
+
+    ExecStart=/usr/lib/bluetooth/bluetoothd -C
+
+In the same file *add* a new line immediately below the `ExecStart`
+line to add the serial protocol:
+	
+    ExecStartPost=/usr/bin/sdptool add SP
+
+Save the file, then reload the configuration file and restart the
+service:
+	
+    sudo systemctl daemon-reload
+    sudo systemctl restart bluetooth.service
+
+## Install the btmonitor Service
+
+Install the service file and enable the service:
+
+    sudo cp ~/bin/btremote.service /usr/lib/systemd/system/btremote.service
+    sudo systemctl enable btremote.service
+    sudo systemctl start btremote.service
+    journalctl _SYSTEMD_UNIT=btremote.service
+
+## Mobile Device Preparation
+
+Install software on your mobile device that can send and receive over
+the Bluetooth serial protocol.  `btremote` has been tested with the
+Android app *Serial Bluetooth Terminal* (1.33 or later) by Kai Morich,
+available on the Google Play Store.  Conveniently, this app has a row
+of buttons that can be programmed with btremote commands.  Set the
+display mode to "Terminal", and the font size to the smallest readable
+one. The line termination for sending should be set to use just the CR
+character.
+    
+## Pair Your Mobile Device
+
+*Before* deploying the embedded `rsked`, pair it with your mobile
+device(s).  The desktop application on Debian or Ubuntu should do the
+trick, however it is also easily accomplished with the `bluetoothctl`
+utility.
+
+     $ bluetoothctl
+     agent on
+     discoverable on
+     scan on
+     ...
+     quit
+ 
+ Find the embedded device in your mobile device's menu of discovered
+ stations.  Answer any pairing challenge on either side (while in
+ `bluetoothctl`).
+ 

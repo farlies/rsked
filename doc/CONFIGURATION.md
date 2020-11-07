@@ -6,6 +6,7 @@
 4. [mpd](#mpd)
 5. [gqrx](#gqrx)
 6. [check_inet](#check_inet)
+7. 
 
 ## Overview
 
@@ -627,3 +628,107 @@ The next time `check_inet.sh` is run, it will test the next URL in the
 list. It is best to select URLs that are very small files (robots.txt
 is *usually* small), and hosts that are reliably "up" and responsive.
 Never use a URL for a stream.
+
+## btremote
+
+The easiest way to interact with the embedded application is usually
+via IP networking--WiFi or Ethernet allows commands to be issued
+easily via SSH or web service.  However there are some environments in
+which IP networking is impractical, not permitted, or cannot be
+configured in advance.  Bluetooth is often a viable solution in these
+cases.  The optional `btremote` service offers a way to interact with
+the embedded `rsked` device from a phone or tablet to check its status
+and configure some parameters.  It uses Bluetooth as a serial port
+service on the device, and a terminal emulator on the phone is used to
+issue brief commands.
+
+
+### Interacting with btremote
+
+The `btremote` command may be used in the field to check on 
+the status of the `rsked` device and to configure certain
+parameters. Commands include:
+
+```
+  help   : print this list of commands
+  boot   : reboot rsked device now
+  halt   : power off rsked device now
+  last <lg> [<n>] : tail logfile
+  ls     : log dir list
+  quit   : end session
+  status : print the network status
+  time [<date>] <time>  : get/set time
+  warn <lg> [<n>] : tail warnings
+  wadd <ssid> <psk>  : add WiFi net
+  watt    : attach WiFi
+  wls     : list stored WiFi nets
+  wrm <j> : remove stored WiFi net
+  wscan   : scan visible WiFi nets
+```
+
+### Configuring WiFi
+
+To configure WiFi via `btremote` first run the `wscan` command.  This
+will print a list of discovered SSIDs. You can use the index number
+from this list with the `wadd` command; if your network does not
+appear here, use its literal SSID instead.  (Surround the SSID or
+preshared key with double quotes if it has spaces).
+
+```
+Sat Nov  7 15:10:22 2020
+rsked> wscan
+Starting scan...
+1 ESSIDs stored
+Successful Wi-Fi scan
+ 1. gatornet, ncryptd, 49/70
+
+rsked> wadd 1 MySecretWPAKey
+rsked> watt
+```
+
+### Setting the Time
+
+If the `rsked` device cannot use NTP, then the clock will
+inevitably drift. The `btremote` command `time` may be used
+to manually set a time (and date). This will set both the
+system time and the battery RTC. Time should be specified
+in 24-hour format and should be the *local* time.
+Examples:
+
+```
+rsked> time
+ 2020-11-11 09:07:32
+
+rsked> time 09:09:01
+rsked> time 2020-11-12 15:22:00
+```
+
+### Checking Logs
+
+The `ls` command will list the current logs.
+The `last` command will print the latest lines from a given log file
+given its name (or a prefix thereof). The `warn` command will
+print only errors and warnings from a log.
+
+```
+rsked> ls
+total 204K
+ 60K cooling_00030.log
+ 32K rsked_00032.log
+ 56K clock.log
+4.0K vumonitor_00030.log
+ 12K rsked201015_131929.out
+ 32K mpd.log
+4.0K check_inet.log
+4.0K rsked201009_093130.out
+
+rsked> last cool 4
+2020-11-07 15:30:38 <info> [cooling] rsked Playing, temperature 51.54 C
+2020-11-07 15:31:23 <info> [cooling] Halted FAN at temp=49.926
+2020-11-07 15:31:53 <info> [cooling] rsked Playing, temperature 53.692 C
+2020-11-07 15:33:08 <info> [cooling] rsked Playing, temperature 57.996 C
+
+rsked> warn vumon
+2020-11-07 11:15:24 <warning> [vumonitor] TOO QUIET check #7191
+2020-11-07 14:49:40 <warning> [vumonitor] TOO QUIET check #7294
+```

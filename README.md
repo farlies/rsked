@@ -31,7 +31,7 @@ to require human interaction to schedule audio programming.
 - Status LEDs (optional, GPIO)
 - Control of active cooling (optional, GPIO)
 - Logging of operations for remote monitoring
-- Bluetooth status monitoring (optional)
+- Bluetooth status monitoring and setup (optional)
 
 See [CHANGES](doc/CHANGES.md) for a summary of important changes that have
 occurred over versions of `rsked`.
