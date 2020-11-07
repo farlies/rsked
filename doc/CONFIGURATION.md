@@ -6,7 +6,7 @@
 4. [mpd](#mpd)
 5. [gqrx](#gqrx)
 6. [check_inet](#check_inet)
-7. 
+7. [btremote](#btremote)
 
 ## Overview
 
