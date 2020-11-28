@@ -108,10 +108,11 @@ bool Sdr_player::probe_sdr(Config& cfg)
 {
     Usb_probe probe;
     std::string vendor_str;
+    const char* myname = m_name.c_str();
     
-    if (cfg.get_string(name(),"device_vendor",vendor_str)) {
+    if (cfg.get_string(myname,"device_vendor",vendor_str)) {
         std::string product_str;
-        if (cfg.get_string(name(),"device_product",product_str)) {
+        if (cfg.get_string(myname,"device_product",product_str)) {
             unsigned long vendor=0,product=0;
             try {  // convert from hex - may fail
                 vendor = std::stoul(vendor_str, nullptr, 16 );
@@ -144,7 +145,7 @@ bool Sdr_player::probe_sdr(Config& cfg)
 ///
 void Sdr_player::initialize( Config& cfg, bool /* testp */ )
 {
-    const char* myname = name();
+    const char* myname = name().c_str();
     m_src = nullptr;
     m_enabled = true;
     m_usable = true;

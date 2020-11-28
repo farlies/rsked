@@ -28,12 +28,13 @@
 ///
 class Silent_player : public Player {
 private:
+    std::string m_name {"silent player"};
     PlayerState _state {PlayerState::Stopped};
 public:
     Silent_player();
     virtual ~Silent_player();
     //
-    virtual const char* name() const { return "silent player"; }
+    virtual const std::string& name() const { return m_name; }
     virtual bool completed();
     virtual bool currently_playing( spSource );
     virtual void exit();

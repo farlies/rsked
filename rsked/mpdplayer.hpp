@@ -67,7 +67,7 @@ public:
     Mpd_player(const Mpd_player&) = delete;
     void operator=(Mpd_player const&) = delete;
     //
-    virtual const char* name() const { return m_name.c_str(); }
+    virtual const std::string& name() const { return m_name; }
     virtual bool completed();
     virtual bool currently_playing( spSource );
     virtual void exit();

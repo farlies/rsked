@@ -58,7 +58,7 @@ class Player {
 public:
     virtual ~Player()=0;
     //
-    virtual const char* name() const = 0;
+    virtual const std::string& name() const = 0;
     virtual bool completed()=0;
     virtual bool currently_playing( spSource )=0;
     virtual void exit()=0;
