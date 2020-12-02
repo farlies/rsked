@@ -1,8 +1,10 @@
 /**
- * Test the MPD client
+ * Test the MPD client class
  *
- * This is a manual test, and requires user interaction to listen for
+ * This is a "manual" test, and requires user interaction to listen for
  * the correct audio output. It does not use the boost test framework.
+ *   1.  mpd must be running
+ *   2.  you must provide a valid resource string as the sole argument
  */
 
 /*   Part of the rsked package.
@@ -29,18 +31,19 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
+/// Sample invocations:
 
-/// an mp4 file
-std::string g_reptiles { "Brian Eno/Another Green World/08 - Sombre Reptiles.m4a" };
+/// mp4 file
+///  mpdtest  "Brian Eno/Another Green World/08 - Sombre Reptiles.m4a"
 
-/// a flac file
-std::string g_track4 { "Dub Apocalypse/Live at 3S Artspace/03 Track04.flac" };
+/// flac file
+///  mpdtest  "Dub Apocalypse/Live at 3S Artspace/03 Track04.flac"
 
-/// a directory with mp4 tracks
-std::string g_agworld { "Brian Eno/Another Green World" };
+/// directory with mp4 tracks
+///  mpdtest  "Brian Eno/Another Green World"
 
-/// a playlist (.m3u)  Any extension like .m3u will be stripped for mpd.
-std::string g_master { "master.m3u" };
+/// playlist (.m3u) The .m3u will (must) be stripped for mpd.
+///  mpdtest  "master.m3u"
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -65,6 +68,8 @@ void log_last_err( Mpd_client &client )
 }
 
 
+/// tests a single track or directory
+///
 void test1( Mpd_client &client,  const std::string &resource )
 {
     client.connect();
@@ -85,6 +90,8 @@ void test1( Mpd_client &client,  const std::string &resource )
 }
 
 
+/// tests a playlist
+///
 void testp( Mpd_client &client,  const std::string &plist )
 {
     // strip any trailing extension, like .m3u, if present
@@ -108,22 +115,34 @@ void testp( Mpd_client &client,  const std::string &plist )
     client.disconnect();
 }
 
+////////////////////////////////////////////////////////////////////////////
 
-int main(int, char **)
+
+int main(int argc, char* argv[])
 {
     init_logging("mpdtest","mpdtest_%5N.log",LF_FILE|LF_DEBUG|LF_CONSOLE);
-    //
+    if (argc < 2) {
+        LOG_ERROR(Lgr) << "Usage:  mpdtest  resource_string";
+        return 1;
+    }
+
+    std::string filestring { argv[1] };
+    fs::path filename { filestring };
+    LOG_INFO(Lgr) << "Play " << filename << " for 10 seconds.";
+
     Mpd_client  client {};
     try {
-        // test1( client, g_reptiles );   // .mp4
-        // test1( client, g_track4 );     // .flac
-        // test1( client, g_agworld );        // mp4 directory
-        testp( client, g_master );        // playlist
+        if (filename.extension() == ".m3u") {
+            LOG_INFO(Lgr) << "(It seems to be a playlist.)";
+            testp( client, filestring ); // playlist - handled differently
+        } else {
+            test1( client, filestring ); // regular file
+        }
     }
     catch (std::exception &xxx) {
         LOG_ERROR(Lgr) << "Exit on exception: " << xxx.what();
     }
-    //
+
     log_last_err( client );
     finish_logging();
     return 0;
