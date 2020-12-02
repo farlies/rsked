@@ -189,7 +189,7 @@ bool Base_player::check()
     }
 
     // some problem detected...
-    LOG_WARNING(Lgr) << m_name << "Abnormal condition detected: "
+    LOG_WARNING(Lgr) << m_name << " -- abnormal condition detected: "
                      << Child_mgr::cond_name(status);
     bool rc  { true };
 
@@ -247,9 +247,13 @@ bool Base_player::maybe_restart(RunCond status)
     return attempt_restart();
 }
 
-/// Attempting RESTART up to k times if we are supposed to still be
-/// running
-//
+/// Attempting restart if we are supposed to still be
+/// running. Restarts are limited to m_max_restarts in
+/// m_restart_interval seconds, after which the source is marked as
+/// failed. This is the most likely explanation, although the
+/// alternative of a bad player is also possible--difficult to
+/// distinguish these cases in general.
+///
 bool Base_player::attempt_restart()
 {
     LOG_INFO(Lgr) << m_name << " exited while playing {"
@@ -257,14 +261,17 @@ bool Base_player::attempt_restart()
 
     if (ChildPhase::running == m_cm->cmd_phase())
     {
-        if (m_cm->fails_since(time(0) - _restart_interval) < _max_restarts) {
+        unsigned nrestarts = m_cm->fails_since( time(0) - m_restart_interval );
+        LOG_INFO(Lgr) << m_name << ": "  << nrestarts << " restarts in the last "
+                      << m_restart_interval << " seconds";
+        if ( nrestarts < m_max_restarts) {
             LOG_INFO(Lgr) << m_name << " Attempt to restart player on {"
                           << m_src->name() << "}";
             play( m_src );
         } else {
-            LOG_ERROR(Lgr) << m_name << " Too many failures to attempt restart";
+            LOG_ERROR(Lgr) << m_name << " Too many failures to attempt another restart";
             m_src->mark_failed(); // mark it as suspect
-            m_src = nullptr; // abandon this source
+            m_src.reset();        // abandon this source
             return false;
         }
     } else {

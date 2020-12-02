@@ -259,24 +259,29 @@ void Player_manager::check_minimally_usable()
 /// In some cases the player itself may be marked as defective.
 ///
 /// Typically called for side effects, but returns true iff all
-/// RankedPlayers (and the annunciator) are now okay.
+/// players check out okay.
 ///
 bool Player_manager::check_players()
 {
     check_inet(); // players may invoke Player_manager::inet_available()
-
-    bool rc { true };
-    for ( auto pn : RankedPlayers ) {
-        spPlayer sp = m_players[ pn ];
+    unsigned nc=0, ngood=0;
+    for ( auto pair : m_players ) {
+        spPlayer sp = pair.second;
+        nc++;
         if (sp) {
-            rc = (rc and sp->check());
+            if (sp->check()) {
+                ngood++;
+            } else {
+                if (sp->is_enabled()) {
+                    LOG_DEBUG(Lgr) << "Player_manager: check fails for "
+                                   << pair.first;
+                }
+            }
         }
     }
-    spPlayer sann = m_players[AnnName];
-    if (sann) {
-        rc = (rc and sann->check());
-    }
-    return rc;
+    LOG_DEBUG(Lgr) << "Player_manager: " << ngood << "/" << nc
+                   << " players are okay";
+    return (nc == ngood);
 }
 
 /// Check internet availability.

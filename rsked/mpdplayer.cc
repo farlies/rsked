@@ -432,8 +432,20 @@ void Mpd_player::initialize( Config &cfg, bool testp )
     if (not m_enabled) {
         LOG_INFO(Lgr) <<"Mpd_player '" << m_name << "' (disabled)";
     }
-    // additional configuration only if enabled:
     cfg.get_bool(m_name.c_str(),"run_mpd",m_run_mpd);
+    //
+    // Check whether a rogue mpd process is running when rsked is
+    // supposed to be the mpd parent; this is a common and fatal
+    // situation. This daemon is harder to get rid of than crabgrass;
+    // moreover it fails to clean up its unix socket on exit.
+    if (m_enabled and m_run_mpd and not m_cm->running()) {
+        if (any_mpd_running()) {
+            LOG_ERROR(Lgr) << "Mpd_player found a non-child mpd running!";
+            mark_unusable();
+            set_enabled( false );
+            // throw Player_startup_exception();
+        }
+    }
     cfg.get_unsigned(m_name.c_str(),"port",m_port);
     cfg.get_unsigned(m_name.c_str(),"volume",m_volume);
     if (m_volume > 100) {
@@ -448,26 +460,10 @@ void Mpd_player::initialize( Config &cfg, bool testp )
                      FileCond::MustExist, m_bin_path);
     m_cm->set_binary( m_bin_path );
     m_cm->set_name( m_name );
-    // If not enabled, stop here, do not check whether it is running
-    if (not m_enabled) {
-        return;
-    }
-    // Check whether a rogue mpd process is running when rsked is
-    // supposed to be the mpd parent; this is a common misconfiguration.
-    // Also, mpd fails to clean up its unix socket on exit.
-    if (m_run_mpd and not m_cm->running()) {
-        if (any_mpd_running()) {   // No throw.
-            LOG_ERROR(Lgr) << "Mpd_player found a non-child mpd running!";
-            if (testp) {                // if testing, throw
-                throw Player_startup_exception();
-            }
-            // Not testing: mark mpd unusable but attempt to run anyway
-            // An alternative would be to toggle run_mpd and use the rogue one.
-            mark_unusable();
-        }
-    }
     //
-    LOG_INFO(Lgr) << "Mpd_player '" << m_name << "' initialized";
+    if (m_enabled) {
+        LOG_INFO(Lgr) << "Mpd_player '" << m_name << "' initialized";
+    }
 }
 
 

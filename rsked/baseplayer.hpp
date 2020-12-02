@@ -27,12 +27,12 @@
 class Base_player : public Player_with_caps {
 protected:
     spSource m_src {};
-    const unsigned _max_restarts { 2 };
-    const time_t _restart_interval { 10 };
+    const unsigned m_max_restarts { 2 };     // no more than this many restarts
+    const time_t m_restart_interval { 10 };  // in this many seconds
     PlayerState m_pstate { PlayerState::Stopped };
     std::string m_name { "Base_player" };
-    std::string m_device { };   // audio device e.g. "hw:0,0"
-    std::string m_device_type { };  // api, e.g. "alsa"
+    std::string m_device { };                // audio device e.g. "hw:0,0"
+    std::string m_device_type { };           // API, e.g. "alsa"
     boost::filesystem::path m_wdir {};
     bool m_enabled { true };
     spCM  m_cm { Child_mgr::create(m_name) };
