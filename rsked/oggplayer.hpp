@@ -23,6 +23,8 @@
 /// (which exist but are relatively rare.)
 ///
 class Ogg_player : public Base_player {
+private:
+    void cap_init();
 public:
     Ogg_player();
     Ogg_player(const char *, time_t);

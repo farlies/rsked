@@ -28,7 +28,7 @@ class gqrx_client;
 /// This is the high level Player interface to SDR via the gqrx
 /// application.
 ///
-class Sdr_player : public Player {
+class Sdr_player : public Player_with_caps {
     friend class gqrx_client;
 private:
     spSource m_src {};          // last assigned source object
@@ -48,6 +48,7 @@ private:
     std::string m_name { "Sdr_player" }; // must match config section
     spCM m_cm;
     //
+    void cap_init();
     bool check_demod();
     bool check_play();
     Smeter check_signal();
@@ -76,5 +77,7 @@ public:
     virtual PlayerState state();
     virtual void stop();
     virtual bool check();
+    virtual bool is_enabled() const;
+    virtual bool set_enabled( bool );
 };
 

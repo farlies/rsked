@@ -9,7 +9,7 @@
 
 
 project('rsked','cpp',
-        version: '1.0.3',
+        version: '1.0.4',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -66,6 +66,7 @@ rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
               'rsked/respath.cc',
               'rsked/source.cc',
               'rsked/schedule.cc',
+              'rsked/playpref.cc',
               'rsked/baseplayer.cc',
               'rsked/playermgr.cc',
               'rsked/inetcheck.cc',
@@ -101,6 +102,15 @@ tncheck_srcs = ['test/tncheck.cc', 'rsked/inetcheck.cc']+utils
 ttimeout_srcs = ['test/ttimeout.cc']
 
 mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
+
+tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
+              'rsked/playermgr.cc',  'rsked/vurunner.cc',
+              'rsked/inetcheck.cc',  'rsked/baseplayer.cc',
+              'rsked/oggplayer.cc',  'rsked/mp3player.cc',
+              'rsked/mpdclient.cc',  'rsked/mpdplayer.cc',
+              'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc',
+              'rsked/playpref.cc',   'rsked/schedule.cc']+utils
+
 
 #------------------------------------------------------------------------------
 
@@ -188,6 +198,16 @@ executable('mpdtest',
             cpp_args : my_cpp_args,
             include_directories : [shared_incdirs,rsked_incdirs],
             dependencies : [ boost_dep, mpd_dep, json_dep ])
+
+# 12. Tests for player manager ... this has nearly everything in it.
+executable('tpmgr',
+            sources: tpmgr_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep, 
+                             mpd_dep, json_dep, usb_dep ])
+
+
 
 ##########
 

@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "source.hpp"
+#include "playpref.hpp"
 
 class Config;
 
@@ -70,8 +71,31 @@ public:
     virtual PlayerState state()=0;
     virtual void stop()=0;
     virtual bool check()=0;
+    //
+    virtual bool has_cap( Medium, Encoding ) const = 0;
+    virtual void cap_string( std::string & ) const = 0;
+    virtual void install_caps( Player_prefs& ) const = 0;
+    virtual bool is_enabled() const = 0;
+    virtual bool set_enabled( bool )= 0;
 };
 
 /// Shared pointer to a Player.
 using spPlayer = std::shared_ptr<Player>;
+
+
+/// Player classes can inherit from Player_with_caps instead of
+/// directly from pure Player gaining the std::set implementation
+/// of the capabilities interface.
+///
+class Player_with_caps : public Player {
+private:
+    Player_cap_set m_capset {};
+protected:
+    void add_cap( Medium, Encoding );
+    void clear_caps();
+public:
+    virtual bool has_cap( Medium, Encoding ) const;
+    virtual void cap_string( std::string & ) const;
+    virtual void install_caps( Player_prefs& ) const;
+};
 

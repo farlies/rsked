@@ -19,17 +19,19 @@
 /// Some elementary definitions used in multiple sources...
 
 
-/// Modes a player may be in at any given time.
+/// Modes a player may be in at any given time:
 ///   Stopped : not playing anything right now
 ///   Playing : actively playing a Source
 ///   Paused  : stopped, but may resume where it was interrupted
-///   Broken  : not currently usable
+///   Broken  : not currently usable on account of error
+///   Disabled: disallowed by choice, but potentially usable
 ///
 enum class PlayerState {
     Stopped,
     Playing,
     Paused,
-    Broken
+    Broken,
+    Disabled
 };
 
 

@@ -1,4 +1,7 @@
-/// The mp3 player runs mpg321 on a playable source
+/**
+ * This mp3 player runs mpg321 on a playable mp3 source.
+ * Note: will not handle mp4.
+ */
 
 /*   Part of the rsked package.
  *   Copyright 2020 Steven A. Harp   farlies(at)gmail.com
@@ -24,6 +27,19 @@
 static const boost::filesystem::path DefaultBinPath {"/usr/bin/mpg321"};
 
 
+/// Establish baseline capabilities. Shared by all ctors.
+void Mp3_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::file,       Encoding::mp3);
+    add_cap(Medium::directory,  Encoding::mp3);
+    add_cap(Medium::playlist,   Encoding::mp3);
+    add_cap(Medium::stream,     Encoding::mp3);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
 
 /// CTOR
 ///  Quirk: mpg321 will exit(0) immediately if fed a resource that is not
@@ -34,6 +50,7 @@ Mp3_player::Mp3_player() : Base_player("Mp3_player")
 {
     LOG_INFO(Lgr) << "Created an Mp3_player";
     m_cm->set_min_run( 2 );    // shortest mp3 we might ever play, seconds
+    cap_init();
 }
 
 /// CTOR with name
@@ -42,6 +59,7 @@ Mp3_player::Mp3_player( const char* nm )
 {
     LOG_INFO(Lgr) << "Created an Mp3_player: " << m_name;
     m_cm->set_min_run( 2 );    // shortest mp3 we might ever play, seconds
+    cap_init();
 }
 
 /// DTOR.  Baseplayer will kill any child process.

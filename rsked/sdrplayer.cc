@@ -45,12 +45,26 @@ constexpr const char *Gqrx_host = "127.0.0.1";
 
 ////////////////////////////// SDR_PLAYER /////////////////////////////////////
 
+/// Establish baseline capabilities. Shared by all (1) ctors.
+void Sdr_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::radio,  Encoding::wfm);
+    add_cap(Medium::radio,  Encoding::nfm);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
+
+
 /// CTOR
 Sdr_player::Sdr_player() 
     : m_remote( std::make_unique<gqrx_client>(this) ),
       m_cm( Child_mgr::create( m_name ) )
 {
     LOG_INFO(Lgr) << "Created an Sdr_player";
+    cap_init();
 }
 
 /// DTOR.  Disconnects then deletes.
@@ -82,6 +96,41 @@ bool Sdr_player::is_usable()
     return m_usable;
 }
 
+/// Return enabledness. (API)
+/// * Will NOT throw.
+///
+bool Sdr_player::is_enabled() const
+{
+    return m_enabled;
+}
+
+/// Enable or disable this player.
+///   enabled==true:  Enable
+///   enabled==false: Disable
+///
+/// When disabled, the player exits and goes to state Disabled.
+/// When enabled, the player goes to state Stopped.
+/// Return the new value of the enabled flag.
+///
+/// * Will not throw.
+///
+bool Sdr_player::set_enabled( bool enabled )
+{
+    bool was_enabled = m_enabled;
+    if (was_enabled and not enabled) {
+        exit();
+        m_enabled = false;
+        m_state = PlayerState::Disabled;
+        LOG_WARNING(Lgr) << m_name << " is being Disabled";
+    }
+    else if (enabled and not was_enabled) {
+        m_state = PlayerState::Stopped;
+        m_enabled = true;
+        LOG_WARNING(Lgr) << m_name << " is being Enabled";
+    }
+    return m_enabled;
+}
+
 /// Flag the player as UNusable (p==TRUE), or usable again (p==false).
 /// Kills any running child process.
 ///
@@ -100,9 +149,9 @@ void Sdr_player::mark_unusable( bool unusablep )
     }        
 }
 
-/// Determine if there are any matching radios on the USB bus.
-/// If the config file specifies a device_vendor and device_product
-/// use just that one, otherwise use the default set of SDRs.
+/// Determine if there are any matching radios on the USB bus
+/// if the config file specifies a device_vendor and device_product.
+/// If no vendor is specified just skip this test.
 ///
 bool Sdr_player::probe_sdr(Config& cfg)
 {
@@ -128,6 +177,10 @@ bool Sdr_player::probe_sdr(Config& cfg)
         } else {
             LOG_ERROR(Lgr) << "Missing device_product for SDR " << m_name;
         }
+    } else {
+        LOG_WARNING(Lgr) << m_name 
+             << " config missing SDR device_vendor: skipping checks";
+        return true;
     }
     if (0 == probe.count_devices(true)) {
         if (m_usable) {
@@ -191,7 +244,7 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_unsigned(myname,"gqrx_port",port);
     m_remote->set_hostport( host, port );
     //
-    probe_sdr(cfg);
+    probe_sdr(cfg); // TODO: possibly mark the player as unusable?
     //
     LOG_INFO(Lgr) << myname << " initialized";
 }

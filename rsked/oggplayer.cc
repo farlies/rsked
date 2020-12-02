@@ -25,11 +25,26 @@ static const boost::filesystem::path DefaultBinPath {"/usr/bin/ogg123"};
 
 //////////////////////////////////////////////////////////////////////////////
 
+/// Establish baseline capabilities. shared by all ctors
+void Ogg_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::file,       Encoding::ogg);
+    add_cap(Medium::directory,  Encoding::ogg);
+    add_cap(Medium::playlist,   Encoding::ogg);
+    add_cap(Medium::stream,     Encoding::ogg);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
+
 /// CTOR
 Ogg_player::Ogg_player() : Base_player("Ogg_player")
 {
     LOG_INFO(Lgr) << "Created an Ogg_player";
     m_cm->set_min_run( 2 );    // shortest ogg we might ever play, seconds
+    cap_init();
 }
 
 /// CTOR with name.
@@ -40,6 +55,7 @@ Ogg_player::Ogg_player( const char* nm, time_t min_run_secs )
 {
     LOG_INFO(Lgr) << "Created an Ogg_player: " << m_name;
     m_cm->set_min_run( min_run_secs );
+    cap_init();
 }
 
 /// DTOR.  Baseplayer will kill any child process.

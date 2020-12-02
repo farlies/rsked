@@ -24,7 +24,7 @@
 /// that involve just starting an external process.
 /// Not instantiable.
 ///
-class Base_player : public Player {
+class Base_player : public Player_with_caps {
 protected:
     spSource m_src {};
     const unsigned _max_restarts { 2 };
@@ -57,5 +57,7 @@ public:
     virtual PlayerState state();
     virtual void stop();
     virtual bool check();
+    virtual bool is_enabled() const;
+    virtual bool set_enabled( bool );
 };
 

@@ -29,13 +29,10 @@
 ///
 class Player_manager {
 private:
-    spPlayer m_annunciator {};
-    spPlayer m_ogg123 {};
-    spPlayer m_mpg321 {};
-    spPlayer m_gqrx {};
-    spPlayer m_mpd {};
-    spPlayer m_null_player {};
-    //
+    Player_prefs m_prefs {};
+    std::unordered_map<std::string,spPlayer> m_players {};
+    void install_player( Config&, spPlayer, bool /*testp*/ );
+
     static Inet_checker c_ichecker;
 public:
     Player_manager();
@@ -43,7 +40,8 @@ public:
     //
     bool check_inet();
     void check_minimally_usable();
-    void configure( Config& config, bool testp );
+    void configure( Config&, bool /* testp */); 
+    void configure_prefs(Config&);
     bool check_players();
     void exit_players();
     spPlayer get_annunciator();

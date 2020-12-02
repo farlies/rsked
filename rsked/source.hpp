@@ -45,12 +45,6 @@ enum class Encoding {
     mixed  // arbitrary mixture of ogg/mp3/mp4/flac, e.g. in a playlist
 };
 
-
-/// Resource types -- this is to be represented by Medium::
-// enum class ResType {
-//    None, File, Frequency, Directory, Playlist, URL  };
-///
-
 /// Defects in the schedule itself
 class Schedule_error : public std::exception {
 public:

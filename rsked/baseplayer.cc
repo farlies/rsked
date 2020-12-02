@@ -43,6 +43,36 @@ bool Base_player::is_usable()
     return m_enabled;
 }
 
+/// Enabledness
+bool Base_player::is_enabled() const
+{
+    return m_enabled;
+}
+
+/// enabled==true: Enable
+/// enabled==false; Disable
+///
+/// When disabled, the player exits and goes to state Disabled.
+/// When enabled, the player goes to state Stopped.
+/// Return the new value of the enabled flag.
+///
+bool Base_player::set_enabled( bool enabled )
+{
+    bool was_enabled = m_enabled;
+    if (was_enabled and not enabled) {
+        exit();
+        m_enabled = false;
+        m_pstate = PlayerState::Disabled;
+        LOG_WARNING(Lgr) << m_name << " is being Disabled";
+    }
+    else if (enabled and not was_enabled) {
+        m_pstate = PlayerState::Stopped;
+        m_enabled = true;
+        LOG_WARNING(Lgr) << m_name << " is being Enabled";
+    }
+    return m_enabled;
+}
+
 
 /// Exit: Terminate external player, if any.
 ///

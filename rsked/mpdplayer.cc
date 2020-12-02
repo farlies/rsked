@@ -39,6 +39,33 @@ const boost::filesystem::path Default_mpd_socket {"~/.config/mpd/socket"};
 
 namespace fs = boost::filesystem;
 
+/// Establish baseline capabilities. Shared by all ctors.
+void Mpd_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::file,       Encoding::mp3);
+    add_cap(Medium::directory,  Encoding::mp3);
+    add_cap(Medium::playlist,   Encoding::mp3);
+    add_cap(Medium::stream,     Encoding::mp3);
+    //
+    add_cap(Medium::file,       Encoding::mp4);
+    add_cap(Medium::directory,  Encoding::mp4);
+    add_cap(Medium::playlist,   Encoding::mp4);
+    add_cap(Medium::stream,     Encoding::mp4);
+    //
+    add_cap(Medium::file,       Encoding::ogg);
+    add_cap(Medium::directory,  Encoding::ogg);
+    add_cap(Medium::playlist,   Encoding::ogg);
+    //
+    add_cap(Medium::file,       Encoding::flac);
+    add_cap(Medium::directory,  Encoding::flac);
+    add_cap(Medium::playlist,   Encoding::flac);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
+
 
 /// CTOR - create an Mpd_client right away, but don't connect yet.
 ///
@@ -53,6 +80,7 @@ Mpd_player::Mpd_player()
 
 {
     LOG_INFO(Lgr) << "Created an Mpd_player named " << m_name;
+    cap_init();
 }
 
 
@@ -69,6 +97,7 @@ Mpd_player::Mpd_player(const char *name)
       m_cm(Child_mgr::create(name))
 {
     LOG_INFO(Lgr) << "Created an Mpd_player named " << m_name;
+    cap_init();
 }
 
 
@@ -186,12 +215,15 @@ bool Mpd_player::try_connect(bool probe_only)
     return false;
 }
 
-/// Kill any running mpd and remove its socket file.
+/// Kill any running child mpd and remove its socket file.
 ///
 /// * Will NOT throw
 ///
 void Mpd_player::shutdown_mpd()
 {
+    if (m_testmode) {  // do not do anything if in test mode
+        return;
+    }
     if (m_run_mpd) {
         m_cm->kill_child(); // Kill the child process; throws no exceptions
         if (not m_socket.empty()) {
@@ -386,7 +418,8 @@ void Mpd_player::exit()
 /// Extract configuration values. Should specify either socket or host
 /// and port (for TCP connection); may specify both.  This will not
 /// start MPD if testp is true, so it is safe to use in test
-/// mode. The first call to play will actually start the
+/// mode. (Note that once it test mode, the instance must remain there.)
+/// The first call to play will actually start the
 /// child/connection.  It will check whether a rogue mpd is running
 /// and mark itself as unusable if one is found.
 ///
@@ -394,6 +427,7 @@ void Mpd_player::exit()
 ///
 void Mpd_player::initialize( Config &cfg, bool testp )
 {
+    m_testmode = testp;
     cfg.get_bool(m_name.c_str(),"enabled",m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) <<"Mpd_player '" << m_name << "' (disabled)";
@@ -446,6 +480,9 @@ void Mpd_player::initialize( Config &cfg, bool testp )
 bool Mpd_player::is_usable()
 {
     if (not m_enabled) return false;
+    if (m_testmode) {
+        return (m_state != PlayerState::Broken);
+    }
     //
     try {
         assure_connected(); // sets m_usable
@@ -461,6 +498,43 @@ bool Mpd_player::is_usable()
     return m_usable;
 }
 
+/// Return enabledness. (API)
+/// * Will NOT throw.
+///
+bool Mpd_player::is_enabled() const
+{
+    return m_enabled;
+}
+
+/// Enable or disable this player.
+///   enabled==true:  Enable
+///   enabled==false: Disable
+///
+/// When disabled, the player exits and goes to state Disabled.
+/// When enabled, the player goes to state Stopped.
+/// Return the new value of the enabled flag.
+///
+/// * Will not throw.
+///
+bool Mpd_player::set_enabled( bool enabled )
+{
+    bool was_enabled = m_enabled;
+    if (was_enabled and not enabled) {
+        exit();
+        m_enabled = false;
+        m_state = PlayerState::Disabled;
+        LOG_WARNING(Lgr) << m_name << " is being Disabled";
+    }
+    else if (enabled and not was_enabled) {
+        m_state = PlayerState::Stopped;
+        m_enabled = true;
+        LOG_WARNING(Lgr) << m_name << " is being Enabled";
+    }
+    return m_enabled;
+}
+
+
+
 /// Pause play. If the current source is a network stream, then just
 /// stop the player--it will not recover from pause; otherwise execute
 /// a real pause.
@@ -469,6 +543,9 @@ bool Mpd_player::is_usable()
 ///
 void Mpd_player::pause()
 {
+    if (m_testmode) {
+        return;
+    }
     assure_connected();
     if (m_src->medium()==Medium::stream) {
         LOG_DEBUG(Lgr) << m_name << " stopping network stream";
@@ -496,6 +573,9 @@ void Mpd_player::play( spSource src )
         throw Player_media_exception();
     }
     if (!src) { return; }       // null src
+    if (m_testmode) {           // testing only
+        return;
+    }
     assure_connected();
     try {
         if (not m_usable) {
@@ -563,6 +643,9 @@ void Mpd_player::play( spSource src )
 ///
 void Mpd_player::resume()
 {
+    if (m_testmode) {
+        return;
+    }
     assure_connected();
     if (m_src->medium()==Medium::stream) {
         LOG_DEBUG(Lgr) << m_name << " restarting network stream";
@@ -589,6 +672,9 @@ PlayerState Mpd_player::state()
 ///
 void Mpd_player::stop()
 {
+    if (m_testmode) {
+        return;
+    }
     m_src.reset();
     m_state = PlayerState::Stopped;
     //
