@@ -54,7 +54,7 @@ A typical embedded application will:
 2. Adjust configuration parameters to select the desired features
 3. Install any desired recorded music files
 4. Configure a *schedule* that references local and remote music sources
-5. Set `rsked` to start automatically when the emedded device boots.
+5. Set `rsked` to start automatically when the embedded device boots.
 
 
 ### Recorded Music
@@ -67,7 +67,7 @@ available as packages on most Linux distributions:
 - [mpg321](http://mpg321.sourceforge.net/)
 
 The `ogg123` player plays Ogg-Vorbis recordings, and is required to
-play announcments in `rsked`.  The music player daemon
+play announcements in `rsked`.  The music player daemon
 `mpd` is extremely versatile and recommended.
 The lightweight `mpg321` player is suitable for MP3 files.  All of
 these programs can play both individual files and playlists.

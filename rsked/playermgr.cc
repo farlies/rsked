@@ -188,7 +188,7 @@ void Player_manager::configure_prefs(Config& config)
 
     if (config.get_schema() < "1.1") {
         LOG_WARNING(Lgr) <<
-            "Player_manager: older schema, no user preferenece support";
+            "Player_manager: older schema, no user preference support";
     } else {
         load_json_prefs( config );
     }

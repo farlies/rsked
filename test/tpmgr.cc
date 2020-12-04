@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE( config_pmgr_default )
         spPlayer player3 = pmgr.get_player(sp_src);
         BOOST_REQUIRE( ! player3 );
 
-        // 1a. Reenable Mpd_player and fetch again: should get Mpd_player
+        // 1a. Re-enable Mpd_player and fetch again: should get Mpd_player
         player1->set_enabled(true);
         BOOST_TEST( player1->is_enabled() );
         BOOST_TEST( player1->is_usable() );
