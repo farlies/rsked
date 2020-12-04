@@ -32,7 +32,7 @@ private:
     Player_prefs m_prefs {};
     std::unordered_map<std::string,spPlayer> m_players {};
     void install_player( Config&, spPlayer, bool /*testp*/ );
-
+    void load_json_prefs( Config& );
     static Inet_checker c_ichecker;
 public:
     Player_manager();

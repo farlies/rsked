@@ -97,8 +97,9 @@ void Rsked::configure(const std::string& p, const po::variables_map &vm)
     m_config->set_config_path( p );
     m_config->read_config();    // may throw
 
-    // schema - we only take 1.0
-    if (m_config->get_schema() != "1.0") {
+    // schema - we only take 1.0 or 1.1
+    std::string schema = m_config->get_schema();
+    if ((schema != "1.0") and (schema != "1.1")) {
         LOG_ERROR(Lgr) << "Invalid schema '" << m_config->get_schema()
                        << "' for file " << p;
         throw Config_error();

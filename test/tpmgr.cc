@@ -89,16 +89,15 @@ bool src_init( spSource &sp, const char* src_str )
 //////////////////////////////////////////////////////////////////////////
 
 
-BOOST_AUTO_TEST_CASE( config_pmgr )
+BOOST_AUTO_TEST_CASE( config_pmgr_default )
 {
-    LOG_INFO(Lgr) << "configure Player_mgr test";
     const char *confname = "../test/tpmgr.json";
     Config cfg(confname);
     cfg.read_config();      // might throw
     cfg.log_about();
 
     Player_manager pmgr {};
-    pmgr.configure( cfg,  true /* testP */); // might throw
+    pmgr.configure( cfg,  true ); // (testp) might throw
 
     /// Check annunciator access:
     {
@@ -147,6 +146,57 @@ BOOST_AUTO_TEST_CASE( config_pmgr )
         BOOST_TEST( player1->is_usable() );
         spPlayer player1a = pmgr.get_player(sp_src);
         BOOST_TEST( player1a == player1 );
+    }
+
+    // TODO : more tests
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+/// This has user preference customization.
+
+BOOST_AUTO_TEST_CASE( config_pmgr_custom )
+{
+    const char *confname = "../test/tpmgr2.json";
+    Config cfg(confname);
+    cfg.read_config();      // might throw
+    cfg.log_about();
+
+    Player_manager pmgr {};
+    pmgr.configure( cfg,  true ); // (testp=true); might throw
+
+    /// Check precedence:  directory:ogg
+    {
+        std::string test_src {"OggDirSrc"};
+        const char *src_json =
+          R"( {"encoding" : "ogg", "location" : "Herman's Hermits/Retrospective",
+             "medium": "directory", "repeat" : true, "duration": 3992.731} )";
+
+        // 1. using custom preferences we should get the Ogg player...
+        spSource sp_src = std::make_shared<Source>(test_src);
+        BOOST_TEST( src_init( sp_src, src_json ) );
+        sp_src->describe();
+        spPlayer player1 = pmgr.get_player(sp_src);
+        BOOST_REQUIRE( player1 );
+        BOOST_TEST( player1->has_cap(Medium::directory,Encoding::ogg) );
+        BOOST_TEST( player1->is_usable() );
+        BOOST_TEST( player1->name() == "Ogg_player" );
+
+        // 2. Disable Ogg_player and fetch again: should get Mpd_player
+        player1->set_enabled(false);
+        BOOST_TEST( player1->is_enabled() == false );
+        spPlayer player2 = pmgr.get_player(sp_src);
+        BOOST_REQUIRE( player2 );
+        BOOST_TEST( player2->has_cap(Medium::directory,Encoding::ogg) );
+        BOOST_TEST( player2->is_usable() );
+        BOOST_TEST( player2->name() == "Mpd_player" );
+
+        // 3? Disable Mpd_player and fetch again: should get nullptr
+        player2->set_enabled(false);
+        BOOST_TEST( player2->is_enabled() == false );
+        spPlayer player3 = pmgr.get_player(sp_src);
+        BOOST_REQUIRE( ! player3 );
     }
 
     // TODO : more tests

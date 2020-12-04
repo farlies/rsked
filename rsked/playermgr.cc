@@ -20,7 +20,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
+#include <algorithm>
 #include "logging.hpp"
 #include "player.hpp"
 #include "playermgr.hpp"
@@ -130,14 +130,68 @@ void Player_manager::configure( Config& config, bool testp )
     check_minimally_usable();
 }
 
+
+/// Import user preferences from the configuration JSON.
+/// Structure:   medium > encoding > [ players... ]
+///
+void Player_manager::load_json_prefs(Config& cfg)
+{
+    Json::Value jppref = cfg.get_root()["player_preference"];
+    if (jppref.isNull()) return; // none provided
+    if (not jppref.isObject()) {
+        LOG_ERROR(Lgr) << "Unexpected player_preference syntax";
+        throw Player_config_exception();
+    }
+    try {
+        for (auto medname : jppref.getMemberNames()) {
+            Medium med = strtomedium(medname);
+            auto jmed = jppref[medname];
+            if (not jmed.isObject()) {
+                LOG_ERROR(Lgr) << "Unexpected player_preference syntax";
+                throw Player_config_exception();
+            }
+            for (auto encname : jmed.getMemberNames()) {
+                Encoding enc = strtoencoding(encname);
+                auto jenc = jmed[encname];
+                if ( not jenc.isArray() ) {
+                    LOG_ERROR(Lgr) << "Unexpected player_preference syntax";
+                    throw Player_config_exception();
+                }
+                unsigned i=1;
+                for (auto jplayer : jenc) {
+                    std::string pname = jplayer.asString();
+                    // Validate it is a known player
+                    if (RankedPlayers.end() ==
+                        std::find(RankedPlayers.begin(),RankedPlayers.end(),pname)) {
+                        LOG_ERROR(Lgr) << "Unknown player: " << pname;
+                        throw Player_config_exception();
+                    }
+                    LOG_INFO(Lgr) << "Player preference for " << medname
+                                  << "." << encname << " (" << i++ << ") "
+                                  << pname;
+                    m_prefs.add_player( med, enc, pname );
+                }
+            }
+        }
+    } catch( Schedule_error& ) {
+        LOG_ERROR(Lgr) << "Player_manager: defective player preferences";
+        throw Player_config_exception();
+    }
+}
+
 /// Initializes player preference policy, m_prefs, based on
 /// any user-specified policy, followed by default capabilities.
 ///
-void Player_manager::configure_prefs(Config& /* config */)
+void Player_manager::configure_prefs(Config& config)
 {
     // Read user prefs from config here. These are checked first at run time.
-    // TODO
-    LOG_WARNING(Lgr) << "Player_manager: ignoring user preferences (TODO)";
+
+    if (config.get_schema() < "1.1") {
+        LOG_WARNING(Lgr) <<
+            "Player_manager: older schema, no user preferenece support";
+    } else {
+        load_json_prefs( config );
+    }
 
     // Install full capabilities of all enabled players next.
     // First player installed has default priority 1, and so forth.
