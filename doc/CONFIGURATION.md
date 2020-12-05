@@ -92,6 +92,38 @@ periodically checks whether a usable internet connection is present.
 If enabled here, `rsked` will use this status information to determine
 whether internet streaming sources are viable.
 
+### player\_preference
+
+If different enabled players are able to play the same media/encoding
+for a source, `rsked` will try them according to a preferred order
+until one is found that works. The *default* order (`playermgr.cc`) is
+currently:
+
+1. Mpd_player
+2. Ogg_player
+3. Mp3_player 
+4. Sdr_player
+
+Starting with schema 1.1, it is possible to change this order on a per
+media/encoding basis.  In JSON, a `player_preference` object contains
+nested media objects with encodings mapped to an array of player names
+
+```
+"player_preference" : {
+    "directory" : {
+        "mp3" : [ "Mpd_player", "Mp3_player" ],
+        "ogg" : [ "Ogg_player", "Mpd_player" ]
+    },
+    "file" : {
+        "mp3" : [ "Mp3_player", "Mpd_player" ],
+        "ogg" : [ "Ogg_player", "Mpd_player" ]
+    }
+}
+```
+
+It is only necessary to include entries that deviate from the
+default preferences. This section is completely optional.
+
 ### VU_monitor
 
 - `enabled` : boolean, if true, the volume monitoring feature is enabled
