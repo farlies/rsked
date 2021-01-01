@@ -21,6 +21,7 @@
  */
 
 #include "childmgr.hpp"
+#include "chpty.hpp"
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -150,6 +151,7 @@ void Child_mgr::ListInstances()
         }
     }
 }
+
 
 /// Return a shared pointer to the child_mgr associated with the given
 /// pid This will lock the child list while it searches.  Returns a
@@ -394,6 +396,9 @@ void Child_mgr::postmortem( int status, int reason )
     if ((m_exit_status != 0) or (run_secs < m_min_run)) {
         m_fails.push_back( m_exit_time );   // remember this failure time
     }
+    if (m_pty) {                // If there is a pty, close it immediately.
+        m_pty->close_pty();
+    }
 }
 
 
@@ -551,6 +556,12 @@ void Child_mgr::start_child()
     m_start_time = 0;
     m_exit_time = 0;
     m_kill_time = 0;
+
+    // if so configured, init pty
+    if (m_pty) {
+        m_pty->open_pty();
+    }
+
     if (-1 == (m_pid = fork())) {
         LOG_ERROR(Lgr) << "Child_mgr for " << m_name << " failed to fork "
                        << m_bin_path ;
@@ -564,8 +575,20 @@ void Child_mgr::start_child()
                       << " child pid=" << m_pid ;
         return;
     }
-    // ----------- Below here running in the child process -----------
+    launch_child_binary(argv);
+}
+
+/// This run only in the child process.
+/// Prepare file handles.  Exec the child binary.
+///
+void Child_mgr::launch_child_binary(std::vector<const char*> &argv)
+{
     // TODO: close open files and drop privilege (if needed)
+
+    // Prepare the pty, if enabled
+    if (m_pty) {
+        m_pty->child_init();
+    }
 
     // Change Directory if indicated by m_chdir; if this fails we still try
     // to execute the child.
@@ -730,3 +753,83 @@ bool Child_mgr::check_child_paused(RunCond &cond)
     return false;
 }
 
+///////////////////////////////////////////////////////////////////////////
+////                            Pty Methods
+
+/// Enable a pseudoterminal for the child. Call this before starting
+/// the child. This will not affect any currently running child. Once
+/// enabled, this option may not be disabled.  The pty will automatically
+/// be closed when the Child_mgr is deleted.
+///
+void Child_mgr::enable_pty()
+{
+    if (m_pty) return;
+    if (running()) {
+        LOG_WARNING(Lgr) << "Pty will not be available to current child.";
+    }
+    m_pty = std::make_unique<Pty_controller>();
+}
+
+
+/// Return true iff there is currently a pty attached.
+///
+bool Child_mgr::has_pty() const
+{
+    return ( static_cast<bool>( m_pty ) );
+}
+
+
+
+/// Retrieve the device name of the pseudoterminal.
+/// * May throw
+///
+const std::string& Child_mgr::pty_remote_name() const
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    return m_pty->remote_name();
+}
+
+/// Reads will timeout after this period.
+/// * May throw
+///
+void Child_mgr::set_pty_read_timeout( long secs, long usecs )
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    m_pty->set_read_timeout( secs, usecs );
+}
+
+/// Writes will timeout after this period.
+/// * May throw
+///
+void Child_mgr::set_pty_write_timeout( long secs, long usecs )
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    m_pty->set_write_timeout( secs, usecs );
+}
+
+/// Set the size of the screen seen by the child
+/// * May throw
+///
+void Child_mgr::set_pty_window_size(unsigned rows, unsigned cols)
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    m_pty->set_window_size(rows, cols);
+}
+
+/// Read a string from the child, up to maxbytes in length
+/// * May throw
+///
+ssize_t Child_mgr::pty_read_nb( std::string &s, ssize_t maxbytes)
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    return m_pty->read_nb(s, maxbytes);
+}
+
+/// Write the string to the child's stdin.
+/// * May throw
+///
+ssize_t Child_mgr::pty_write_nb( const std::string &s )
+{
+    if (not m_pty) throw CM_no_pty_exception();
+    return m_pty->write_nb(s);
+}
