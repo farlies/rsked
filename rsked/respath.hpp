@@ -27,6 +27,9 @@ private:
     path m_announcement_path {};  // Announcements
     path m_playlist_path {};   // Playlists
 public:
+    const path& get_libpath() const { return m_library_path; }
+    const path& get_playlistpath() const { return m_playlist_path; }
+    const path& get_announcepath() const { return m_announcement_path; }
     void resolve_library(const path&, path&) const;
     void resolve_announcement(const path&, path&) const;
     void resolve_playlist(const path&, path&) const;

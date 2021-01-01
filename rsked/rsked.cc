@@ -167,6 +167,18 @@ void Rsked::reload_schedule()
     }
 }
 
+/// Access the schedule's ResPathSpec via shared ptr.
+/// Note that this might be null if no schedule or uninitialized schedule.
+///
+std::shared_ptr<const ResPathSpec>
+Rsked::get_respathspec() const
+{
+    if (m_sched) {
+        return m_sched->get_respathspec();
+    }
+    return nullptr;
+}
+
 
 /// Update status in shared memory: RSK_INITIALIZING, RSK_PLAYING, RSK_PAUSED
 ///

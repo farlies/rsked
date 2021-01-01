@@ -109,6 +109,7 @@ private:
 public:
     void debug(bool p) { m_debug = p; }
     spSource find_viable_source( const std::string& );
+    std::shared_ptr<ResPathSpec> get_respathspec() const;
     void load( const boost::filesystem::path& );
     spPlay_slot play_daytime(const struct tm*);
     spPlay_slot play_now();

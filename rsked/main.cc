@@ -38,6 +38,7 @@
 #include <fstream>
 
 #include "version.h"
+#include "main.hpp"
 #include "rsked.hpp"
 #include "logging.hpp"
 #include "jobutil.hpp"
@@ -45,6 +46,8 @@
 #include "childmgr.hpp"
 
 namespace po = boost::program_options;
+
+std::unique_ptr<Rsked> Main::rsked {};
 
 /// Our official name, used in pid file
 const char *AppName { "rsked" };
@@ -178,15 +181,15 @@ int main(int ac, char **av)
     log_banner(true);
     // -------------------------- RUN --------------------------
     try  {
-        std::unique_ptr<Rsked> rsked( new Rsked(key_id,test_mode) );
+        Main::rsked = std::make_unique<Rsked>(key_id,test_mode);
         if (vm.count("config")) {
             std::string cstr { vm["config"].as<std::string>() };
-            rsked->configure(cstr,vm);
+            Main::rsked->configure(cstr,vm);
         } else {
-            rsked->configure(DefaultConfigPath,vm);
+            Main::rsked->configure(DefaultConfigPath,vm);
         }
         if (!test_mode) {
-            rsked->track_schedule(); // <=== MAY RUN FOREVER ====
+            Main::rsked->track_schedule(); // <==MAY RUN "FOREVER"==
         }
     }
     catch (Config_error &ex) {
@@ -201,6 +204,7 @@ int main(int ac, char **av)
         return_code = 3;
         LOG_ERROR(Lgr) << "main: unexpected fatal error";
     };
+    Main::rsked.reset();
     // ---------------------------------------------------------
     Child_mgr::kill_all();
     LOG_INFO(Lgr) << "Exiting on signal " << gTermSignal;
