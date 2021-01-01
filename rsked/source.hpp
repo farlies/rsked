@@ -104,6 +104,7 @@ public:
     bool repeatp() const {return m_repeatp; }
     bool res_path(boost::filesystem::path&);
     const std::string& resource() const;
+    void set_quiet_okay(bool q) { m_quiet_okay = q; }
     void validate(const ResPathSpec&);
     bool viable();
     //
