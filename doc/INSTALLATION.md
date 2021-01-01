@@ -40,15 +40,23 @@ deb packages are required for a typical installation:
 - libgpiod2
 - libjsoncpp1
 
-You may omit the gnuradio packages if there is no need to play FM
-radio via `gqrx` (and the sdr player is disabled in the
-configuration.)  You may omit `mpd`, `mpc`, and `mpg321` if there is
-no need to play MP3 files or streams (and these players are disabled
-in the configuration).  You may omit `dnsutils` if the application
-will not use the IP network at all, or will not need to run
-`check_inet`.
+### Notes
 
-(Aside: On Ubuntu 20.04, replace boost1.67 packages with boost1.71.)
+- On Ubuntu 20.04, replace `boost1.67` packages with `boost1.71`.
+
+- The VLC Media player is typically included in the minimal install, but
+  if command `vlc` is missing, install `vlc`.
+
+- You may omit the gnuradio packages if there is no need to play FM
+  radio via `gqrx` (and the SDR player is disabled in the configuration.)
+
+- You may omit `mpd`, `mpc`, and `mpg321` if there is no need to play
+  MP3 files or streams with these players. (Be sure to disable them in
+  the configuration).
+
+- You may omit `dnsutils` if the application will not use the IP network
+  at all, or will not need to run `check_inet`.
+
 
 ## Installing a Binary Release
 
@@ -138,9 +146,19 @@ audio announcements.
 sudo apt install vorbis-tools
 ```
 
+## vlc
+
+The VLC Media player is commonly pre-installed, but may be installed various ways
+if needed, e.g.:
+
+```
+sudo apt install vlc
+```
+
 ## mpd
 
-The Music Player Daemon: optional, but desirable.
+The *Music Player Daemon* is an alternative to VLC in that it also plays a wide
+variety of audio files and streams.
 
 ```
 sudo apt install mpd mpc
@@ -170,8 +188,8 @@ journalctl --user --unit=mpd
 
 ## mpg321
 
-Optional. Not needed if using `mpd`, but it has a much smaller
-footprint than `mpd`.
+Optional. Not needed if using `mpd` or `vlc`, but it has a much smaller
+footprint.  Note that it will only play `mp3`, not `mp4/m4a` files.
 
 ```
 sudo apt install mpg321

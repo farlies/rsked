@@ -4,11 +4,12 @@ rsked
 `rsked`, short for *radio scheduler*, is a Linux application that
 plays any of various audio sources at specific times on a weekly
 schedule, without any requirement for human interaction.  Sources
-include locally stored recordings (ogg, mp3), internet streams, and FM
-broadcasts (via inexpensive SDR hardware). It is intended to be run as
-an **embedded application** on an inexpensive low power microsystem
-(Raspberry Pi 3, RPi).  However it can run on x86 desktop computers as
-well, and likely on any Linux computer with a sound card.
+include locally stored recordings (ogg, mp3, mp4, flac), internet
+streams, and FM broadcasts (via inexpensive SDR hardware). It is
+intended to be run as an **embedded application** on an inexpensive
+low power microsystem (Raspberry Pi 3, RPi).  However it can run on
+x86 desktop computers as well, and likely on any Linux computer with a
+sound card.
 
 `rsked` was originally developed for people who, due to disability,
 are physically unable to operate conventional audio equipment. It
@@ -21,8 +22,8 @@ to require human interaction to schedule audio programming.
 ## Features
 
 - Weekly program schedule defined in a simple JSON file
-- Play MP3 or Ogg-Vorbis files, directories, or playlists
-- Play MP3 internet streams
+- Play MP3, MP4, FLAC, or Ogg-Vorbis files, directories, or playlists
+- Play internet streams
 - Play FM broadcast stations
 - Audio "message of the day" at scheduled times
 - Audio source failure detected, with reversion to defined backup sources
@@ -63,14 +64,15 @@ Recorded music may be played with any of these external applications
 available as packages on most Linux distributions:
 
 - [ogg123](https://wiki.xiph.org/Vorbis-tools)
+- [vlc](https://www.videolan.org)
 - [mpd](https://www.musicpd.org)
 - [mpg321](http://mpg321.sourceforge.net/)
 
 The `ogg123` player plays Ogg-Vorbis recordings, and is required to
-play announcements in `rsked`.  The music player daemon
-`mpd` is extremely versatile and recommended.
-The lightweight `mpg321` player is suitable for MP3 files.  All of
-these programs can play both individual files and playlists.
+play announcements in `rsked`. `vlc` plays a wide range of audio file
+formats.  The music player daemon `mpd` is similarly versatile.  The
+lightweight `mpg321` player is suitable for MP3 files.  All of these
+programs can play both individual files and playlists.
 
 
 ### Streaming

@@ -69,7 +69,7 @@ need wired or wireless access. Select a model with integral Wi-Fi
 in latter case.
 
 In an embedded solution, the network and WEP credentials to use
-Wi-Fi must be added to the device prior to installation. Add
+Wi-Fi are easiest to add to the device prior to installation. Add
 stanzas to the file `/etc/wpa_supplicant/wpa_supplicant.conf`
 e.g. 
 
@@ -84,6 +84,9 @@ The preshared key (psk) hash may be generated with `wpa_passphrase`. See
 [Wireless-CLI](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md)
 for more details.
 
+For on-site configuration of the Wi-Fi, consult:
+[INSTALLATION:Bluetooth](INSTALLATION.md#Bluetooth).
+
 Consider adding a *firewall* package like `ufw`. Configure it to
 open only ports needed for the installation.
 
@@ -94,6 +97,9 @@ capable models will be unsatisfactory.  Consult the `gqrx` development
 site for progress with other models such as the Pi 4.  The `gqrx`
 configuration should be tailored to minimize the display features,
 e.g. the spectrum waterfall--none of these are needed here.
+Lighter-weight alterntives to `gqrx` SDR for `rsked` are being studied.
+A good antenna can improve reception. The ANT500 from Great Scott Gadgets
+works well in my installations.
 
 
 ## Storage

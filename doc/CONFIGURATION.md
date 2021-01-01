@@ -99,10 +99,11 @@ for a source, `rsked` will try them according to a preferred order
 until one is found that works. The *default* order (`playermgr.cc`) is
 currently:
 
-1. Mpd_player
-2. Ogg_player
-3. Mp3_player 
-4. Sdr_player
+1. Vlc_player
+2. Mpd_player
+3. Ogg_player
+4. Mp3_player 
+5. Sdr_player
 
 Starting with schema 1.1, it is possible to change this order on a per
 media/encoding basis.  In JSON, a `player_preference` object contains
@@ -134,6 +135,16 @@ The VU monitor is a child process that checks audio output at the
 Linux sound system layer.  If no sound is emitted for timeout seconds,
 `rsked` is notified.  If silence is unexpected, `rsked` will attempt
 to restore programming, e.g. by switching to an alternate source.
+
+### Vlc_player
+
+- `enabled` : boolean, if true, the `vlc` player is enabled
+- `debug` : boolean, if true, `rsked` emits additional logging from the player
+- `bin_path` : path to the `vlc` binary
+
+Stock VLC Media Player on most Linux distributions will play most
+audio content. Starting with v1.0.5 it is by default the top priority
+player for everything except FM radio.
 
 ### Mpd_player
 

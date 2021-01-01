@@ -9,7 +9,7 @@
 
 
 project('rsked','cpp',
-        version: '1.0.4',
+        version: '1.0.5',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -38,7 +38,7 @@ endif
 
 boost_dep = dependency('boost',
    modules : ['system','log','log_setup','program_options',
-              'thread','filesystem', 'date_time'])
+              'thread','filesystem', 'date_time', 'regex'])
 
 if get_option('buildtype') == 'debug'
   boost_utest_dep = dependency('boost', modules : ['unit_test_framework'])
@@ -53,7 +53,7 @@ mpd_dep = dependency('libmpdclient')
 libgpiod_dep = dependency('libgpiodcxx')
 
 utils = ['util/jobutil.cc','util/logging.cc','util/childmgr.cc',
-         'util/configutil.cc','util/config.cc']
+         'util/chpty.cc','util/configutil.cc','util/config.cc']
 
 # Include Directories
 shared_incdirs = include_directories('util')
@@ -73,6 +73,7 @@ rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
               'rsked/vurunner.cc',
               'rsked/oggplayer.cc',
               'rsked/mp3player.cc',
+              'rsked/vlcplayer.cc',
               'rsked/mpdclient.cc', 'rsked/mpdplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc'
              ] + utils
@@ -103,11 +104,17 @@ ttimeout_srcs = ['test/ttimeout.cc']
 
 mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
 
+tvlc_srcs = ['test/tvlc.cc', 'rsked/vlcplayer.cc', 'rsked/playpref.cc',
+             'rsked/source.cc', 'rsked/respath.cc', 'rsked/inetcheck.cc'
+             ]+utils
+
+tpty_srcs = ['test/tpty.cc', 'util/chpty.cc']
+
 tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
               'rsked/playermgr.cc',  'rsked/vurunner.cc',
               'rsked/inetcheck.cc',  'rsked/baseplayer.cc',
               'rsked/oggplayer.cc',  'rsked/mp3player.cc',
-              'rsked/mpdclient.cc',  'rsked/mpdplayer.cc',
+              'rsked/mpdclient.cc',  'rsked/mpdplayer.cc', 'rsked/vlcplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc',
               'rsked/playpref.cc',   'rsked/schedule.cc']+utils
 
@@ -208,6 +215,21 @@ executable('tpmgr',
                              mpd_dep, json_dep, usb_dep ])
 
 
+# 13. Tests for ChPty
+executable('tpty',
+            sources: tpty_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep ]
+          )
+
+# 14. Tests for VLC client
+executable('tvlc',
+            sources: tvlc_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep, json_dep ]
+          )
 
 ##########
 
