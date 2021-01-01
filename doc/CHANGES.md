@@ -1,4 +1,8 @@
-Usable version of the Bluetooth utility, with documentation.
+## Version 1.0.5, 2021-01-01
+
+- Support for VLC Media player as a player option
+- Support for player preference by media type in rsked.json
+- Bluetooth monitoring and configuration utility, with documentation.
 
 ## Version 1.0.3,  2020-10-20
 
