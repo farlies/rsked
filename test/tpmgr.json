@@ -5,7 +5,7 @@
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2020-11-29T15:15"
+        "version" : "2021-01-01T11:36"
     },
 
     "Inet_checker" : {
@@ -20,7 +20,7 @@
     },
 
     "Mpd_player" : {
-        "enabled" : true,
+        "enabled" : false,
         "debug" : false,
         "run_mpd" : true,
         "bin_path" : "/usr/bin/mpd",
@@ -37,6 +37,12 @@
         "gqrx_gold"  : "~/.config/gqrx/gold.conf",
         "low_s"      : -20.0,
         "low_low_s"  : -40.0
+    },
+
+    "Vlc_player" : {
+        "enabled" : true,
+        "volume" : 100,
+        "vlc_bin_path"   : "/usr/bin/vlc"
     },
 
     "Ogg_player" : {

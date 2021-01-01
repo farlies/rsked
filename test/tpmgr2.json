@@ -5,7 +5,7 @@
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2020-11-29T15:15"
+        "version" : "2021-01-01T11:36"
     },
 
     "Inet_checker" : {
@@ -28,6 +28,12 @@
             "mp3" : [ "Mp3_player", "Mpd_player" ],
             "ogg" : [ "Ogg_player", "Mpd_player" ]
         }
+    },
+
+    "Vlc_player" : {
+        "enabled" : false,
+        "volume" : 100,
+        "vlc_bin_path"   : "/usr/bin/vlc"
     },
 
     "Mpd_player" : {

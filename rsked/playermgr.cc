@@ -35,11 +35,14 @@
 #include "mpdplayer.hpp"
 #include "sdrplayer.hpp"
 #include "silentplayer.hpp"
+#include "vlcplayer.hpp"
+// *EXTEND*
 
 /// The default priority list for players. User policy may override.
 /// NOTE: Every potentially usable player should have an entry here.
 ///
 std::vector<std::string> RankedPlayers {
+    "Vlc_player",
     "Mpd_player",
     "Ogg_player",
     "Mp3_player",
@@ -49,6 +52,7 @@ std::vector<std::string> RankedPlayers {
 };
 
 #define INSTALL_PLAYERS \
+    install_player( config, std::make_shared<Vlc_player>(), testp);\
     install_player( config, std::make_shared<Mpd_player>(), testp);\
     install_player( config, std::make_shared<Ogg_player>(), testp);\
     install_player( config, std::make_shared<Mp3_player>(), testp);\

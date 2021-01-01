@@ -1,0 +1,18 @@
+{
+    "encoding"   : "UTF-8",
+    "schema" : "1.1",
+
+    "General" : {
+        "application" : "rsked",
+        "sched_path" : "~/.config/rsked/schedule.json",
+        "version" : "2020-12-27T11:44",
+        "description" : "for vlc testing"
+    },
+
+   "Vlc_player" : {
+        "enabled" : true,
+        "debug" : true,
+        "bin_path" : "/usr/bin/vlc",
+        "volume" : 100
+    }
+}
