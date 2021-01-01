@@ -1,12 +1,12 @@
 {
-    "encoding"   : "UTF-8",
-    "schema" : "1.0",
+    "encoding" : "UTF-8",
+    "schema" : "1.1",
 
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2020-09-23T14:41",
-        "description" : "for RPi"
+        "version" : "2021-01-01T10:40",
+        "description" : "for 32-bit RPi Linux"
     },
 
     "Inet_checker" : {
@@ -20,8 +20,15 @@
         "timeout" : 40
     },
 
-    "Mpd_player" : {
+    "Vlc_player" : {
         "enabled" : true,
+        "debug" : false,
+        "bin_path" : "/usr/bin/vlc",
+        "volume" : 100
+    },
+
+    "Mpd_player" : {
+        "enabled" : false,
         "debug" : false,
         "run_mpd" : true,
         "bin_path" : "/usr/bin/mpd",
