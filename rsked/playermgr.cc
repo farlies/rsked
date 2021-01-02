@@ -33,6 +33,7 @@
 #include "oggplayer.hpp"
 #include "mp3player.hpp"
 #include "mpdplayer.hpp"
+#include "nrsc5player.hpp"
 #include "sdrplayer.hpp"
 #include "silentplayer.hpp"
 #include "vlcplayer.hpp"
@@ -46,6 +47,7 @@ std::vector<std::string> RankedPlayers {
     "Mpd_player",
     "Ogg_player",
     "Mp3_player",
+    "Nrsc5_player",
     "Sdr_player",
     // *EXTEND*
     SilentName
@@ -56,9 +58,10 @@ std::vector<std::string> RankedPlayers {
     install_player( config, std::make_shared<Mpd_player>(), testp);\
     install_player( config, std::make_shared<Ogg_player>(), testp);\
     install_player( config, std::make_shared<Mp3_player>(), testp);\
+    install_player( config, std::make_shared<Nrsc5_player>(), testp);\
     install_player( config, std::make_shared<Sdr_player>(), testp);
 
-    // *EXTEND*
+    // ^ *EXTEND* ^
 
 ////////////////////////////////////////////////////////////////////////////
 ///                             Player_manager

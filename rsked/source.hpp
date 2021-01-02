@@ -94,6 +94,7 @@ public:
     Encoding encoding() const { return m_encoding; }
     bool failedp() const { return m_failedp; }
     freq_t freq_hz() const { return m_freq_hz; }
+    double freq_mhz() const { return (static_cast<double>(m_freq_hz) / 1.0e6); }
     time_t last_fail() const { return m_last_fail; }
     void load(const Json::Value &);
     bool localp() const;

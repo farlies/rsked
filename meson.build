@@ -9,7 +9,7 @@
 
 
 project('rsked','cpp',
-        version: '1.0.5',
+        version: '1.0.6',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -74,6 +74,7 @@ rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
               'rsked/oggplayer.cc',
               'rsked/mp3player.cc',
               'rsked/vlcplayer.cc',
+              'rsked/nrsc5player.cc',
               'rsked/mpdclient.cc', 'rsked/mpdplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc'
              ] + utils
