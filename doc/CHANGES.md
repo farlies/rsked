@@ -1,3 +1,11 @@
+## Version 1.0.6 (beta), 2021-01-02
+
+- Experimental support for HD radio via nrsc5
+- Bug fixes
+
+You can build the nrsc5 application from source in:
+https://github.com/theori-io/NRSC5
+
 ## Version 1.0.5, 2021-01-01
 
 - Support for VLC Media player as a player option

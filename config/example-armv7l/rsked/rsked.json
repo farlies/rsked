@@ -38,6 +38,12 @@
         "volume" : 75
     },
 
+    "Nrsc5_player" : {
+        "enabled" : true,
+        "nrsc5_bin_path"  : "/usr/local/bin/nrsc5",
+        "device_index" : 0
+    },
+
     "Sdr_player" : {
         "enabled" : true,
         "gqrx_bin_path"  : "~/bin/gqrx",
