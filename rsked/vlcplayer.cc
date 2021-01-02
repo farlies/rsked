@@ -333,11 +333,11 @@ void Vlc_player::set_volume()
 void Vlc_player::try_start()
 {
     constexpr const unsigned MAX_RETRIES=3;
-    constexpr const long VLC_WAIT_USEC = 12000;
+    constexpr const long VLC_WAIT_USEC = 123'000;
 
     // We run VLC as a child: start it now.
     if (not m_cm->running()) {
-        LOG_DEBUG(Lgr) << "Vlc_player::try_start launching child VLC";
+        LOG_INFO(Lgr) << "Launching VLC child process";
         m_cm->set_name("vlc");
         m_cm->enable_pty();
         m_cm->set_wdir( m_library_path ); // relative paths of music files
@@ -380,8 +380,8 @@ bool Vlc_player::check_status()
         parse_status( m_last_resp, m_state, m_obsvol, m_obsuri );
         return true;
     }
-    catch( const Chpty_exception & ) {
-        LOG_ERROR(Lgr) << m_name << " is unresponsive.";
+    catch( const Chpty_exception &err ) {
+        LOG_ERROR(Lgr) << m_name << " is unresponsive: " << err.what();
         mark_unusable();
     }
     catch( const std::exception &err ) {
