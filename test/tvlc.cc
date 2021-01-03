@@ -37,6 +37,7 @@
 #include "config.hpp"
 #include "fake_rsked.hpp"
 
+namespace utf = boost::unit_test;
 namespace bdata = boost::unit_test::data;
 namespace fs = boost::filesystem;
 
@@ -82,7 +83,7 @@ BOOST_TEST_GLOBAL_FIXTURE(LogFixture);
 
 /// Test sources in the test/Music/ directory
 ///
-const char *Sources[] ={
+const char *Sources[6] ={
     // 0
     R"( { "encoding" : "ogg",   "medium" : "file",
             "repeat" : false,  "duration" : 43.5,
@@ -101,7 +102,16 @@ const char *Sources[] ={
     // 3
     R"( {"encoding" : "mp3", "medium" : "stream",
                   "location" : "https://stream.wqxr.org/wqxr-web",
-                  "repeat" : true} )"
+                  "repeat" : true} )",
+    // 4
+    R"( {"encoding" : "mp3", "medium" : "playlist",
+                  "location" : "begegnungen.m3u",
+                  "repeat" : true} )",
+    // 5
+    R"( { "encoding" : "ogg",   "medium" : "directory",
+            "repeat" : false,  "duration" : 35,
+            "location" :  "Test/Dirtest" })",
+
 };
 
 
@@ -118,6 +128,8 @@ spSource load_test_source( unsigned k, const char*name )
     spSource spTestSrc = std::make_shared<Source>( name );
     BOOST_REQUIRE( spTestSrc );
     spTestSrc->load( jvalue );
+    // next will throw a schedule error if the source is invalid
+    spTestSrc->validate( *(Main::rsked->get_respathspec()) );
     return spTestSrc;
 }
 
@@ -168,7 +180,93 @@ bool do_mp3_stream( spPlayer vlcp, unsigned cycles )
     return result;
 }
 
-BOOST_AUTO_TEST_CASE( vlc_play_pause_resume_test )
+/// Play a stream, trapping all exceptions.
+///
+bool do_playlist( spPlayer vlcp, unsigned cycles )
+{
+    bool result = true;
+    spSource spTestSrc { load_test_source(4,"testPlaylist") };
+    try {
+        vlcp->play( spTestSrc );
+        monitor_play( vlcp, spTestSrc, cycles );
+    } catch( const std::exception &err ) {
+        result = false;
+    }
+    vlcp->stop();
+    return result;
+}
+
+/// Play a directory (all ogg), trapping all play time exceptions.
+/// Return true if no issues were detected.
+///
+bool do_directory( spPlayer vlcp, unsigned cycles )
+{
+    bool result = true;
+    spSource spTestSrc { load_test_source(5,"testDirectory") };
+    try {
+        vlcp->play( spTestSrc );
+        monitor_play( vlcp, spTestSrc, cycles );
+    } catch( const std::exception &err ) {
+        result = false;
+    }
+    vlcp->stop();
+    return result;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE( vlc_playlist_test, * utf::disabled() )
+{
+    std::shared_ptr<const ResPathSpec> rps =Main::rsked->get_respathspec();
+    BOOST_REQUIRE(rps);
+
+    const char *confname = "../test/vlc.json";
+    Config cfg(confname);
+    cfg.read_config();
+
+    spPlayer vlcp = std::make_shared<Vlc_player>();
+    BOOST_REQUIRE( vlcp );
+    vlcp->initialize( cfg, false );  // testp=false
+
+    // Check status
+    BOOST_TEST( vlcp->check() );
+
+    // Playlist
+    LOG_INFO(Lgr) << "Play a local playlist for 20 seconds.";
+    BOOST_TEST( do_playlist(vlcp, 10) );
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE( vlc_directory_test )
+{
+    std::shared_ptr<const ResPathSpec> rps =Main::rsked->get_respathspec();
+    BOOST_REQUIRE(rps);
+
+    const char *confname = "../test/vlc.json";
+    Config cfg(confname);
+    cfg.read_config();
+
+    spPlayer vlcp = std::make_shared<Vlc_player>();
+    BOOST_REQUIRE( vlcp );
+    vlcp->initialize( cfg, false );  // testp=false
+
+    // Check status
+    BOOST_TEST( vlcp->check() );
+
+    // Directory
+    LOG_INFO(Lgr) << "Play a local directory for 36 seconds.";
+    BOOST_TEST( do_directory( vlcp, 18 ) );
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+BOOST_AUTO_TEST_CASE( vlc_play_pause_resume_test, * utf::disabled()   )
 {
     std::shared_ptr<const ResPathSpec> rps =Main::rsked->get_respathspec();
     BOOST_REQUIRE(rps);
