@@ -57,7 +57,7 @@ private:
     struct termios m_termios {};
     bool m_valid_termios {false};
     struct winsize m_winsize {24, 80, 0, 0};
-    struct timeval m_rtimeout { 0, 10'000 }; // secs, usecs
+    struct timeval m_rtimeout { 0, 50'000 }; // secs, usecs
     struct timeval m_wtimeout { 0, 10'000 }; // secs, usecs
     std::string m_remote_name {};
 public:

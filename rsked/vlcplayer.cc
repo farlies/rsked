@@ -46,13 +46,15 @@ const fs::path Default_vlc_bin {"/usr/bin/vlc"};
 
 //////////////////////////////////////////////////////////////////////////
 ///
-/// In theory, Vlc volume goes up to 1024. But settings much above 255
+/// In theory, Vlc volume goes up to 1024. But settings much above 300
 /// seem to cause gross audio distortation.  TODO: determine why.
-/// Constant VlcMaxVol caps the effective volume setting, and corresponds
-/// to a json configured "100".
+/// Constant VlcMaxVol calibrates the effective volume setting, and
+/// corresponds to a json configured "100".
+/// You may need to adjust the volume of vlc relative to other sources
+/// like SDR so that a consistent level is presented by all players.
 ///
-const unsigned VlcMaxVol       { 255 };
-const unsigned Default_vlc_vol { 250 };
+const unsigned VlcMaxVol       { 300 };
+const unsigned Default_vlc_vol { 280 };
 ///
 //////////////////////////////////////////////////////////////////////////
 
@@ -271,9 +273,9 @@ void Vlc_player::do_command( const std::string& cmd, bool log_errors )
     m_cm->pty_write_nb( cmd );
     m_last_resp.clear();
     m_cm->pty_read_nb( m_last_resp, MaxResponse );
-    // if (m_debug) {
-    //     LOG_DEBUG(Lgr) << "Vlc responds: " << m_last_resp;
-    // }
+    if (m_debug) {
+        LOG_DEBUG(Lgr) << "Vlc responds: " << m_last_resp;
+    }
     if ( detect_vlc_error(m_last_resp) ) {
         if (log_errors) {
             std::string cmdx = cmd;
@@ -340,6 +342,7 @@ void Vlc_player::try_start()
         LOG_INFO(Lgr) << "Launching VLC child process";
         m_cm->set_name("vlc");
         m_cm->enable_pty();
+        m_cm->set_pty_read_timeout( 0, 100'000 );  // sec,usec: may be sluggish
         m_cm->set_wdir( m_library_path ); // relative paths of music files
         //
         m_cm->clear_args();
@@ -616,8 +619,8 @@ void Vlc_player::initialize( Config &cfg, bool testp )
     }
     cfg.get_unsigned(m_name.c_str(),"volume",m_volume);
     if (m_volume > 100) {
-        LOG_WARNING(Lgr) << "Vlc volume capped at 100%";
-        m_volume = 100;
+        LOG_WARNING(Lgr) << "Vlc volume > 100: possible distortion";
+        // m_volume = 100;  // allow > 100% at user's risk
     }
     cfg.get_bool(m_name.c_str(),"debug", m_debug);
     //
@@ -750,27 +753,36 @@ void Vlc_player::play( spSource src )
     }
     do_command("stop\n",true);
     do_command("clear\n",true);
+    // Note that the 'repeat' command will only repeat one track, not
+    // a whole playlist or directory--use 'loop' to achieve that effect.
     if ( src->repeatp() ) {
-        do_command("repeat on\n",true);
+        do_command("loop on\n",true);
     } else {
-        do_command("repeat off\n",true);
+        do_command("loop off\n",true);
     }
     set_volume();
-    std::string qcommand {"enqueue "};
-    if (src->dynamic()) {
-        // TODO: since dynamic announcements reference a different base directory
-        // this is unlikely to work as it stands: need pathname wrangling here!
-        std::string dynstr;
-        uri_expand_time( src->resource(), dynstr );
-        qcommand += dynstr;
+    // ------------------------------------------------------------------------
+    // Enqueue the resource:
+    std::string qcommand {"enqueue "};  // note required trailing space
+    std::string effpath;
+    if (src->localp()) {
+        boost::filesystem::path abspath {};
+        if (not src->res_path( abspath )) { // get the expanded absolute path
+            throw Player_media_exception(); // ??? best error to throw ???
+        }
+        effpath = abspath.native();
     } else {
-        qcommand += src->resource();
+        effpath = src->resource();
     }
+    qcommand += effpath;
     qcommand += "\n";
     do_command( qcommand, true );
+    LOG_DEBUG(Lgr) << m_name << " enqueued: `" << effpath << "`";
+    // ------------------------------------------------------------------------
+    do_command( "goto 1\n", true ); // essential for playlists
     do_command( "play\n", true );
     if (m_debug) {
-        LOG_DEBUG(Lgr) << m_name << " playing " << src->name();
+        do_command( "playlist\n", true );
     }
     // ...success
     m_src = src;  // intended source
