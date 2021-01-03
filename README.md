@@ -24,7 +24,7 @@ to require human interaction to schedule audio programming.
 - Weekly program schedule defined in a simple JSON file
 - Play MP3, MP4, FLAC, or Ogg-Vorbis files, directories, or playlists
 - Play internet streams
-- Play FM broadcast stations
+- Play FM broadcast stations, including HD
 - Audio "message of the day" at scheduled times
 - Audio source failure detected, with reversion to defined backup sources
 - Runs on Raspberry Pi-3 or x86_64, no screen required
@@ -90,9 +90,11 @@ these have not been tested in `rsked`.
 Over-the-air FM broadcasts may be scheduled using *Software Defined
 Radio* (SDR). Attach an inexpensive USB SDR radio dongle such as
 [RTL-2832U](https://www.rtl-sdr.com/), then configure the
-desired frequencies in the schedule.  `rsked` uses a slightly modified
-fork of [gqrx](https://github.com/farlies/gqrx). Consult that project
-for further instructions.
+desired frequencies in the schedule.  `rsked` uses either of:
+
+- [gqrx](https://github.com/farlies/gqrx), a modified fork
+- [nrsc5](https://github.com/theori-io/NRSC5), an HD-FM receiver
+  compatible with RTL-SDR dongles.
 
 ### rsked application
 

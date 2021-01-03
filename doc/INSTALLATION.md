@@ -195,6 +195,16 @@ footprint.  Note that it will only play `mp3`, not `mp4/m4a` files.
 sudo apt install mpg321
 ```
 
+## nrsc5
+
+Optional. This program receives NRSC-5 digital radio stations ("HD")
+using an RTL-SDR dongle. It offers a command-line interface as well as
+an API upon which other applications can be built. `rsked` drives the
+command line application.  Retrieve the source from GitHub, then build
+and install per directions.
+
+- https://github.com/theori-io/NRSC5
+
 
 ## gqrx
 

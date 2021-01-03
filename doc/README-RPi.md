@@ -92,12 +92,12 @@ open only ports needed for the installation.
 
 ## FM Radio
 
-For FM demodulation with `gqrx`, one needs at least a Pi 3.  Less
-capable models will be unsatisfactory.  Consult the `gqrx` development
+For FM demodulation with SDR, one needs at least a Pi 3.  Less
+capable models will be unsatisfactory.  Consult the `gqrx` or `nrsc5` development
 site for progress with other models such as the Pi 4.  The `gqrx`
 configuration should be tailored to minimize the display features,
 e.g. the spectrum waterfall--none of these are needed here.
-Lighter-weight alterntives to `gqrx` SDR for `rsked` are being studied.
+`nrsc5` is a lighter-weight alterntives to `gqrx, albeit for HD radio only.
 A good antenna can improve reception. The ANT500 from Great Scott Gadgets
 works well in my installations.
 
@@ -114,7 +114,7 @@ A 16GB card should be sufficient for most applications.
 ## Cooling
 
 Even with passive heat sinks, the RPi may run hot when doing FM
-reception via `gqrx` SDR.  An inexpensive 5-volt cooling fan can make
+reception via SDR.  An inexpensive 5-volt cooling fan can make
 a huge difference.  Applications that are *not using SDR* can get by
 fine with passive cooling.  Heat sinks should be used even if active
 cooling is installed.
@@ -161,15 +161,17 @@ Other startup mechanisms are possible--feel free to experiment.
 While `rsked` is designed to run "headless" (no monitor), the `gqrx`
 application, written with a Qt5 interface, expects a display. 
 Also, the LXDE autostart mechanism depends on the presence of a display.
-Thus you will need to provide some sort of screen.
+If you are not using `gqrx` and have some other autostart mechanism
+in mind, then this configuration step may be skipped.
+Otherwise, you will need to provide some sort of screen.
 Possible solutions here include:
 
 1. attach an small HDMI display
 2. attach an HDMI "pacifier" (plug that fakes a monitor)
 3. create a virtual screen via **Xvfb**
 
-Option 1 is useful for debugging, but option 3 is cheap and easy.
-Use Option 3 for embedded deployment.
+Option 1 is useful for debugging; option 2 requires additional hardware.
+Happily, option 3 is cheap and easy.
 
 ```
 sudo apt install xvfb

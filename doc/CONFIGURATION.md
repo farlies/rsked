@@ -345,16 +345,30 @@ might be translated to: `"/home/pi/.config/rsked/motd/fcookie.ogg"`
 #### Playlists
 
 - `medium` : `playlist`
-- `location` : string, relative pathname of the playlist
+- `location` : string, pathname of the playlist
 
-The location pathname is taken to be relative to the *playlist directory*.
+The `location` filename, e.g. `foo.m3u`, is taken to be relative to
+the *playlist directory*.  A playlist is a file that should have one
+media pathname per line.  No shell expansion at all is performed on
+these pathnames. De facto standard M3U file format is acceptable, but
+the M3U directives will be ignored.  Example playlists are included in
+the `mpd/playlists` directories; replace these with playlists
+reflecting your stored audio files.
 
-A playlist is a file that should have one media pathname per line.
-No shell expansion at all is performed on these pathnames. De facto standard
-M3U file format is acceptable, but the M3U directives will be ignored.
-Example playlists are included in the `mpd/playlists` directories;
-replace these with playlists reflecting your stored audio files.
-The simplest way to create playlists is with an `mpd` client like *Cantata*.
+There are some differences in the way different media players interpret the
+pathnames in playlists.  However in general, relative pathnames or
+bare filenames are assumed to be relative to the directory containing
+the *playlist* file.  For best interoperability you may either (or
+both) of:
+
+1. Put all of your playlists at the root of the music directory (so
+   relative paths will coincide with the assumed root), or make
+   symbolic links so that they appear in all required places.
+2. Only use *full pathnames* in playlists.  This option is arguably
+   best long term as it should be unambiguous to any current or future
+   player.
+
+
 
 #### Network Streams
 
