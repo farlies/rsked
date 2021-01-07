@@ -53,8 +53,8 @@ const fs::path Default_vlc_bin {"/usr/bin/vlc"};
 /// You may need to adjust the volume of vlc relative to other sources
 /// like SDR so that a consistent level is presented by all players.
 ///
-const unsigned VlcMaxVol       { 300 };
-const unsigned Default_vlc_vol { 280 };
+const unsigned VlcMaxVol       { 300 };  // VLC units
+const unsigned Default_vlc_vol { 100 };  // Percentage
 ///
 //////////////////////////////////////////////////////////////////////////
 
