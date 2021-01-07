@@ -114,7 +114,7 @@ tpty_srcs = ['test/tpty.cc', 'util/chpty.cc']
 tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
               'rsked/playermgr.cc',  'rsked/vurunner.cc',
               'rsked/inetcheck.cc',  'rsked/baseplayer.cc',
-              'rsked/oggplayer.cc',  'rsked/mp3player.cc',
+              'rsked/oggplayer.cc',  'rsked/mp3player.cc','rsked/nrsc5player.cc',
               'rsked/mpdclient.cc',  'rsked/mpdplayer.cc', 'rsked/vlcplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc',
               'rsked/playpref.cc',   'rsked/schedule.cc']+utils
