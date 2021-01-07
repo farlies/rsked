@@ -32,6 +32,7 @@
 #include "logging.hpp"
 
 #include "cmexceptions.hpp"
+#include "chpty.hpp"
 
 /// Some symbolic values used in Child_mgr:
 ///
@@ -59,8 +60,6 @@ enum class RunCond {
     wrongState                  //! obs running when it should not be
 };
 
-/// Optional pty object for child
-class Pty_controller;
 
 ///////////////////////////////////////////////////////////////////////
 
