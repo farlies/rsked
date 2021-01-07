@@ -112,6 +112,7 @@ if [[ "$build_type" == "release" ]]; then
     echo "; stripped release binaries"
 fi
 
+## GQRX
 gqrxbin="../gqrx/build/gqrx"
 # Note: assume gqrx binary is already stripped if it needs to be!
 if [[ -e $gqrxbin ]] ; then
@@ -120,6 +121,17 @@ if [[ -e $gqrxbin ]] ; then
     echo "; found gqrx binary, installing"
 else
     echo "; did Not find gqrx binary: $gqrxbin"
+fi
+
+## NRSC5
+nrsc5bin="../nrsc5/build/src/nrsc5"
+# Note: assume nrsc5 binary is already stripped if it needs to be!
+if [[ -e $nrsc5bin ]] ; then
+    cp $nrsc5bin $bindir
+    strip $bindir/nrsc5
+    echo "; found nrsc5 binary, installing"
+else
+    echo "; did Not find nrsc5 binary: $nrsc5bin"
 fi
 
 SCRIPTS="check_inet.sh btremote.pl btremote.service check_playlist.sh\
