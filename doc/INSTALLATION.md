@@ -37,6 +37,7 @@ deb packages are required for a typical installation:
 - gnuradio, libgnuradio-osmosdr0.1.4, libvolk1-bin
 - libboost-program-options1.67.0
 - libboost-log1.67.0
+- libboost-regex1.67.0
 - libgpiod2
 - libjsoncpp1
 
@@ -105,11 +106,12 @@ additionally require the following development tools and libraries:
 ##  Ubuntu 20.04:
 
 ```
+sudo apt-get update
 sudo apt install build-essential gcc
 sudo apt install git meson
 sudo apt install libboost1.71-dev libboost-system1.71-dev
 sudo apt install libboost-log1.71-dev libboost-program-options1.71-dev
-sudo apt install libboost-test1.71-dev
+sudo apt install libboost-test1.71-dev libboost-regex1.71-dev
 sudo apt install libjsoncpp-dev
 sudo apt install libpulse-dev
 sudo apt install libgpiod-dev
@@ -123,11 +125,12 @@ on your system--check what is available and substitute accordingly.
 ## Raspbian Buster
 
 ```
+sudo apt-get update
 sudo apt install build-essential gcc
 sudo apt install git meson
 sudo apt install libboost1.67-dev libboost-system1.67-dev
 sudo apt install libboost-log1.67-dev libboost-program-options1.67-dev
-sudo apt install libboost-test1.67-dev
+sudo apt install libboost-test1.67-dev  libboost-regex1.67-dev
 sudo apt install libjsoncpp-dev
 sudo apt install libpulse-dev
 sudo apt install libgpiod-dev
