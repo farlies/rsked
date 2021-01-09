@@ -205,8 +205,11 @@ sudo apt install mpg321
 Optional. This program receives NRSC-5 digital radio stations ("HD")
 using an RTL-SDR dongle. It offers a command-line interface as well as
 an API upon which other applications can be built. `rsked` drives the
-command line application.  Retrieve the source from GitHub, then build
-and install per directions.
+command line application.  Since v1.0.6, the ARM `rsked` release
+includes an `nrsc5` binary that will be installed in `~/bin`.
+Otherwise, retrieve the source from GitHub, then build and install per
+directions. Adjust the pathname in the `rsked.json` file to reference
+the correct binary.
 
 - https://github.com/theori-io/NRSC5
 
