@@ -103,5 +103,6 @@ public:
     void configure( const std::string&,
                     const boost::program_options::variables_map& );
     std::shared_ptr<const ResPathSpec> get_respathspec() const;
+    const std::string& get_config_version() const { return m_cfgversion; }
     void track_schedule();
 };

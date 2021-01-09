@@ -176,6 +176,7 @@ Rsked::get_respathspec() const
     if (m_sched) {
         return m_sched->get_respathspec();
     }
+    LOG_ERROR(Lgr) << "get_respathspec fails due to no loaded schedule!";
     return nullptr;
 }
 

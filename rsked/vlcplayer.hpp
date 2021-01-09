@@ -40,7 +40,7 @@ private:
     PlayerState m_state { PlayerState::Stopped };
     unsigned m_volume;     // as a percentage [0-100]
     unsigned m_obsvol {0};  // observed playback volume
-    boost::filesystem::path m_library_path; // music library location
+    boost::filesystem::path m_library_path {}; // music library location
     std::string m_library_uri {"file://"}; // music library location
     std::string m_last_resp {}; // last response from vlc
     std::string m_obsuri {}; // observed playing URI

@@ -33,8 +33,7 @@
 #include "config.hpp"
 #include "vlcplayer.hpp"
 #include "playermgr.hpp"
-
-#include "test/fake_rsked.hpp"
+#include "rsked.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>
@@ -192,15 +191,12 @@ void Vlc_player::cap_init()
 Vlc_player::Vlc_player()
     : m_name("Vlc_player"),
       m_volume(Default_vlc_vol),
-      m_library_path( Main::rsked->get_respathspec()->get_libpath() ),
       m_cm(Child_mgr::create(m_name))
-
 {
     LOG_INFO(Lgr) << "Created a Vlc_player named " << m_name;
     m_library_uri += m_library_path.native();
     cap_init();
 }
-
 
 /// CTOR with name.  Note that the player will expect a config file
 /// section with this name to retrieve its parameters.
@@ -208,7 +204,6 @@ Vlc_player::Vlc_player()
 Vlc_player::Vlc_player(const char *name)
     : m_name(name),
       m_volume(Default_vlc_vol),
-      m_library_path( Main::rsked->get_respathspec()->get_libpath()),
       m_cm(Child_mgr::create(name))
 {
     LOG_INFO(Lgr) << "Created an Vlc_player named " << m_name;
@@ -617,6 +612,10 @@ void Vlc_player::initialize( Config &cfg, bool testp )
     if (not m_enabled) {
         LOG_INFO(Lgr) <<"Vlc_player '" << m_name << "' (disabled)";
     }
+    // Note: next will fail if no global rsked instance exists, so you
+    // must fake one for unit testing.
+    m_library_path = Main::rsked->get_respathspec()->get_libpath();
+
     cfg.get_unsigned(m_name.c_str(),"volume",m_volume);
     if (m_volume > 100) {
         LOG_WARNING(Lgr) << "Vlc volume > 100: possible distortion";
