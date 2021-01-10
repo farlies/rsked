@@ -27,7 +27,7 @@ known to work:
 ## Dependencies
 
 To run a binary ARM release begin with at least a minimal desktop
-installation of Debian 10 Buster (Raspbian).  The following additional
+installation of Debian 10 **Buster** (Raspbian).  The following additional
 deb packages are required for a typical installation:
 - vorbis-tools
 - mpd, mpc
@@ -49,7 +49,7 @@ deb packages are required for a typical installation:
   if command `vlc` is missing, install `vlc`.
 
 - You may omit the gnuradio packages if there is no need to play FM
-  radio via `gqrx` (and the SDR player is disabled in the configuration.)
+  radio via one of the SDR players (`gqrx` or `nrsc5`).
 
 - You may omit `mpd`, `mpc`, and `mpg321` if there is no need to play
   MP3 files or streams with these players. (Be sure to disable them in
@@ -86,7 +86,9 @@ Replace the pathname above with one corresponding to whatever release
 you downloaded.
 
 Edit the files in the `~/.config` directories per instructions in
-[CONFIGURATION](CONFIGURATION.md).
+[CONFIGURATION](CONFIGURATION.md).  You can test rsked configuration
+by running `~/bin/rsked --test`; it should show no errors and report
+that all of the needed players are configured.
 
 
 # Build Tools and Libraries
@@ -203,8 +205,11 @@ sudo apt install mpg321
 Optional. This program receives NRSC-5 digital radio stations ("HD")
 using an RTL-SDR dongle. It offers a command-line interface as well as
 an API upon which other applications can be built. `rsked` drives the
-command line application.  Retrieve the source from GitHub, then build
-and install per directions.
+command line application.  Since v1.0.6, the ARM `rsked` release
+includes an `nrsc5` binary that will be installed in `~/bin`.
+Otherwise, retrieve the source from GitHub, then build and install per
+directions. Adjust the pathname in the `rsked.json` file to reference
+the correct binary.
 
 - https://github.com/theori-io/NRSC5
 
