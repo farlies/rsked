@@ -55,7 +55,7 @@ Nrsc5_player::Nrsc5_player( const char* nm, time_t min_run_secs )
     cap_init();
 }
 
-/// DTOR.  Baseplayer will kill any child process.
+/// DTOR.  Note: baseplayer dtor will kill any child process.
 Nrsc5_player::~Nrsc5_player()
 {
 }
@@ -87,7 +87,39 @@ void Nrsc5_player::initialize( Config& cfg, bool testp )
 }
 
 
+/// Pause: nrsc5 does not explicitly handle SIGSTOP (or any other signal)
+/// so die instead, but declare we are in a "Paused" state.
+///
+void Nrsc5_player::pause()
+{
+    exit();
+    m_pstate = PlayerState::Paused;  // pretend we are "paused"
+}
+
+/// If paused, then execute play for the most recent source.
+/// * May throw
+///
+void Nrsc5_player::resume()
+{
+    spSource src = m_src;
+    if (! src) {
+        LOG_ERROR(Lgr) << m_name << " asked to resume, but source is UNdefined";
+        throw Player_media_exception();
+    }
+    play( src );
+}
+
+/// Exit: Terminate external player, if any.
+///
+void Nrsc5_player::exit()
+{
+    LOG_INFO(Lgr) << m_name << " signal to exit (hard)";
+    m_cm->kill_child( true ); 
+    m_pstate = PlayerState::Stopped;
+}
+
 /// Play the given source (a station).
+/// * May throw
 ///
 void Nrsc5_player::play( spSource src )
 {

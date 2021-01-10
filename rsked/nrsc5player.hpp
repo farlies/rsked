@@ -33,7 +33,10 @@ public:
     Nrsc5_player(const Nrsc5_player&) = delete;
     void operator=(Nrsc5_player const&) = delete;
     //
+    virtual void exit() override;
     virtual void initialize( Config&, bool ) override;
+    virtual void pause() override;
     virtual void play( spSource ) override;
+    virtual void resume() override;
 };
 
