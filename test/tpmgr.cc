@@ -108,6 +108,9 @@ BOOST_AUTO_TEST_CASE( config_pmgr_default )
     cfg.read_config();      // might throw
     cfg.log_about();
 
+    std::shared_ptr<const ResPathSpec> rps =Main::rsked->get_respathspec();
+    BOOST_REQUIRE(rps);
+
     Player_manager pmgr {};
     pmgr.configure( cfg,  true ); // (testp) might throw
 
