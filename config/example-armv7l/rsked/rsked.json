@@ -40,7 +40,7 @@
 
     "Nrsc5_player" : {
         "enabled" : true,
-        "nrsc5_bin_path"  : "/usr/local/bin/nrsc5",
+        "nrsc5_bin_path"  : "~/bin/nrsc5",
         "device_index" : 0
     },
 
