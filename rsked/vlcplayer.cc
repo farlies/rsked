@@ -330,14 +330,14 @@ void Vlc_player::set_volume()
 void Vlc_player::try_start()
 {
     constexpr const unsigned MAX_RETRIES=3;
-    constexpr const long VLC_WAIT_USEC = 123'000;
+    constexpr const long VLC_WAIT_USEC = 1'500'000;
 
     // We run VLC as a child: start it now.
     if (not m_cm->running()) {
         LOG_INFO(Lgr) << "Launching VLC child process";
         m_cm->set_name("vlc");
         m_cm->enable_pty();
-        m_cm->set_pty_read_timeout( 0, 100'000 );  // sec,usec: may be sluggish
+        m_cm->set_pty_read_timeout( 0, 800'000 );  // sec,usec: may be sluggish
         m_cm->set_wdir( m_library_path ); // relative paths of music files
         //
         m_cm->clear_args();
@@ -354,6 +354,8 @@ void Vlc_player::try_start()
             stop();
             return;
         }
+	// TODO: FIXME...if check_status failed, the player is already
+	// marked unusable and the child process killed! so this loop is moot.
     }
     mark_unusable();
     throw Player_startup_exception();
