@@ -109,7 +109,8 @@ tvlc_srcs = ['test/tvlc.cc', 'rsked/vlcplayer.cc', 'rsked/playpref.cc',
              'rsked/source.cc', 'rsked/respath.cc', 'rsked/inetcheck.cc'
              ]+utils
 
-tpty_srcs = ['test/tpty.cc', 'util/chpty.cc']
+tpty_srcs = ['test/tpty.cc', 'util/chpty.cc', 'util/logging.cc',
+             'util/configutil.cc']
 
 tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
               'rsked/playermgr.cc',  'rsked/vurunner.cc',
