@@ -325,11 +325,11 @@ void Player_manager::check_minimally_usable()
 bool Player_manager::check_players()
 {
     check_inet(); // players may invoke Player_manager::inet_available()
-    unsigned nc=0, ngood=0;
+    unsigned nc=0, ngood=0, nplaying=0;
     for ( auto pair : m_players ) {
         spPlayer sp = pair.second;
-        nc++;
         if (sp) {
+            nc++;
             if (sp->check()) {
                 ngood++;
             } else {
@@ -338,11 +338,36 @@ bool Player_manager::check_players()
                                    << pair.first;
                 }
             }
+            if (sp->state() ==  PlayerState::Playing) {
+                nplaying++;
+            }
         }
     }
     LOG_DEBUG(Lgr) << "Player_manager: " << ngood << "/" << nc
-                   << " players are okay";
+                   << " players okay, " << nplaying << " playing";
+    //
+    if (nplaying > 1) {         // this really shouldn't happen...
+        return fix_contention();
+    }
     return (nc == ngood);
+}
+
+
+/// This is called in the unlikely event that more than one player
+/// thinks it should be playing at the current time(!).
+///
+bool Player_manager::fix_contention()
+{
+    LOG_ERROR(Lgr) << "More than 1 player is playing!";
+    for ( auto pair : m_players ) {
+        spPlayer sp = pair.second;
+        if (sp) {
+            if (sp->state() ==  PlayerState::Playing) {
+                LOG_ERROR(Lgr) << sp->name() << " thinks it is playing";
+            }
+        }
+    }
+    return false;
 }
 
 /// Check internet availability.
