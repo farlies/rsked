@@ -35,6 +35,8 @@
 class Vlc_player : public Player_with_caps {
 private:
     enum { MaxResponse=4000, RecheckSecs=2*60*60 };
+    enum class CmdRes { completed, not_running, no_pty,
+            bad_parse, unresponsive, misc_error };
     std::string m_name; // user friendly name of player
     spSource m_src {};  // store the source we are playing
     PlayerState m_state { PlayerState::Stopped };
@@ -48,6 +50,7 @@ private:
     bool m_usable {true};
     bool m_debug {false};
     bool m_testmode {false};
+    long m_iowait_us { 40'000 };  // microseconds to wait on pty I/O
     unsigned m_stall_counter {0};
     unsigned m_stalls_max {7};
     unsigned long m_last_elapsed_secs {0};
@@ -62,8 +65,10 @@ private:
     void check_not_stalled();
     bool check_status();
     void do_command( const std::string&, bool );
+    CmdRes do_status();
     void mark_unusable();
     void set_volume();
+    void set_pty_timeout();
     void shutdown_vlc();
     void try_start();
     bool verify_playing_uri( const std::string& ) const;

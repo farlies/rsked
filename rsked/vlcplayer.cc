@@ -59,6 +59,32 @@ const unsigned Default_vlc_vol { 100 };  // Percentage
 
 
 
+/// Enforce sleep for usecs microseconds, even if interrupted by
+/// signals.  Exception: If there was a problem copying information
+/// from user space, it will exit prematurely. Values of usecs
+/// less than or equal to 0 will make the function return immediately.
+///
+static void really_sleep( long usecs )
+{
+    if (usecs <= 0) {
+        return;
+    }
+    time_t secs = usecs / 1'000'000;
+    long nsecs  = 1000 * (usecs - secs*1'000'000);
+    struct timespec rem { secs, nsecs };
+    errno = 0;
+    for (;;) {
+        struct timespec req = rem;
+        int rc = nanosleep( &req, &rem );
+        if (0==rc) {
+            return;   // finished the entire interval
+        }
+        if (errno != EINTR) {
+            break;
+        }
+    }
+}
+
 
 /// this is used to parse vlc status messages from cli interface
 ///
@@ -106,10 +132,12 @@ static bool parse_unsigned( const std::string &resp, unsigned long &u )
 ///  'stopped' : PlayerState::Stopped
 ///  'playing' : PlayerState::Playing
 ///  'paused'  : PlayerState::Paused
+/// Returns true if a normal status response is parsed, othewise false.
 ///
-/// * May throw std::runtime_error in very rare circumstances
+/// * May throw std::runtime_error in VERY rare circumstances
 ///
-static void parse_status( const std::string &sresp1, PlayerState &pstate,
+static bool
+parse_status( const std::string &sresp1, PlayerState &pstate,
                    unsigned &obsvol, std::string &resource)
 {
    std::string::const_iterator start, end;
@@ -117,11 +145,13 @@ static void parse_status( const std::string &sresp1, PlayerState &pstate,
    end = sresp1.end();
    boost::match_results<std::string::const_iterator> what;
    boost::match_flag_type flags = boost::match_default;
+   bool parsedp {false};
 
    while(regex_search(start, end, what, Status_regex, flags))
    {
        std::string skey(what[1].first, what[1].second);
        std::string sval(what[2].first, what[2].second);
+       parsedp = true;
        if (skey == "audio volume") {
            try {
                obsvol = static_cast<unsigned>( std::stoul(sval) );
@@ -146,7 +176,7 @@ static void parse_status( const std::string &sresp1, PlayerState &pstate,
        flags |= boost::match_prev_avail;
        flags |= boost::match_not_bob;
    }
-
+   return parsedp;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -196,6 +226,7 @@ Vlc_player::Vlc_player()
     LOG_INFO(Lgr) << "Created a Vlc_player named " << m_name;
     m_library_uri += m_library_path.native();
     cap_init();
+    m_cm->enable_pty();
 }
 
 /// CTOR with name.  Note that the player will expect a config file
@@ -209,6 +240,7 @@ Vlc_player::Vlc_player(const char *name)
     LOG_INFO(Lgr) << "Created an Vlc_player named " << m_name;
     m_library_uri += m_library_path.native();
     cap_init();
+    m_cm->enable_pty();
 }
 
 
@@ -266,6 +298,9 @@ void Vlc_player::do_command( const std::string& cmd, bool log_errors )
         LOG_DEBUG(Lgr) << "Tell vlc: " << cmdx;
     }
     m_cm->pty_write_nb( cmd );
+    if (m_debug) {
+        LOG_DEBUG(Lgr) << "command was written, now wait for response";
+    }
     m_last_resp.clear();
     m_cm->pty_read_nb( m_last_resp, MaxResponse );
     if (m_debug) {
@@ -321,7 +356,19 @@ void Vlc_player::set_volume()
     do_command( set_vol_cmd, true );
 }
 
-/// Optionally start the child process and verify it is responsive.
+/// We might need to wait up to m_iowait_us for I/O. Pass this
+/// member value on the ChildMgr pty. Value required varies from
+/// one machine to another.  Currently the same for read and write.
+///
+void Vlc_player::set_pty_timeout()
+{
+    long secs = m_iowait_us / 1'000'000;
+    long usecs = m_iowait_us - secs*1'000'000;
+    m_cm->set_pty_read_timeout( secs, usecs );
+    m_cm->set_pty_write_timeout( secs, usecs );
+}
+
+/// If needed, start the child process and verify it is responsive.
 /// On success, it will return with m_usable set to true.
 /// The player will begin in stopped, with an empty play list.
 ///
@@ -330,14 +377,13 @@ void Vlc_player::set_volume()
 void Vlc_player::try_start()
 {
     constexpr const unsigned MAX_RETRIES=3;
-    constexpr const long VLC_WAIT_USEC = 1'500'000;
+    constexpr const long VLC_WAIT_USEC = 1'000'000;
 
     // We run VLC as a child: start it now.
     if (not m_cm->running()) {
         LOG_INFO(Lgr) << "Launching VLC child process";
         m_cm->set_name("vlc");
-        m_cm->enable_pty();
-        m_cm->set_pty_read_timeout( 0, 800'000 );  // sec,usec: may be sluggish
+        set_pty_timeout();
         m_cm->set_wdir( m_library_path ); // relative paths of music files
         //
         m_cm->clear_args();
@@ -345,50 +391,79 @@ void Vlc_player::try_start()
         m_cm->add_arg( "--no-playlist-autostart" ); // don't autostart
         m_cm->start_child();      // may throw
     }
+    // VLC is nominally running if we get here. Attempt a status check.
     for (unsigned i=1; i<=MAX_RETRIES; i++) {
-        usleep( VLC_WAIT_USEC );  // give it time to fire up
-        if (check_status()) {     // success
+        really_sleep( VLC_WAIT_USEC );  // give it time to fire up
+        if (CmdRes::completed == do_status()) {     // success
             m_usable = true;
             LOG_INFO(Lgr) << "VLC running ";
             set_volume();
             stop();
             return;
         }
-	// TODO: FIXME...if check_status failed, the player is already
-	// marked unusable and the child process killed! so this loop is moot.
     }
     mark_unusable();
     throw Player_startup_exception();
 }
 
+
 /// Issue a 'status' command to vlc and capture the result. Updates
 /// m_state, m_obsvol and m_obsuri. If a result is obtained then
-/// return true.  If there is no child process, or if we do not get a
-/// response within the timeout period then return false.  Failure
-/// will mark the player unusable (m_usable := false).
+/// return true.  If there is any problem, mark the player as unusable
+/// (m_usable := false) and return false.
 ///
 /// * Will NOT throw.
 ///
 bool Vlc_player::check_status()
 {
+    CmdRes dsr =  do_status();
+
+    if (dsr != CmdRes::completed) {
+        mark_unusable();
+        return false;
+    } else {
+        return true;
+    }
+}
+
+/// Performs a "status" command on the VLc player, setting members:
+///    m_last_resp, m_state, m_obsvol, m_obsuri
+///
+/// Returns one of the Vlc_player::CmdRes values:
+/// - completed
+/// - not_running
+/// - no_pty
+/// - unresponsive
+/// - bad_parse
+/// - error
+///
+/// * Will not throw, I hope.
+///
+Vlc_player::CmdRes Vlc_player::do_status()
+{
     try {
-        if (not m_cm->running() or not m_cm->has_pty()) {
-            return false;
+        if (not m_cm->running()) {
+            return CmdRes::not_running;
+        }
+        if (not m_cm->has_pty()) {
+            return CmdRes::no_pty;
         }
         do_command("status\n",true);
-        m_obsuri = "";
-        parse_status( m_last_resp, m_state, m_obsvol, m_obsuri );
-        return true;
     }
     catch( const Chpty_exception &err ) {
         LOG_ERROR(Lgr) << m_name << " is unresponsive: " << err.what();
-        mark_unusable();
+        return CmdRes::unresponsive;
     }
     catch( const std::exception &err ) {
         LOG_ERROR(Lgr) << m_name << " unexpected error in check_status: "
                        << err.what();
+        return CmdRes::misc_error;
     }
-    return false;
+    m_obsuri = "";
+    if (parse_status( m_last_resp, m_state, m_obsvol, m_obsuri )) {
+        return CmdRes::completed;
+    }
+    return CmdRes::bad_parse;
 }
 
 
@@ -429,14 +504,15 @@ void Vlc_player::mark_unusable()
 /// If the player has made no progress in elapsed time (no change)
 /// for m_stalls_max number of checks then throw a Player_media_exception.
 /// (Tune parameter to ride out brief connection issues.)
-/// Will not alert if the source is marked as "may-be-quiet".
+/// Will neither check nor alert if the source is marked as "may-be-quiet".
 ///
 /// * May THROW: Player_exception
 ///
 void Vlc_player::check_not_stalled()
 {
-    if (m_src->may_be_quiet()) return;
-    //
+    if (m_src->may_be_quiet()) {
+        return;
+    }
     try {
         do_command("get_time\n",true);
         unsigned long u {0};
@@ -459,8 +535,8 @@ void Vlc_player::check_not_stalled()
             m_last_elapsed_secs = u;
         }
     } catch (const std::exception &err) {
-        LOG_DEBUG(Lgr) << m_name << " error checking not stalled:" << err.what();
-        throw Player_exception();
+        LOG_WARNING(Lgr) << m_name << " error checking not stalled:" << err.what();
+        throw Player_media_exception();
     }
     if (m_stall_counter > m_stalls_max) {
         LOG_WARNING(Lgr) << m_name << " stalled on source {"
@@ -624,6 +700,17 @@ void Vlc_player::initialize( Config &cfg, bool testp )
         // m_volume = 100;  // allow > 100% at user's risk
     }
     cfg.get_bool(m_name.c_str(),"debug", m_debug);
+    //
+    // Optional wait_us sets the time we are willing to wait for vlc I/O
+    long lwait = m_iowait_us;
+    cfg.get_long(m_name.c_str(),"wait_us",lwait);
+    if ((lwait > 0) and (lwait < 5'000'000)) {
+        m_iowait_us = lwait;
+        set_pty_timeout();
+    } else {
+        LOG_WARNING(Lgr) << m_name << " wait_us:=" << lwait
+                         << " is implausible, using " << m_iowait_us;
+    }
     //
     m_bin_path = Default_vlc_bin;
     if (m_enabled) {
