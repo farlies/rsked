@@ -90,21 +90,23 @@ void Ogg_player::initialize( Config& cfg, bool /* testp */ )
 }
 
 
-/// Play the given slot (if you can). Setting the src to nullptr stops
-/// the player and resets the source.
-/// NOTE:  No support for ogg streams yet.
+/// Play the given slot (if you can). Calling with src==nullptr stops
+/// the player and resets the source member m_src.
+/// Support for ogg streams is conjectural at this point.
+///
+/// * May throw Player_exceptions
 ///
 void Ogg_player::play( spSource src )
 {
     if (!src) {
         m_src = src;
-        stop();
+        stop();  // == exit()
         return;
     }
-    if (src->encoding() != Encoding::ogg) {
-        LOG_ERROR(Lgr) << m_name <<  " cannot play this type of source: "
-                       << encoding_name( src->encoding() );
-        return;
+    // Verify src is a valid type for Vlc
+    if (not has_cap(src->medium(),src->encoding())) {
+        LOG_ERROR(Lgr) << m_name << "cannot play type of source in" << src->name();
+        throw Player_media_exception();
     }
     m_src = src;
     LOG_INFO(Lgr) << m_name << " play: {" << m_src->name() << "}";

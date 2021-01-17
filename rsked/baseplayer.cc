@@ -75,28 +75,33 @@ bool Base_player::set_enabled( bool enabled )
 
 
 /// Exit: Terminate external player, if any.
+/// * Will NOT throw
 ///
 void Base_player::exit()
 {
-    LOG_INFO(Lgr) << m_name << " exit";
-    m_cm->kill_child();
+    LOG_INFO(Lgr) << "forcing " << m_name << " to exit";
+    m_cm->kill_child( true, m_kill_us );
     m_pstate = PlayerState::Stopped;
 }
 
 
 /// If playing a file, directory, or playlist, then signal STOP.
 ///
+/// * Might throw a CM_exception
+///
 void Base_player::pause()
 {
     // verify m_src is not mode streaming
     if (!m_src) return;
     if (m_src->medium() == Medium::stream) {
-        LOG_WARNING(Lgr) << m_name << " -- cannot pause while in stream mode.";
+        LOG_WARNING(Lgr) << m_name <<
+            "--cannot pause while streaming; exit instead.";
+        exit();
         return;
     }
     if (m_pstate == PlayerState::Playing) {
         if (m_cm->running()) {
-            m_cm->stop_child();
+            m_cm->stop_child( m_pause_us );
             m_pstate = PlayerState::Paused;
             LOG_DEBUG(Lgr) << m_name << " paused";
         }
@@ -110,7 +115,7 @@ void Base_player::resume()
     if (m_pstate == PlayerState::Paused) {
         ChildPhase cph = m_cm->last_obs_phase();
         if (ChildPhase::paused == cph) {
-            m_cm->cont_child();
+            m_cm->cont_child( m_resume_us );
             m_pstate = PlayerState::Playing;
         } else {
             LOG_WARNING(Lgr)
@@ -235,7 +240,7 @@ bool Base_player::maybe_restart(RunCond status)
     //
     if (not m_src->repeatp() and not (status==RunCond::runTooShort)) {
         // tell cm it should not be running so next check won't return here
-        m_cm->kill_child();
+        m_cm->kill_child(true); // force
         if (nullptr == m_src) {
             LOG_INFO(Lgr) << m_name << " exited while not playing anything";
         } else {
