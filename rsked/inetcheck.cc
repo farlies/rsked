@@ -43,7 +43,7 @@ void Inet_checker::set_refresh_secs(time_t t)
     if (t > 0) {
         m_refresh_secs = t;
     } else {
-        throw std::invalid_argument("Inet_checker set refresh time < 0");
+        throw std::invalid_argument("Inet_checker: set refresh time < 0");
     }
 }
 
@@ -111,15 +111,15 @@ bool Inet_checker::get_current_status()
 bool Inet_checker::inet_ready()
 {
     if (not m_enabled) {
-        LOG_DEBUG(Lgr) << "Inet_checker disabled";
+        LOG_DEBUG(Lgr) << "Inet_checker: is disabled";
         return true;
     }
     time_t dt = (time(0) - m_last_check);
     if (dt >= m_refresh_secs) {
-        LOG_DEBUG(Lgr) << "Time to reload status file";
+        LOG_DEBUG(Lgr) << "Inet_checker: reload status file";
         return get_current_status();
     }
-    LOG_DEBUG(Lgr) << "Inet_checker using cached value " << dt
+    LOG_DEBUG(Lgr) << "Inet_checker: using cached value " << dt
                    << " < " << m_refresh_secs;
     return m_last_status;
 }
