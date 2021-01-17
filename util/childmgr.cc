@@ -396,7 +396,7 @@ void Child_mgr::postmortem( int status, int reason )
     if ((m_exit_status != 0) or (run_secs < m_min_run)) {
         m_fails.push_back( m_exit_time );   // remember this failure time
     }
-    if (m_pty) {                // If there is a pty, close it immediately.
+    if (m_pty) { // If there is a pty, close it immediately (safe).
         m_pty->close_pty();
     }
 }
@@ -407,7 +407,9 @@ void Child_mgr::postmortem( int status, int reason )
 /// Member _pid may be zeroed if the process no longer observed.
 ///
 /// N.B. This is called within the SIGCHLD handler, so no I/O or other
-/// unsafe function calls. It should never throw an exception.
+/// unsafe function calls.
+///
+/// * Will not throw
 ///
 void Child_mgr::update_status( siginfo_t & infop )
 {
@@ -458,25 +460,87 @@ void Child_mgr::signal_child(int sig)
     }
 }
 
+/// Wait up to wait_us MICROseconds for the observed phase to
+/// transition to phase indicated by argument "tgt_phase".  Return
+/// true if the observed phase is is the desired target phase.
+///
+/// * Will NOT throw
+///
+bool Child_mgr::wait_for_phase( ChildPhase tgt_phase, long wait_us )
+{
+    time_t secs = wait_us / 1'000'000;
+    long     us = wait_us - secs*1000;
+    struct timespec rem_ts { secs, us*1000 };
+
+    while (m_obs_phase != tgt_phase) {
+        struct timespec wait_ts = rem_ts;
+        errno = 0;
+        int rc = nanosleep( &wait_ts, &rem_ts );
+        if (0 == rc) break;  // full wait accomplished
+        if (errno != EINTR) {
+            LOG_ERROR(Lgr) << "Child_mgr " << m_name << " wait for phase "
+                           << phase_name(tgt_phase)
+                           << " failed on error " << errno;
+            break;
+        } // else: interrupted, continue to wait the remaining rem_ts
+    }
+    if (m_obs_phase != tgt_phase) {
+        LOG_WARNING(Lgr) << "Child " << m_name << "(" << m_pid
+                         << ") persists in phase " << phase_name(m_obs_phase)
+                         << " instead of transitioning to " << phase_name(tgt_phase);
+        return false;
+    }
+    return true;
+}
+
+
 /// Stop (pause) the child process by sending SIGSTOP. It will signal
 /// even if the child is not in a running state. Note that not all
-/// applications will handle this signal well.
-/// * May throw CM_exception
+/// applications will handle STOP/CONT signals smoothly. If wait_us > 0
+/// then wait for up to that many microseconds for the child to report
+/// it has stopped--if this does not occur then throw an exception.
+/// If wait_us==0 (or negative) then just signal and return--do not verify.
 ///
-void Child_mgr::stop_child()
+/// * May throw CM_nochild_exception, CM_stop_exception, or CM_signal_exception
+///
+void Child_mgr::stop_child( long wait_us )
 {
     signal_child( SIGSTOP );
     m_cmd_phase = ChildPhase::paused;
+    if (0 >= wait_us) {
+        return;   // Do not wait for child to stop or verify stopped
+    }
+    if (not wait_for_phase( ChildPhase::paused, wait_us )) {
+        // if the child is apparently GONE then throw
+        if (m_obs_phase == ChildPhase::gone) {
+            throw CM_nochild_exception();
+        }
+        throw CM_stop_exception();
+    }
 }
 
-/// Continue a stopped child process by sending child SIGCONT. It will
-/// signal the child even if it is not apparently stopped.
-/// * May throw CM_exception
+/// Continue a paused child process by sending child SIGCONT. It will
+/// signal the child even if it is not apparently stopped.  If a
+/// non-zero wait_us is specified, the function will wait up to that
+/// number of MICROseconds for the child to signal that is no longer
+/// paused. (Aside: the child might also exit in that period).
+/// If no transition is observed then throw.
 ///
-void Child_mgr::cont_child()
+/// * May throw CM_nochild_exception, CM_cont_exception, or CM_signal_exception
+///
+void Child_mgr::cont_child( long wait_us )
 {
     signal_child( SIGCONT );
     m_cmd_phase = ChildPhase::running;
+    if (0 == wait_us) {
+        return;                 // Do not wait for child to resume
+    }
+    if (not wait_for_phase( ChildPhase::running, wait_us )) {
+        if (m_obs_phase == ChildPhase::gone) {
+            throw CM_nochild_exception();
+        }
+        throw CM_cont_exception();
+    }
 }
 
 
@@ -489,58 +553,79 @@ void Child_mgr::cont_child()
 ///
 /// *  Will NOT throw.
 ///
-void Child_mgr::kill_child(bool force)
+void Child_mgr::kill_child( bool force, long wait_us )
 {
     if (m_cmd_phase == ChildPhase::gone 
           and m_obs_phase == ChildPhase::gone) {
-        return;   // was already noted as dead-won't throw
+        return;   // was already noted as dead.
     }
     m_cmd_phase = ChildPhase::gone;
 
     // If we lack a valid pid, then presume it is somehow already dead
     if (m_pid == NOTAPID) {
-        m_obs_phase = ChildPhase::gone;
-        m_start_time = 0;       // TODO:  is this right ??? 
-        m_terminate = 0;
+        presume_dead( NOTAPID );
         return;
     }
-
-    // If not force, use SIGTERM; if force, use SIGKILL
+    // If child is STOPPED, (and not force) first attempt to continue
+    // the child. (A process cannot handle normal signals when
+    // stopped.) Handle any errors from cont_child. If continuation
+    // fails, force kill.
+    //
+    if ((m_obs_phase == ChildPhase::paused) and not force) {
+        LOG_DEBUG(Lgr) << m_name << "(" << m_pid 
+                       << ") is paused--first awaken, then kill"; 
+        try {
+            cont_child( wait_us ); // wait microseconds
+        }
+        catch( std::exception &err ) {
+            LOG_ERROR(Lgr) << "Failed to unpause prior to kill: " 
+                           << err.what();
+            force = true;       // no more Mr. nice guy
+        }
+        m_cmd_phase = ChildPhase::gone; // maybe was reset to running
+    }
     m_terminate = (force ? SIGKILL : SIGTERM);
     m_kill_time = time(0);
-    int res = kill(m_pid, m_terminate); // the system call
 
+    int res = kill( m_pid, m_terminate ); // the system call
     if (0 == res) {
         LOG_DEBUG(Lgr) << "Child_mgr killed " << m_name << " pid=" << m_pid
             << " signal=" << (SIGTERM==m_terminate ? "SIGTERM" : "SIGKILL");
+        wait_for_phase( ChildPhase::gone, wait_us );
     }
-    else {
-        // There is not much we can do if we cannot even send the
-        // signal. Most likely the pid no longer exists, or has been
-        // reused for another user.  In either case, presume dead.
+    else { // not much we can do if we cannot even send the signal
+        presume_dead( res );
         LOG_WARNING(Lgr) 
             << "Child_mgr failed to kill " << m_name << " pid=" << m_pid 
             << " (Error " << res << ")  Presume dead.";
-        m_old_pid = m_pid;
-        m_pid = NOTAPID;
-        m_terminate = 0;
-        m_obs_phase = ChildPhase::gone;
     }
 }
 
+/// Presume the child is dead and reset various member vars.
+///
+/// *  Will NOT throw.
+///
+void Child_mgr::presume_dead( int /* rc */ )
+{
+    m_obs_phase = ChildPhase::gone;
+    m_old_pid = m_pid;
+    m_pid = NOTAPID;
+    m_terminate = 0;
+    /* m_start_time = 0; */ // leave for possible postmortem
+}
 
-/**
- * Launch the child process.  Clear args, then add arguments prior to
- * calling this (TODO: currently must be done *every time*.)
- * If a child is already running, it will be killed
- * first. (TODO: this might not be the desired behavior in all cases.)
- * * May throw CM_start_exception.
- */
+/// Launch the child process.  Clear args, then add arguments prior to
+/// calling this function. Adding args prior to call must be
+/// done for *every* invocation.  If a child is already running, it will
+/// be killed ungently (sigkill) first.
+///
+/// * May throw CM_start_exception.
+///
 void Child_mgr::start_child()
 {
     // if necessary, kill any current child process
     if (m_obs_phase != ChildPhase::gone) {
-        kill_child();           // no throw
+        kill_child(true);           // force; no throw
     }
     //
     std::vector<const char*> argv {};        // captive ptrs to args
@@ -714,9 +799,9 @@ bool Child_mgr::check_child_gone(RunCond &cond)
     }
     // Dead.
     if (CLD_EXITED == m_exit_reason) {   // child called exit()
-        LOG_DEBUG(Lgr) << "Child_mgr " << m_name <<" pid=" << m_old_pid
-                       << " (" << m_bin_path
-                       << ") exit(" << m_exit_status << ")";
+        // LOG_DEBUG(Lgr) << "Child_mgr " << m_name <<" pid=" << m_old_pid
+        //                << " (" << m_bin_path
+        //                << ") exit(" << m_exit_status << ")";
         if (0==m_exit_status) {
             if (uptime() > m_min_run) {
                 cond = RunCond::okay;
@@ -729,9 +814,10 @@ bool Child_mgr::check_child_gone(RunCond &cond)
         cond = RunCond::badExit;
     }
     if (CLD_KILLED == m_exit_reason) { // child smote by signal
-        LOG_DEBUG(Lgr) << "Child_mgr " << m_name << " pid=" << m_old_pid 
+        LOG_DEBUG(Lgr) << m_name << " pid=" << m_old_pid 
                        << " (" << m_bin_path
-                       << ") killed by signal(" <<  m_exit_status << ")";
+                       << ") killed by sig(" <<  m_exit_status
+                       << "), should be " << phase_name(m_cmd_phase);
         cond = RunCond::sigKilled;
     }
     return false;

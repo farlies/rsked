@@ -131,6 +131,7 @@ private:
     bool check_child_running( RunCond &);
     void launch_child_binary(std::vector<const char*>&);
     void postmortem( int, int );
+    void presume_dead( int );
     void update_status( siginfo_t & );
     Child_mgr();
     Child_mgr( const boost::filesystem::path );
@@ -151,13 +152,13 @@ public:
     void clear_status();
     ChildPhase cmd_phase() const { return m_cmd_phase; }
     bool completed() const;
-    void cont_child();
+    void cont_child(long wait_us=0);
     unsigned fails_since(time_t) const;
     int get_exit_reason() const { return m_exit_reason; }
     int get_exit_status() const { return m_exit_status; }
     const std::string & get_name() const { return m_name; }
     pid_t get_pid() const { return m_pid; }
-    void kill_child(bool force=false);
+    void kill_child(bool force=false, long wait_us=0 );
     int last_exit_status() const { return m_exit_status; }
     ChildPhase last_obs_phase() const { return m_obs_phase; }
     bool running() const;
@@ -168,9 +169,10 @@ public:
     void set_wdir(const boost::filesystem::path &);
     void signal_child(int);
     void start_child();
-    void stop_child();
+    void stop_child(long wait_us=0);
     unsigned updates() { return m_updates; }
     time_t uptime() const;
+    bool wait_for_phase( ChildPhase, long ); // usecs
     // pseudoterminal methods
     void enable_pty();
     bool has_pty() const;

@@ -45,21 +45,22 @@
 
 ///////////////////////////////////////////////////////////////////
 
-/// Represent the controlling side of a pseudoterminal.
+/// This object represents the controlling side of a pseudoterminal.
 /// The buffer capacity of pty is about 4kb in either direction.
 ///
 class Pty_controller {
 private:
-    enum { non_fd = (-1), libc_err=(-1) };
+    enum { non_fd = (-1), libc_err=(-1), PTYBUFSIZE=4096 };
     int m_cfd { non_fd };            // controller file descriptor
     int m_rfd { non_fd };            // remote file descriptor (child)
     int m_errno {0};
     struct termios m_termios {};
     bool m_valid_termios {false};
     struct winsize m_winsize {24, 80, 0, 0};
-    struct timeval m_rtimeout { 0, 50'000 }; // secs, usecs
+    struct timeval m_rtimeout { 0, 25'000 }; // secs, usecs
     struct timeval m_wtimeout { 0, 10'000 }; // secs, usecs
     std::string m_remote_name {};
+    char m_read_buf[ PTYBUFSIZE ];
 public:
     int can_read();
     int can_write();

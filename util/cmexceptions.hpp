@@ -47,6 +47,20 @@ struct CM_start_exception : public CM_exception {
 };
 
 
+/// Occurs when we cannot continue (unpause) a child process.
+struct CM_cont_exception : public CM_exception {
+    const char* what() const throw() {
+        return "Child_mgr failed to unpause child process";
+    }
+};
+
+/// Occurs when we cannot stop (pause) a child process.
+struct CM_stop_exception : public CM_exception {
+    const char* what() const throw() {
+        return "Child_mgr failed to stop child process";
+    }
+};
+
 struct CM_no_pty_exception : public CM_exception {
     const char* what() const throw() {
         return "CM has not enabled pty"; }
