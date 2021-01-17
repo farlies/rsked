@@ -320,6 +320,7 @@ void Rsked::play_announcement( const char* sname )
         LOG_ERROR(Lgr) << "play_announcement missing name or schedule";
         return;
     }
+    spPlayer player;
     try {
         spSource src = m_sched->find_viable_source( sname );
         if (!src) {
@@ -337,7 +338,7 @@ void Rsked::play_announcement( const char* sname )
                              << "} suppressed at this time of day";
             return;
         }
-        spPlayer player = m_pmgr->get_annunciator();
+        player = m_pmgr->get_annunciator();
         if (player and player->is_usable()) {
             time_limited_play( player, src, Announcement_max_secs );
             LOG_INFO(Lgr) << "Announcement {" << sname << "} complete";
@@ -345,9 +346,15 @@ void Rsked::play_announcement( const char* sname )
             LOG_ERROR(Lgr) << "Failed to get a usable annunciator for message "
                            << sname;
         }
+        player.reset();
     } catch (...) {
         LOG_ERROR(Lgr) << "play_announcement(" << sname << ") failed.";
     }
+    try {   // exit the announcement player on failure
+        if (player) {
+            player->exit();
+        }
+    } catch(...) {};
 }
 
 /// Play a *scheduled* announcement given the schedule slot, if the
@@ -450,6 +457,7 @@ void Rsked::resume_play()
 /// Play the source on the player (which is typically the
 /// annunciator), waiting for completion up to n_secs seconds. The
 /// player is always stopped prior to return.
+///
 /// * May throw a Player exception
 ///
 void Rsked::time_limited_play( spPlayer player, spSource src, time_t n_secs )
@@ -463,11 +471,12 @@ void Rsked::time_limited_play( spPlayer player, spSource src, time_t n_secs )
     do {
         sleep(1);
         if ((time(0) - start) > n_secs) {
-            LOG_WARNING(Lgr) << "Time limit expired playing " << src->name();
+            LOG_WARNING(Lgr) << "Exceded time limit playing " << src->name();
+            break;
         }
     } while (not player->completed());
-    //
-    player->play( nullptr );
+    // Always shutdown player after completion OR timeout...
+    player->play(nullptr);
 }
 
 
