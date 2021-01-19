@@ -43,10 +43,10 @@
 /// NOTE: Every potentially usable player should have an entry here.
 ///
 std::vector<std::string> RankedPlayers {
-    "Vlc_player",
     "Mpd_player",
     "Ogg_player",
     "Mp3_player",
+    "Vlc_player",
     "Nrsc5_player",
     "Sdr_player",
     // *EXTEND*
@@ -54,10 +54,10 @@ std::vector<std::string> RankedPlayers {
 };
 
 #define INSTALL_PLAYERS \
-    install_player( config, std::make_shared<Vlc_player>(), testp);\
     install_player( config, std::make_shared<Mpd_player>(), testp);\
     install_player( config, std::make_shared<Ogg_player>(), testp);\
     install_player( config, std::make_shared<Mp3_player>(), testp);\
+    install_player( config, std::make_shared<Vlc_player>(), testp);\
     install_player( config, std::make_shared<Nrsc5_player>(), testp);\
     install_player( config, std::make_shared<Sdr_player>(), testp);
 

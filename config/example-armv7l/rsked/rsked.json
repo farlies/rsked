@@ -5,8 +5,8 @@
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2021-01-01T10:40",
-        "description" : "for 32-bit RPi Linux"
+        "version" : "2021-01-18T18:00",
+        "description" : "example for 32-bit RPi Linux"
     },
 
     "Inet_checker" : {
@@ -21,14 +21,14 @@
     },
 
     "Vlc_player" : {
-        "enabled" : true,
+        "enabled" : false,
         "debug" : false,
         "bin_path" : "/usr/bin/vlc",
         "volume" : 100
     },
 
     "Mpd_player" : {
-        "enabled" : false,
+        "enabled" : true,
         "debug" : false,
         "run_mpd" : true,
         "bin_path" : "/usr/bin/mpd",
@@ -57,13 +57,13 @@
 
     "Ogg_player" : {
         "enabled" : true,
-        "device" : "pulse",
+        "device_type" : "pulse",
         "ogg_bin_path"   : "/usr/bin/ogg123"
     },
 
     "Mp3_player" : {
-        "enabled" : false,
-        "device" : "pulse",
+        "enabled" : true,
+        "device_type" : "alsa",
         "mp3_bin_path"   : "/usr/bin/mpg321"
     }
 }
