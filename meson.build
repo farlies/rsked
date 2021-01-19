@@ -206,7 +206,7 @@ executable('mpdtest',
             sources: mpdtest_srcs,
             cpp_args : my_cpp_args,
             include_directories : [shared_incdirs,rsked_incdirs],
-            dependencies : [ boost_dep, mpd_dep, json_dep ])
+            dependencies : [ boost_dep, boost_utest_dep, mpd_dep, json_dep ])
 
 # 12. Tests for player manager ... this has nearly everything in it.
 executable('tpmgr',
