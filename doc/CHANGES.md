@@ -1,3 +1,11 @@
+## Version 1.0.7 (rc1), 2021-01-18
+
+- Updated example rsked.json configs, disabling vlc by default
+- Bug fixes
+
+Vlc and nrsc5 are somewhat sluggish on armv7l (Debian 10) leading
+to odd errors; they should be considered experimental there, ymmv.
+
 ## Version 1.0.6 (beta), 2021-01-02
 
 - Experimental support for HD radio via nrsc5

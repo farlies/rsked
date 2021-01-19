@@ -96,8 +96,12 @@ For FM demodulation with SDR, one needs at least a Pi 3.  Less
 capable models will be unsatisfactory.  Consult the `gqrx` or `nrsc5` development
 site for progress with other models such as the Pi 4.  The `gqrx`
 configuration should be tailored to minimize the display features,
-e.g. the spectrum waterfall--none of these are needed here.
+e.g. the spectrum waterfall; none of these are needed here.
+
 `nrsc5` is a lighter-weight alterntives to `gqrx, albeit for HD radio only.
+Its a lower CPU load and the Pi runs cooler. However its start up is quite slow
+and must be restarted every time rsked pauses or changes frequencies.
+
 A good antenna can improve reception. The ANT500 from Great Scott Gadgets
 works well in my installations.
 

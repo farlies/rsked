@@ -63,16 +63,17 @@ A typical embedded application will:
 Recorded music may be played with any of these external applications
 available as packages on most Linux distributions:
 
-- [ogg123](https://wiki.xiph.org/Vorbis-tools)
-- [vlc](https://www.videolan.org)
 - [mpd](https://www.musicpd.org)
+- [ogg123](https://wiki.xiph.org/Vorbis-tools)
 - [mpg321](http://mpg321.sourceforge.net/)
+- [vlc](https://www.videolan.org)
 
 The `ogg123` player plays Ogg-Vorbis recordings, and is required to
-play announcements in `rsked`. `vlc` plays a wide range of audio file
-formats.  The music player daemon `mpd` is similarly versatile.  The
-lightweight `mpg321` player is suitable for MP3 files.  All of these
-programs can play both individual files and playlists.
+play announcements in `rsked`. The music player daemon `mpd` plays a
+wide range of audio files and has been extensively tested with
+`rsked`.  `Vlc` is similarly versatile. The lightweight `mpg321`
+player is suitable for MP3 files.  All of these programs can play both
+individual files and playlists.
 
 
 ### Streaming

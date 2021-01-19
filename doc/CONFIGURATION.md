@@ -99,12 +99,12 @@ for a source, `rsked` will try them according to a preferred order
 until one is found that works. The *default* order (`playermgr.cc`) is
 currently:
 
-1. Vlc_player
-2. Mpd_player
-3. Ogg_player
-4. Mp3_player
-5. Nrsc5_player
-6. Sdr_player
+1. Mpd_player
+2. Ogg_player
+3. Mp3_player
+4. Vlc_player
+5. Sdr_player
+6. Nrsc5_player
 
 Starting with schema 1.1, it is possible to change this order on a per
 media/encoding basis.  In JSON, a `player_preference` object contains
@@ -112,6 +112,9 @@ nested media objects with encodings mapped to an array of player names
 
 ```
 "player_preference" : {
+    "radio" : {
+        "wfm" : [ "Nrsc5_player", "Sdr_player" ]
+    },
     "directory" : {
         "mp3" : [ "Mpd_player", "Mp3_player" ],
         "ogg" : [ "Ogg_player", "Mpd_player" ]
@@ -145,8 +148,9 @@ to restore programming, e.g. by switching to an alternate source.
 - `wait_us` : integer, microseconds to wait for vlc to respond to commands
 
 Stock VLC Media Player on most Linux distributions will play most
-audio content. Starting with v1.0.5 it is by default the top priority
-player for everything except FM radio.  You might still prefer `mpd`
+audio content. Starting with v1.0.5 it is experimentally available
+for everything except FM radio.  It seems to work well on x86, but
+has thrown odd errors on Arm (Debian 10). You might still prefer `mpd`
 which has had far more testing with `rsked`. The `wait_us` might need to
 be adjusted from its default (40,000 microseconds) if VLC proves sluggish
 on the target embedded system.
@@ -177,7 +181,20 @@ otherwise the TCP socket (`host`/`port`) will be used.
 - `gqrx_bin_path` : string, pathname of the `gqrx` binary
 - `device_index` : integer, Gnuradio device index
 
-The device index is normally 0 (the default) when only a single SDR
+This player is experimentally available, and plays HD radio.  The
+source configuration does not yet offer any way to select alternative
+channels, so HD1 is always selected (work in progress).  If HD is
+available and the signal is strong, it will deliver noticably better
+audio quality than the analog signal on `Sdr_player`. It also less CPU
+power than the Sdr_player, possibly eliminating the need for
+cooling. But two factors might lead you to *disable* this
+player. First, it takes quite some time to start, resume, or to
+change stations (on Arm, about 18 seconds) which may annoy some
+listeners.  Second, it can be unlistenable if the station is weak or
+suffers from interference; the analog signal seems to degrade more
+gracefully.  Experiment in your listening location.
+
+The `device_index` is normally 0 (the default) when only a single SDR
 device is connected to the computer. If you have more than one, boy
 you're fancy: you might need to specify which SDR `nrsc5` should use here.
 

@@ -151,19 +151,10 @@ audio announcements.
 sudo apt install vorbis-tools
 ```
 
-## vlc
-
-The VLC Media player is commonly pre-installed, but may be installed various ways
-if needed, e.g.:
-
-```
-sudo apt install vlc
-```
-
 ## mpd
 
-The *Music Player Daemon* is an alternative to VLC in that it also plays a wide
-variety of audio files and streams.
+The *Music Player Daemon* plays a wide variety of audio files and internet
+streams.
 
 ```
 sudo apt install mpd mpc
@@ -190,6 +181,17 @@ sure it is not still starting:
 journalctl --unit=mpd
 journalctl --user --unit=mpd
 ```
+
+## vlc
+
+Optional. The VLC Media player is an experimental alternative to
+`mpd`. It is commonly pre-installed, but may be installed various ways
+if needed, e.g.:
+
+```
+sudo apt install vlc
+```
+
 
 ## mpg321
 
