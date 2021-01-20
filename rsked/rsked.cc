@@ -393,6 +393,7 @@ void Rsked::play_announcement( spPlay_slot slot )
             LOG_DEBUG(Lgr) << "play_announcement: " << m_cur_player->name()
                            << " has completed. spSlot=" << slot;
             slot->describe();
+            m_cur_player->stop(); // desired state is now: stopped
             resume_play();
         } else {
             LOG_DEBUG(Lgr) << "play_announcement: " << m_cur_player->name()
