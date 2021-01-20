@@ -35,6 +35,7 @@ private:
     freq_t m_freq { 0 };        // last assigned frequency
     bool m_enabled { true };
     bool m_usable { true };
+    const long m_kill_us { 25'000 };  // allow 25ms to exit
     time_t m_last_unusable { 0 };
     time_t m_recheck_secs { 8*60*60 }; // 8 Hours
     boost::filesystem::path m_config_work {};

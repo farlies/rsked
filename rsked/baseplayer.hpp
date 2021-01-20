@@ -36,9 +36,9 @@ protected:
     boost::filesystem::path m_wdir {};
     bool m_enabled { true };
     spCM  m_cm { Child_mgr::create(m_name) };
-    long m_kill_us { 5000 };   // wait usec for child process to die (kill)
-    long m_pause_us { 5000 };  // wait usec for child process to pause (stop)
-    long m_resume_us { 5000 }; // wait usec for child process to resume (cont)
+    long m_kill_us { 20'000 };   // wait usec for child process to die (kill)
+    long m_pause_us { 20'000 };  // wait usec for child process to pause (stop)
+    long m_resume_us { 20'000 }; // wait usec for child process to resume (cont)
     bool attempt_restart();
     bool maybe_restart(RunCond);
 public:

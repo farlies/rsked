@@ -109,12 +109,14 @@ void Nrsc5_player::resume()
     play( src );
 }
 
-/// Exit: Terminate external player, if any.
+/// Exit will terminate external player process, if any.
+/// TODO: better to send 'Q' to the player pty first...
+/// * will not throw
 ///
 void Nrsc5_player::exit()
 {
-    LOG_INFO(Lgr) << m_name << " signal to exit (hard)";
-    m_cm->kill_child( true ); 
+    LOG_INFO(Lgr) << " signal " << m_name << "to exit (KILL)";
+    m_cm->kill_child( true, m_kill_us ); 
     m_pstate = PlayerState::Stopped;
 }
 

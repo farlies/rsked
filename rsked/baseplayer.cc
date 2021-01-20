@@ -34,7 +34,7 @@ Base_player::Base_player( const char* nm )
 /// DTOR
 Base_player::~Base_player()
 {
-    m_cm->kill_child();  // will never throw
+    m_cm->kill_child( true, m_kill_us );  // will never throw
 }
 
 /// Usability
@@ -240,7 +240,7 @@ bool Base_player::maybe_restart(RunCond status)
     //
     if (not m_src->repeatp() and not (status==RunCond::runTooShort)) {
         // tell cm it should not be running so next check won't return here
-        m_cm->kill_child(true); // force
+        m_cm->kill_child( true, m_kill_us ); // force
         if (nullptr == m_src) {
             LOG_INFO(Lgr) << m_name << " exited while not playing anything";
         } else {

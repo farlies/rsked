@@ -249,6 +249,7 @@ Vlc_player::Vlc_player(const char *name)
 ///
 Vlc_player::~Vlc_player()
 {
+    shutdown_vlc();
 }
 
 ////////////////////////////// Private Methods //////////////////////////////
@@ -467,22 +468,26 @@ Vlc_player::CmdRes Vlc_player::do_status()
 }
 
 
-/// Kill any running child vlc.
+/// Terminate any running child vlc. First ask it to 'quit'; then
+/// sigkill any lingering child process.
 ///
 /// * Will NOT throw
 ///
 void Vlc_player::shutdown_vlc()
 {
     // do not do anything if in test mode or not running
-    if (m_testmode) return;
-    if (not m_cm->running())  return;
-
+    if (m_testmode or not m_cm->running())  {
+        return;
+    }
     if (m_cm->has_pty()) {
+        const long quit_us { 20'000L };
         try {
             m_cm->pty_write_nb("quit\n");
+            really_sleep( quit_us );  // give it time to exit
         } catch(...) {}
     }
-    m_cm->kill_child(); // Kill the child process; throws no exceptions
+    // Kill the child process, throwing no exceptions
+    m_cm->kill_child(true,m_kill_us);
 }
 
 
@@ -494,7 +499,7 @@ void Vlc_player::shutdown_vlc()
 void Vlc_player::mark_unusable()
 {
     m_usable = false;
-    m_cm->kill_child();       // won't throw
+    m_cm->kill_child(true,m_kill_us);       // won't throw
     m_last_unusable = time(0);
     LOG_WARNING(Lgr) << m_name << " is being marked as Unusable until future notice";
     m_state = PlayerState::Broken;

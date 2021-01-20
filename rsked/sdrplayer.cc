@@ -71,7 +71,7 @@ Sdr_player::Sdr_player()
 Sdr_player::~Sdr_player()
 {
     m_remote->disconnect();
-    m_cm->kill_child();
+    m_cm->kill_child( true, m_kill_us );
 }
 
 /// Return Usability flag.  Might be not usable if:
@@ -133,6 +133,7 @@ bool Sdr_player::set_enabled( bool enabled )
 
 /// Flag the player as UNusable (p==TRUE), or usable again (p==false).
 /// Kills any running child process.
+ /// * Will NOT throw
 ///
 void Sdr_player::mark_unusable( bool unusablep )
 {
@@ -141,12 +142,12 @@ void Sdr_player::mark_unusable( bool unusablep )
     if (!m_usable) {
         m_last_unusable = time(0);
         LOG_WARNING(Lgr) << "Sdr_player being marked as Unusable until future notice";
-        m_cm->kill_child();           //  < ! >
+        m_cm->kill_child( true, m_kill_us );  // will not throw
         m_state = PlayerState::Broken;
     } else {
         LOG_WARNING(Lgr) << "Sdr_player is being tentatively marked as usable again";
         m_state = PlayerState::Stopped;
-    }        
+    }
 }
 
 /// Determine if there are any matching radios on the USB bus
@@ -273,20 +274,22 @@ void Sdr_player::setup_gqrx_config()
 
 
 /// Exit: Terminate external player, if any
+/// * Will NOT throw
 ///
 void Sdr_player::exit()
 {
     if (m_cm->running()) {
         try {
             m_remote->disconnect();
-            m_cm->kill_child();
-            LOG_INFO(Lgr) << "Sdr_player exits";
-            m_state = PlayerState::Stopped;
+            m_cm->kill_child(false,m_kill_us);
+            LOG_INFO(Lgr) << m_name << " exit";
         }
         catch (...) {
-            // Child_mgr logs error message
+            m_cm->kill_child(true,m_kill_us);
         }
-    } else {
+        m_state = PlayerState::Stopped;
+    }
+    else {
         LOG_INFO(Lgr) << "Sdr_player already exited";
     }
 }
@@ -360,7 +363,7 @@ void Sdr_player::play( spSource src )
         LOG_ERROR(Lgr) << "Sdr_player play(): " << ex.what();
         m_src = nullptr;
         mark_unusable(true);
-        m_cm->kill_child();
+        m_cm->kill_child(true,m_kill_us);
         throw;
     }
     m_state = PlayerState::Playing;

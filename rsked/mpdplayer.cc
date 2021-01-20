@@ -225,7 +225,9 @@ void Mpd_player::shutdown_mpd()
         return;
     }
     if (m_run_mpd) {
-        m_cm->kill_child(); // Kill the child process; throws no exceptions
+        // Kill the child process; throws no exceptions
+        const long max_kill_us = 25'000;  // 25ms
+        m_cm->kill_child( true, max_kill_us );
         if (not m_socket.empty()) {
             boost::system::error_code ec;
             boost::filesystem::remove( m_socket, ec );

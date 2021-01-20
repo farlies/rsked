@@ -347,7 +347,7 @@ bool Player_manager::check_players()
                    << " players okay, " << nplaying << " playing";
     //
     if (nplaying > 1) {         // this really shouldn't happen...
-        return fix_contention();
+        return fix_contention( nplaying );
     }
     return (nc == ngood);
 }
@@ -356,14 +356,15 @@ bool Player_manager::check_players()
 /// This is called in the unlikely event that more than one player
 /// thinks it should be playing at the current time(!).
 ///
-bool Player_manager::fix_contention()
+bool Player_manager::fix_contention( unsigned np )
 {
-    LOG_ERROR(Lgr) << "More than 1 player is playing!";
+    LOG_WARNING(Lgr) << np << " players are nominally playing";
     for ( auto pair : m_players ) {
         spPlayer sp = pair.second;
         if (sp) {
             if (sp->state() ==  PlayerState::Playing) {
-                LOG_ERROR(Lgr) << sp->name() << " thinks it is playing";
+                LOG_WARNING(Lgr) << " - " << sp->name()
+                               << " thinks it is playing";
             }
         }
     }

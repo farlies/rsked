@@ -51,6 +51,7 @@ private:
     bool m_debug {false};
     bool m_testmode {false};
     long m_iowait_us { 40'000 };  // microseconds to wait on pty I/O
+    long m_kill_us { 50'000 };   // uS to wait for child process exit
     unsigned m_stall_counter {0};
     unsigned m_stalls_max {7};
     unsigned long m_last_elapsed_secs {0};

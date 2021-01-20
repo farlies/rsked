@@ -44,7 +44,7 @@ public:
     void configure_prefs(Config&);
     bool check_players();
     void exit_players();
-    bool fix_contention();
+    bool fix_contention(unsigned);
     spPlayer get_annunciator();
     spPlayer get_player( spSource );
     static bool inet_available();
