@@ -1,43 +1,102 @@
 #!/bin/bash
+
 # This is meant to be invoked on login, e.g. in the autostart file
 # in directory .config/lxsession/LXDE-pi on the RPi platform.
 # It will start cooling and hence rsked each time the user session starts.
 
+# Part of rsked
+# Copyright 2020 Steven A. Harp
+
+#----------------------------------------------------------------------
+#                     Adjustable Parameters:
+
+# Uncomment to add any desired flags for launch of cooling application
+#COOLINGFLAGS="--debug"
+
+# rsked related apps that might be run (or have been run)
+RSKEDAPPS="cooling rsked vumonitor nrsc5 mpd vlc gqrx"
+
+# XDG runtime files that must be cleaned out before new run.
+# Note: if using mpd, be sure its unix socket is configured
+#   to be created in /run/user/$UID/mpd.socket.
+#
+XRDFILES="cooling.pid rsked.pid vumonitor.pid mpd.pid mpd.socket"
+
+# Master volume setting (comment out to leave level as is)
+#MASTERVOL="75%"
+
+# Set to "yes" to cause check_inet to run once before starting rsked
+FIRSTCHECKINET="yes"
+
+# Set to "yes" to cause the gpio lines to be strobed prior to starting
+# cooling.  They can be in funny states at boot time. Comment out
+# to skip.
+GPIOPOST="yes"
+
+#----------------------------------------------------------------------
+#                            Do It:
+
+# Create a new run log:
+ts=`date +%y%m%d_%H%M%S`
+STARTLOG="${HOME}/logs/rsked${ts}.out"
+echo "$ts startup_rsked" > $STARTLOG
+
 # Optionally set master volume to a known level:
-#/usr/bin/amixer set Master playback 50%
+#
+if [[ -n "$MASTERVOL" ]]; then
+    AMIXER=/usr/bin/amixer
+    if [[ -x $AMIXER ]]; then
+        $AMIXER set Master playback $MASTERVOL &>> $STARTLOG
+    fi
+fi
 
-# kill any existing processes and clean out PID files
-/usr/bin/pkill -9 -u ${USER} -x cooling
-/usr/bin/pkill -9 -u ${USER} -x rsked
-/usr/bin/pkill -9 -u ${USER} -x vumonitor
-/usr/bin/pkill -9 -u ${USER} -x mpd
+# Kill any existing rsked related processes:
+#
+for app in $RSKEDAPPS; do
+    /usr/bin/pkill -9 -u ${USER} -x $app
+done
 
-rm -f ${XDG_RUNTIME_DIR}/cooling.pid
-rm -f ${XDG_RUNTIME_DIR}/rsked.pid
-rm -f ${XDG_RUNTIME_DIR}/vumonitor.pid
-rm -f ${XDG_RUNTIME_DIR}/mpd.pid
-rm -f ${XDG_RUNTIME_DIR}/mpd.socket
-# Note that if you reconfigure the mpd socket in rsked.json, you should
-# adjust the following line to reflect the new pathname:
-rm -f ${HOME}/.config/mpd/socket
+# Clean out any stale PID files or sockets:
+#
+for xpf in $XRDFILES; do
+    rm -f ${XDG_RUNTIME_DIR}/$xpf
+done
 
-# verify log directories are present
+# Verify log directories are present or create if needed
 mkdir -p ${HOME}/logs
 mkdir -p ${HOME}/logs_old
 
-# run the first internet check prior to starting rsked
-if [[ -x ${HOME}/bin/check_inet.sh ]]; then
-    ${HOME}/bin/check_inet.sh
+# Move any old .out files to logs_old
+for ofile in ${HOME}/logs/*.out;  do
+    if [[ "$ofile" != "$STARTLOG" ]]; then
+        echo "moving $ofile to logs_old/" &>> $STARTLOG
+        mv $ofile ${HOME}/logs_old/
+    fi
+done
+
+# Maybe run the first internet check prior to starting rsked
+# Note that with Wi-Fi the connection might not be ready immediately
+# upon boot.
+#
+if [[ "$FIRSTCHECKINET" = "yes" ]]; then
+    echo "doing preliminary runof check_inet" &>> $STARTLOG
+    ichkr="${HOME}/bin/check_inet.sh"
+    if [[ -x $ichkr ]]; then
+        $ichkr
+    fi
 fi
 
-# strobe all the gpio pins we use to assure clean
-${HOME}/bin/gpiopost.py
-
-ts=`date +%y%m%d_%H%M%S`
+# Maybe strobe all the gpio pins we use to assure clean
+if [[ "$GPIOPOST" == "yes" ]]; then
+    gpost="${HOME}/bin/gpiopost.py"
+    if [[ -x $gpost ]]; then
+        $gpost &>> $STARTLOG
+    fi
+fi
 
 # start cooling, which starts rsked, vumonitor, and all players
 # any misc output to stderr or stdout will be collected
 # in ~/logs/rsked{datetime}.out
 #
-${HOME}/bin/cooling --debug &> ${HOME}/logs/rsked${ts}.out
+${HOME}/bin/cooling $COOLINGFLAGS &>> $STARTLOG
 
