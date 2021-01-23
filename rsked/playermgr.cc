@@ -39,7 +39,11 @@
 #include "vlcplayer.hpp"
 // *EXTEND*
 
-/// The default priority list for players. User policy may override.
+/// The default priority list for players. Earlier positions have higher
+/// priority.  User policy in rsked.json may override on a medium-by-medium
+/// encoding-by-encoding basis. Disabling a player there removes it from
+/// consideration completely.
+///
 /// NOTE: Every potentially usable player should have an entry here.
 ///
 std::vector<std::string> RankedPlayers {
@@ -47,8 +51,8 @@ std::vector<std::string> RankedPlayers {
     "Ogg_player",
     "Mp3_player",
     "Vlc_player",
-    "Nrsc5_player",
     "Sdr_player",
+    "Nrsc5_player",
     // *EXTEND*
     SilentName
 };
@@ -371,13 +375,25 @@ bool Player_manager::fix_contention( unsigned np )
     return false;
 }
 
-/// Check internet availability.
+/// Check internet availability. Warn in the log if unavailable,
+/// but not too frequently.
 ///
 bool Player_manager::check_inet()
 {
-    if (not c_ichecker.inet_ready()) {
-        LOG_WARNING(Lgr) << "Internet seems to be unavailable";
+    time_t warn_repeat_secs = 3600; // hourly
+    bool previously_working = m_inet_ready;
+    m_inet_ready = c_ichecker.inet_ready();
+    //
+    if (not m_inet_ready) {
+        time_t tt=time(0);
+        if ((tt - m_last_inet_warning) > warn_repeat_secs) {
+            m_last_inet_warning = tt;
+            LOG_WARNING(Lgr) << "Internet seems to be unavailable";
+        }
         return false;
+    }
+    if (not previously_working) {
+        LOG_INFO(Lgr) << "Internet service is available";
     }
     return true;
 }

@@ -26,10 +26,13 @@
 #include "inetcheck.hpp"
 
 /// This object will retrieve/create a player for any given source.
+/// It also keeps an eye on internet availability.
 ///
 class Player_manager {
 private:
     Player_prefs m_prefs {};
+    time_t m_last_inet_warning {0};
+    bool m_inet_ready {false};
     std::unordered_map<std::string,spPlayer> m_players {};
     void install_player( Config&, spPlayer, bool /*testp*/ );
     void load_json_prefs( Config& );
