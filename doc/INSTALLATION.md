@@ -74,21 +74,23 @@ the user that will run `rsked`, e.g. "pi".  **Note well** that
 depending on options given to `tar`, unpacking the archive might
 overwrite (or fail to overwrite) any identically named files from a
 previous installation in `~/bin` or `~/.config/{rsked,gqrx,mpd}`. If
-you wish to preserve such files, e.g. an existing schedule, *move
-them* to a safe place before expanding.
+you wish to preserve such files, e.g. an existing schedule, rename or
+move them to a safe place before expanding.
 
 ```
 cd
-tar xzf ~/Downloads/rsked1.0.3-armv7l-release.tgz
+tar xzf ~/Downloads/rsked1.0.7-armv7l-release.tgz
 ```
 
 Replace the pathname above with one corresponding to whatever release
 you downloaded.
 
-Edit the files in the `~/.config` directories per instructions in
-[CONFIGURATION](CONFIGURATION.md).  You can test rsked configuration
-by running `~/bin/rsked --test`; it should show no errors and report
-that all of the needed players are configured.
+The example files are in the `~/.config/{rsked,mpd,gqrx}` directories.
+Copy the example configuration files to their canonical names and edit
+them per instructions in [CONFIGURATION](CONFIGURATION.md).  You can
+test `rsked` configuration by running `~/bin/rsked --test`; it should
+show no errors and report that all of the needed players are
+configured.
 
 
 # Build Tools and Libraries
