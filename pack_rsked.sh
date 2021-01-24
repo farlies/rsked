@@ -145,8 +145,8 @@ done
 rctarget=$tgtdir/.config/rsked
 cp $confdir/rsked/*.json $rctarget/
 cp $confdir/rsked/*.pl $rctarget/
-cp $confdir/rsked/crontab $rctarget/
-cp $confdir/rsked/ci.conf $rctarget/
+cp $confdir/rsked/example-crontab $rctarget/
+cp $confdir/rsked/example-ci.conf $rctarget/
 cp doc/*  $rctarget/
 cp scripts/sked_schema-2.0.json $rctarget/
 cp -R resource $rctarget/

@@ -10,17 +10,12 @@
 
 ## Overview
 
-The best approach to configuration is to begin with example configuration
-files and modify them to suit your needs.  See the section
-*Configuration Files* in [INSTALLATION](INSTALLATION.md#configuration-files)
-for more information. In overview:
-
-- prepare a set of configuration files in `rsked/config/$MYCONFIG`
-- compile `rsked` in the build directory
-- use `ninja` to install the binaries and your configuration files
-- make further adjustments to configuration files, do *either*
-  - edit them in their installed locations, *or*
-  - edit the ones in `rsked/config/$MYCONFIG`, and use `ninja install` to reinstall
+The best approach to configuration is to begin with example
+configuration files, copy and modify them to suit your needs.  If you
+have *installed from a release tarball*, the example files are in their
+required places but *must be renamed*: in each case, remove the
+`example-` prefix from the name, e.g. `example-gold.conf` becomes
+`gold.conf`.
 
 The most common sorts of changes required are enabling or disabling
 features, or altering path names to reflect where you have stored
@@ -37,14 +32,24 @@ Configuration changes you will almost certainly want to make include:
 - `rsked/cooling.json` -- GPIO pin assignments matching your hardware
 
 
+If you are *building from source*, see the section *Configuration Files*
+in [INSTALLATION](INSTALLATION.md#configuration-files) for more
+information. In overview:
+
+- prepare a set of configuration files in `rsked/config/$MYCONFIG`
+- compile `rsked` in the build directory
+- use `ninja` to install the binaries and your configuration files
+- make further adjustments to configuration files, do *either*
+  - edit them in their installed locations, *or*
+  - edit the ones in `rsked/config/$MYCONFIG`, and use `ninja install` to reinstall
+
 
 ### Pathnames in Configuration Files
 
-Pathnames in the JSON configuration
-files for `rsked`, `cooling` and `schedule` may start with a tilde string
-"~/" to indicate the `$HOME` directory of the user running `rsked`, as
-with command line shells.  Other shell syntax is *not* supported, e.g.
-wildcards.
+Pathnames in the JSON configuration files for `rsked`, `cooling` and
+`schedule` may start with a tilde string "~/" to indicate the `$HOME`
+directory of the user running `rsked`, as with command line shells.
+Other shell syntax is *not* supported, e.g.  wildcards.
 
 
 ## rsked
