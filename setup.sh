@@ -10,6 +10,7 @@
 #    setup.sh -xr     # x86_64 release
 #    setup.sh -xd     # x86_64 debug
 #    setup.sh -ar     # armv7l release
+#    setup.sh -arf     # armv7l FINAL release
 #    setup.sh -ad     # armv7l debug
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
@@ -34,6 +35,9 @@ Options:
  -c
     use the clang compiler
 
+ -f
+    mark this as an official release for packaging
+
  -g
     use the gcc compiler
 
@@ -56,12 +60,14 @@ sCXX=g++
 BTYPE='debug'
 TMACH=$(arch)
 NOSTRIP=false
+FINAL=false
 
-while getopts ":acdgrRx" opt ; do
+while getopts ":acdfgrRx" opt ; do
     case $opt in
         a ) TMACH=armv7l ;;
         c ) sCC=clang; sCXX=clang++ ;;
         d ) BTYPE=debug ;;
+        f ) FINAL=true ;;
         g ) sCC=gcc; sCXX=g++ ;;
         r ) BTYPE=release ;;
         R ) BTYPE=release ; NOSTRIP=true ;;
@@ -112,5 +118,6 @@ meson setup --buildtype $BTYPE \
       -Dprefix="$HOME" \
       -Dtarget_machine=$TMACH \
       -Ddatadir=.config \
+      -Dfinal=$FINAL \
       -Dstrip=$STRIP  $BUILDDIR
 

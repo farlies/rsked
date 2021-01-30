@@ -3,13 +3,13 @@
 #
 # Prior to using meson for builds, use the script:        ./setup.sh
 # to produce a build directory for the desired build
-# configuration.
+# configuration. See --help in that script for options.
 #
 #############################################################################
 
 
 project('rsked','cpp',
-        version: '1.0.7',
+        version: 'v1.0.7',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -18,8 +18,17 @@ btype = get_option('buildtype')
 
 
 # Create version.h with the shared version number
+rversion = meson.project_version() + '-'  + tmach + '-' + btype
+#
+gdesc = run_command('git','describe','--tags','--long','--dirty')
+gitversn = gdesc.stdout().strip() + '-'  + tmach
+#
 vers_data = configuration_data()
-vers_data.set('version',meson.project_version() + '-'  + tmach + '-' + btype)
+if get_option('final')
+  vers_data.set('version',rversion)
+else
+  vers_data.set('version',gitversn)
+endif
 configure_file(input : 'util/version.h.in',
                output : 'version.h',
                configuration : vers_data)
