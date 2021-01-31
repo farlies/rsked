@@ -1,4 +1,4 @@
-/// The nrsc5 player runs nrsc5123 on a playable slot.
+/// The nrsc5 player runs nrsc5 on a playable slot.
 
 /*   Part of the rsked package.
  *   Copyright 2020 Steven A. Harp   farlies(at)gmail.com
@@ -26,10 +26,16 @@ static const boost::filesystem::path DefaultBinPath {"/usr/local/bin/nrsc5"};
 //////////////////////////////////////////////////////////////////////////////
 
 /// Establish baseline capabilities. shared by all ctors
+/// This only works on HD modulation on FM stations.
+/// AM HD-Radio might be added at some future date...
+///
 void Nrsc5_player::cap_init()
 {
     clear_caps();
-    add_cap(Medium::radio,     Encoding::wfm);
+    add_cap(Medium::radio,     Encoding::hd1fm);
+    add_cap(Medium::radio,     Encoding::hd2fm);
+    add_cap(Medium::radio,     Encoding::hd3fm);
+    add_cap(Medium::radio,     Encoding::hd4fm);
     //
     std::string cstr;
     cap_string( cstr );
@@ -154,7 +160,8 @@ void Nrsc5_player::play( spSource src )
     m_src = src;
     std::string freq_mhz = std::to_string( m_src->freq_mhz() );
     LOG_INFO(Lgr) << m_name << " play: {" << m_src->name() << "}  "
-                  << freq_mhz << " MHz, HD1"
+                  << freq_mhz << " MHz, "
+                  << encoding_name(m_src->encoding())
                   << ", SDR device " << m_device_index;
     //
     m_cm->clear_args();
@@ -164,7 +171,24 @@ void Nrsc5_player::play( spSource src )
     m_cm->add_arg( m_device_index );
     //
     m_cm->add_arg( freq_mhz ); //
-    m_cm->add_arg( "0" );     // HD program. TODO: make a src argument
+    switch (src->encoding()) {
+    case Encoding::hd1fm :
+        m_cm->add_arg( "0" );
+        break;
+    case Encoding::hd2fm :
+        m_cm->add_arg( "1" );
+        break;
+    case Encoding::hd3fm :
+        m_cm->add_arg( "2" );
+        break;
+    case Encoding::hd4fm :
+        m_cm->add_arg( "3" );
+        break;
+    default:
+        LOG_WARNING(Lgr) << m_name << " asked to play unknown encoding";
+        m_cm->add_arg( "0" );   // should never occur, but...
+        break;
+    }
     m_cm->start_child();
     m_pstate = PlayerState::Playing;
 }

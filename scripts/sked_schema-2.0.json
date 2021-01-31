@@ -87,7 +87,7 @@
         "rfsource": {
             "$comment": "RF sources have restricted property set, numeric location",
             "properties": {
-                "encoding": {"enum" : ["wfm","nfm"] },
+                "encoding": {"enum" : ["wfm","nfm","hd1fm","hd2fm","hd3fm","hd4fm"] },
                 "medium": {"const" : "radio"},
                 "location": { "type": "number",
                               "$comment": "Frequency in MHz",

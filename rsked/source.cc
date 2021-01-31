@@ -58,6 +58,10 @@ const char* encoding_name( const Encoding enc )
     case Encoding::flac: return "flac";
     case Encoding::wfm: return "wfm";
     case Encoding::nfm: return "nfm";
+    case Encoding::hd1fm: return "hd1fm";
+    case Encoding::hd2fm: return "hd2fm";
+    case Encoding::hd3fm: return "hd3fm";
+    case Encoding::hd4fm: return "hd4fm";
     case Encoding::mixed: return "mixed";
     default:
         return "unknown";
@@ -106,6 +110,14 @@ Encoding strtoencoding( const std::string &s )
         return Encoding::wfm;
     } else if (s == "nfm") {
         return Encoding::nfm;
+    } else if (s == "hd1fm") {
+        return Encoding::hd1fm;
+    } else if (s == "hd2fm") {
+        return Encoding::hd2fm;
+    } else if (s == "hd3fm") {
+        return Encoding::hd3fm;
+    } else if (s == "hd4fm") {
+        return Encoding::hd4fm;
     } else if (s == "mixed") {
         return Encoding::mixed;
     }
