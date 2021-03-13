@@ -8,7 +8,7 @@
 #############################################################################
 
 
-project('rsked','cpp',
+project('rsked',['cpp','c'],
         version: 'v1.0.7',
         license: 'Apache 2.0')
 
@@ -43,6 +43,7 @@ else # gcc
                  '-Weffc++', '-Wno-psabi']
 endif
 
+
 # COMMON DEPENDENCIES
 
 boost_dep = dependency('boost',
@@ -60,6 +61,14 @@ pulse_dep = dependency('libpulse')
 usb_dep  =  dependency('libusb-1.0')
 mpd_dep = dependency('libmpdclient')
 libgpiod_dep = dependency('libgpiodcxx')
+thread_dep = dependency('threads')
+ao_dep = dependency('ao')
+
+local_inc = include_directories('/usr/local/include')
+
+ccompiler = meson.get_compiler('c')
+libnrsc5 = ccompiler.find_library('nrsc5',dirs : ['/usr/local/lib'])
+
 
 utils = ['util/jobutil.cc','util/logging.cc','util/childmgr.cc',
          'util/chpty.cc','util/configutil.cc','util/config.cc']
@@ -95,6 +104,10 @@ cooling_srcs = ['cooling/main.cc', 'cooling/cooling.cc' ] + utils
 vu_srcs = ['vumonitor/vumonitor.cc', 'util/jobutil.cc',
            'util/configutil.cc',  'util/logging.cc']
 
+# HDRADIO application (optional)
+hdradio_srcs = ['hdradio/main.cc', 'hdradio/audio.cc', 'hdradio/sdradio.cc',
+                'hdradio/session.cc', 'hdradio/hdinfo.cc', 'hdradio/controller.cc',
+                'util/configutil.cc', 'util/logging.cc']
 
 # Unit tests
 tsrc_srcs = ['test/tsrc.cc', 'rsked/respath.cc', 'rsked/source.cc']+utils
@@ -107,6 +120,9 @@ tproc_srcs = ['test/tproc.cc','util/logging.cc',
 
 tconfig_srcs = ['test/tconfig.cc','util/logging.cc',
                 'util/configutil.cc','util/config.cc']
+
+trespath_srcs = ['test/trespath.cc','rsked/respath.cc',
+                 'util/logging.cc', 'util/configutil.cc']
 
 tncheck_srcs = ['test/tncheck.cc', 'rsked/inetcheck.cc']+utils
 
@@ -241,6 +257,24 @@ executable('tvlc',
             include_directories : [shared_incdirs,rsked_incdirs],
             dependencies : [ boost_dep,  boost_utest_dep, json_dep ]
           )
+
+# 15. HD radio app
+executable('hdradio',
+            sources: hdradio_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs, local_inc],
+            dependencies : [ libnrsc5, thread_dep, ao_dep,  boost_dep ]
+          )
+
+# 16. Test for ResPathSpec
+executable('trespath',
+            sources: trespath_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep ]
+          )
+
+
 
 ##########
 

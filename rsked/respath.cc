@@ -23,6 +23,7 @@
 
 #include "logging.hpp"
 #include "respath.hpp"
+#include "util/configutil.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -32,43 +33,66 @@ namespace fs = boost::filesystem;
 ResPathSpec::ResPathSpec()
 {
     const char *hptr = getenv("HOME");
-    std::string home {""};
     if (hptr==nullptr) {
         LOG_WARNING(Lgr) << "ResPathSpec: HOME not set in environment";
-        home = "/";
+        m_home = "/";
     } else {
-        home = hptr;
-        home += '/';
+        m_home = hptr;
+        m_home += '/';
     }
-    m_library_path = home + "Music/";
-    m_announcement_path = home + ".config/rsked/";
-    m_playlist_path = home + ".config/mpd/playlists/";
-    LOG_INFO(Lgr) << "Music library: " << m_library_path;
-    LOG_INFO(Lgr) << "Announcements: " << m_announcement_path;
-    LOG_INFO(Lgr) << "Play lists:    " << m_playlist_path;
+    m_library_path = m_home + "Music/";
+    m_announcement_path = m_home + ".config/rsked/";
+    m_playlist_path = m_home + ".config/mpd/playlists/";
+    LOG_INFO(Lgr) << "Default Music library: " << m_library_path;
+    LOG_INFO(Lgr) << "Default Announcements: " << m_announcement_path;
+    LOG_INFO(Lgr) << "Default Play lists:    " << m_playlist_path;
 }
 
 /// Specify the music library directory.
+/// * May throw if cannot canonicalize
 ///
 void ResPathSpec::set_library_base(const fs::path &base)
 {
-    m_library_path = fs::canonical( base );
+    fs::path xbase = expand_home( base );
+    try {
+        m_library_path = fs::canonical( xbase );
+    }
+    catch(const fs::filesystem_error &fse) {
+        LOG_ERROR(Lgr) << "ResPathSpec bad music library base " << base;
+        throw;
+    }
     LOG_INFO(Lgr) << "Music library: " << m_library_path;
 }
 
 /// Specify the playlist directory.
+/// * May throw if cannot canonicalize
 ///
 void ResPathSpec::set_playlist_base(const fs::path &base)
 {
-    m_playlist_path = fs::canonical( base );
+    fs::path xbase = expand_home( base );
+    try {
+        m_playlist_path = fs::canonical( xbase );
+    }
+    catch(const fs::filesystem_error &fse) {
+        LOG_ERROR(Lgr) << "ResPathSpec bad playlist base " << base;
+        throw;
+    }
     LOG_INFO(Lgr) << "Play lists:    " << m_playlist_path;
 }
 
 /// Specify the announcement directory.
+/// * May throw if cannot canonicalize
 ///
 void ResPathSpec::set_announcement_base(const fs::path &base)
 {
-    m_announcement_path = fs::canonical( base );
+    fs::path xbase = expand_home( base );
+    try {
+        m_announcement_path = fs::canonical( xbase );
+    }
+    catch(const fs::filesystem_error &fse) {
+        LOG_ERROR(Lgr) << "ResPathSpec bad announcement base " << base;
+        throw;
+    }
     LOG_INFO(Lgr) << "Announcements: " << m_announcement_path;
 }
 

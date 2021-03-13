@@ -23,9 +23,10 @@
 class ResPathSpec {
     using path=boost::filesystem::path;
 private:
-    path m_library_path {};  // Music Library
+    std::string m_home {""};      // HOME directory (used in defaults)
+    path m_library_path {};       // Music Library
     path m_announcement_path {};  // Announcements
-    path m_playlist_path {};   // Playlists
+    path m_playlist_path {};      // Playlists
 public:
     const path& get_libpath() const { return m_library_path; }
     const path& get_playlistpath() const { return m_playlist_path; }
