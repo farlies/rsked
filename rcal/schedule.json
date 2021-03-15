@@ -1,13 +1,12 @@
 {
     "encoding" : "UTF-8",
     "schema"   : "2.0",
-    "version"  : "2020-09-10T17:35",
-    "library" : "~/Music",
-    "playlists" : "~/.config/mpd",
+    "version"  : "2021-01-30T17:16",
+    "description" : "Schedule with extras for system testing on Medusa.",
 
     "sources" :
     {
-        "kbem" : {"encoding" : "wfm", "medium": "radio", "location" : 88.5,
+       "kbem" : {"encoding" : "wfm", "medium": "radio", "location" : 88.5,
                   "alternate" : "master"},
 
         "kfai" : {"encoding" : "wfm", "medium": "radio", "location" : 90.3,
@@ -19,32 +18,53 @@
         "ksjn" : {"encoding" : "wfm", "medium": "radio", "location" : 99.5,
                   "alternate" : "master"},
 
+        "ksjn_hd1" : {"encoding" : "hd1fm", "medium": "radio", "location" : 99.5,
+                  "alternate" : "ksjn"},
+
+        "ksjn_hd2" : {"encoding" : "hd2fm", "medium": "radio", "location" : 99.5,
+                  "alternate" : "ksjn"},
+
         "cms"  : {"encoding" : "mp3", "medium" : "stream",
                   "location" : "http://cms.stream.publicradio.org/cms.mp3",
-                  "alternate" : "ksjn",  "repeat" : true},
+                  "alternate" : "ksjn_hd1",  "repeat" : true},
+
+        "qxr"  : {"encoding" : "mp3", "medium" : "stream",
+                  "location" : "https://stream.wqxr.org/wqxr-web",
+                  "alternate" : "cms",  "repeat" : true},
         
         "nis"  : {"encoding" : "mp3", "medium": "stream", 
                   "location" : "http://nis.stream.publicradio.org/nis.mp3",
                   "alternate" : "know",  "repeat" : true},
-        
+
+        "sunrajoy" : { "encoding" : "ogg", "medium": "playlist", "repeat" : true,
+                       "location" : "sound_of_joy.m3u", "duration": 2857 },
+
+        "begegnungen" : { "encoding" : "mp3", "medium": "playlist", "repeat" : true,
+                          "location" : "begegnungen.m3u", "duration": 2481 },
+
         "master" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
                     "location" : "master.m3u", "duration": 38253.213},
-
-        "gonzo" : {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
-                   "location" : "gonzo.m3u", "duration": 1078.45},
-
-        "Herman's Hermits" : {
-            "encoding" : "ogg", "location" : "Herman's Hermits/Retrospective",
-            "medium": "directory", "repeat" : true, "duration": 3992.731},
-
-        "Mr. Broadway" : {"encoding" : "ogg", "medium": "file", "location" :
-            "Oliver Nelson/More Blues and the Abstract Truth/03-Theme from Mr. Broadway.ogg",
-            "repeat" : false, "duration": 349.44},
 
         "dnow" : {"encoding" : "mp3", "medium": "stream",  "duration": 3600,
                   "repeat" : false, "alternate" : "nis", "dynamic" : true,
                   "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"},
-        
+
+        "dublive" : {"encoding" : "flac", "medium": "directory", "duration": 1599.4,
+                     "location": "Dub Apocalypse/Live at 3S Artspace"},
+
+        "Track04" : {"encoding" : "flac", "medium": "file", "duration": 465.5,
+                     "location": "Dub Apocalypse/Live at 3S Artspace/03 Track04.flac"},
+
+        "greenworld" : {"encoding" : "mp4", "medium": "directory", "duration": 2468.4,
+                        "location": "Brian Eno/Another Green World/"},
+
+        "reptiles" : {"encoding" : "mp4", "medium": "file", "duration": 145.0, "location":
+                      "Brian Eno/Another Green World/08 - Sombre Reptiles.m4a"},
+
+        "lburning" : {"encoding" : "ogg", "medium": "file", "duration": 130.8, "location":
+                      "The Clash/The Essential Clash/02-Londons Burning.ogg"},
+
+
         "motd-md" : {"encoding" : "ogg", "medium" : "file",
                      "location" : "motd/each-%m-%d.ogg",
                      "dynamic" : true, "duration" : 10, 
@@ -78,14 +98,20 @@
         "%motd"   : {"encoding" : "ogg", "medium": "file", "duration": 2,
                      "text" : "message of the day",
                      "location" :  "resource/motd.ogg", "announcement" : true  }
-    },
+     },
 
     "dayprograms" : {
     "sunday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "08:00", "program" : "cms" },
         {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "10:30", "program" : "sunrajoy" },
+        {"start" : "11:00", "program" : "qxr" },
+        {"start" : "12:00", "program" : "begegnungen" },
+        {"start" : "12:30", "program" : "cms" },
+        {"start" : "14:00", "program" : "qxr" },
         {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "16:00", "program" : "cms" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
@@ -93,8 +119,11 @@
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
         {"start" : "09:00", "announce" : "motd-md" },
-        {"start" : "12:00", "program" : "dnow" },
-        {"start" : "13:00", "program" : "cms" },
+        {"start" : "12:00", "program" : "reptiles" },
+        {"start" : "12:02:26", "program" : "cms" },
+        {"start" : "12:30", "program" : "dnow" },
+        {"start" : "13:30", "program" : "Track04" },
+        {"start" : "13:37:45", "program" : "cms" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
         {"start" : "15:30", "announce" : "motd-ymd" },
@@ -104,17 +133,26 @@
     "tuesday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:30", "announce" : "motd-md" },
-        {"start" : "13:30", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-md" },
         {"start" : "14:00", "program" : "nis" },
-        {"start" : "15:00", "program" : "cms" },
+        {"start" : "15:30", "program" : "qxr" },
+        {"start" : "16:00", "announce" : "motd-ymd" },
+        {"start" : "16:10", "program" : "begegnungen" },
+        {"start" : "16:30", "program" : "qxr" },
+        {"start" : "17:00", "announce" : "motd-ymd" },
+        {"start" : "17:15", "program" : "sunrajoy" },
+        {"start" : "18:00", "program" : "qxr" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
     "wednesday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-md" },
+        {"start" : "10:00", "program" : "qxr" },
+        {"start" : "11:00", "program" : "Track04" },
+        {"start" : "11:07:45", "program" : "cms" },
+        {"start" : "11:15", "announce" : "motd-md" },
         {"start" : "13:30", "announce" : "motd-md" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
@@ -133,19 +171,30 @@
 
     "friday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "07:30", "program" : "cms" },
+        {"start" : "07:30", "program" : "qxr" },
         {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "12:10", "program" : "Track04" },
+        {"start" : "12:17:45", "program" : "qxr" },
         {"start" : "13:30", "announce" : "motd-ymd" },
         {"start" : "14:00", "program" : "nis" },
-        {"start" : "15:00", "program" : "cms" },
+        {"start" : "15:00", "program" : "qxr" },
         {"start" : "21:00", "program" : "OFF" }
     ],
 
     "saturday" : [
         {"start" : "00:00", "program" : "OFF" },
-        {"start" : "08:00", "program" : "cms" },
+        {"start" : "08:00", "program" : "qxr" },
         {"start" : "09:30", "announce" : "motd-md" },
+        {"start" : "10:15", "program" : "sunrajoy" },
+        {"start" : "11:00", "program" : "cms" },
+        {"start" : "12:00", "program" : "qxr" },
+        {"start" : "12:30", "program" : "begegnungen" },
+        {"start" : "13:00", "program" : "qxr" },
         {"start" : "15:30", "announce" : "motd-ymd" },
+        {"start" : "16:00", "program" : "sunrajoy" },
+        {"start" : "17:00", "program" : "ksjn_hd1" },
+        {"start" : "17:40", "program" : "ksjn_hd2" },
+        {"start" : "18:15", "program" : "qxr" },
         {"start" : "21:00", "program" : "OFF" }
     ]
     }
