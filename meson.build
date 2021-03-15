@@ -104,10 +104,10 @@ cooling_srcs = ['cooling/main.cc', 'cooling/cooling.cc' ] + utils
 vu_srcs = ['vumonitor/vumonitor.cc', 'util/jobutil.cc',
            'util/configutil.cc',  'util/logging.cc']
 
-# HDRADIO application (optional)
-hdradio_srcs = ['hdradio/main.cc', 'hdradio/audio.cc', 'hdradio/sdradio.cc',
-                'hdradio/session.cc', 'hdradio/hdinfo.cc', 'hdradio/controller.cc',
-                'util/configutil.cc', 'util/logging.cc']
+# DARADIO application (disabled)
+# daradio_srcs = ['daradio/main.cc', 'daradio/audio.cc', 'daradio/sdradio.cc',
+#                 'daradio/session.cc', 'daradio/hdinfo.cc', 'daradio/controller.cc',
+#                 'util/configutil.cc', 'util/logging.cc']
 
 # Unit tests
 tsrc_srcs = ['test/tsrc.cc', 'rsked/respath.cc', 'rsked/source.cc']+utils
@@ -258,13 +258,13 @@ executable('tvlc',
             dependencies : [ boost_dep,  boost_utest_dep, json_dep ]
           )
 
-# 15. HD radio app
-executable('hdradio',
-            sources: hdradio_srcs,
-            cpp_args : my_cpp_args,
-            include_directories : [shared_incdirs,rsked_incdirs, local_inc],
-            dependencies : [ libnrsc5, thread_dep, ao_dep,  boost_dep ]
-          )
+# 15. Digital/Analog Radio app
+# executable('daradio',
+#             sources: daradio_srcs,
+#             cpp_args : my_cpp_args,
+#             include_directories : [shared_incdirs,rsked_incdirs, local_inc],
+#             dependencies : [ libnrsc5, thread_dep, ao_dep,  boost_dep ]
+#           )
 
 # 16. Test for ResPathSpec
 executable('trespath',
