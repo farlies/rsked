@@ -1,5 +1,11 @@
 <?php
-function formatEvent($aline) {
+/// This file, which is not part of the distribution for rsked/rcal,
+/// should define the variable $logbase, a directory ending in '/' e.g.
+///      $logbase="/home/pi/";
+///
+require('localparams.php');
+
+function formatEvent($aline,$severe) {
     if (strlen($aline) < 5) {
         return;
     }
@@ -7,6 +13,9 @@ function formatEvent($aline) {
     if (1 == preg_match( $pattern1, $aline, $matches)) {
         $timestamp = $matches[1];
         $level = $matches[2];
+        if ($severe and (($level == "info") or ($level == "debug"))) {
+            return;
+        }
         $facility = $matches[3];
         $message = trim($matches[4]);
         echo '<tr class="'. $level . '"><td>' . $timestamp . '</td><td>' .
@@ -18,23 +27,23 @@ function formatEvent($aline) {
 }
 
 /* formats filename as a table */
-function formatLogFile($filename) {
+function formatLogFile($filename, $severe) {
     print '<table id="logevents"> <tr> <th>Date</th> <th>Level</th>' .
           ' <th>Facility</th> <th>Message</th> </tr>';
     $logfile = fopen($filename, "r") or die("Unable to open log file!");
     while(!feof($logfile)) {
         $logline = fgets($logfile);
-        formatEvent( $logline );
+        formatEvent( $logline, $severe );
     }
     fclose($logfile);
     print "</table>\n";
 }
 
-$logbase = "/home/sharp/";
 
 // get the 'log' parameter from URL
 $lfname = $_REQUEST["log"];
+$severe = ("true" == $_REQUEST["warnerroronly"]);
 // TODO: sanitize lfname
 
-formatLogFile( $logbase . $lfname);
+formatLogFile( $logbase . $lfname, $severe);
 ?>

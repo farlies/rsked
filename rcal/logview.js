@@ -22,21 +22,29 @@ function populate_log_menus(resp,status,jxref) {
     if (undefined!=initial_value) {
         $('#curlogs').val(initial_value);
     }
-    select_log( $('#curlogs').val() );
+    refresh_log();
+}
+
+
+function refresh_log() {
+    select_log( $('#curlogs').val(),
+                $('#warnerroronly').prop('checked'));
+}
+
+function select_log( lgname, severe ) {
+    console.log( "select log: '"+lgname+"'");
+    $.get("log2table.php",
+          {log: lgname, warnerroronly: severe },
+          function(resp) {
+              $('#logarea').html(resp);
+          })
 }
 
 function load_log_menus() {
     $.getJSON("findlogs.php","all",populate_log_menus);
     var $logsel = $('#curlogs');
-    $logsel.change( function() { select_log( $('#curlogs').val() ); } );
-}
-
-function select_log( lgname ) {
-    console.log( "select log: '"+lgname+"'");
-    $.get("log2table.php",{log: lgname },
-          function(resp) {
-              $('#logarea').html(resp);
-          })
+    $logsel.change( refresh_log );
+    $('#warnerroronly').change( refresh_log );
 }
 
 load_log_menus();
