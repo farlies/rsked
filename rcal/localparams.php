@@ -6,4 +6,6 @@
 ///
 $logbase = "/home/pi/";
 
+/// Directory that contains schedule.json, rsked.json, cooling.json
+$cfgbase = "/home/pi/.config/rsked/";
 ?>

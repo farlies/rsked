@@ -1,4 +1,7 @@
 <?php
+/// This defines logbase for the installed system.
+require('localparams.php');
+
 /// return json obj with fields current and old, each an array of log names
 ///
 function find_logs( $dirname ) {
@@ -15,8 +18,8 @@ function find_logs( $dirname ) {
     sort($lognames);
     return $lognames;
 }
-$newlogs = find_logs("/home/sharp/logs");
-$oldlogs = find_logs("/home/sharp/logs_old");
+$newlogs = find_logs($logbase . "logs");
+$oldlogs = find_logs($logbase . "logs_old");
 $all_logs = array( "current" => $newlogs, "old"=>$oldlogs );
 echo json_encode($all_logs) . "\n";
 ?>
