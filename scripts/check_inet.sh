@@ -46,9 +46,7 @@ URLS=("https://www.streamguys.com/robots.txt"
       "https://www.jstor.org/robots.txt"
       "https://www.startribune.com/robots.txt"
       "https://www.theguardian.com/us/robots.txt"
-      "https://www.schneier.com/robots.txt"
       "https://www.postgresql.org/robots.txt"
-      "https://www.sciencenews.org/robots.txt"
       "https://www.python.org/robots.txt"
       "https://www.digikey.com/robots.txt"
       "https://arstechnica.com/robots.txt"
@@ -74,6 +72,9 @@ GETOUT=/tmp/checkfile.out
 TIMEOUT=5
 
 ########################################################################
+
+# Version of this script
+VERSION="1.1"
 
 # last status code written by this script, if any
 LastStatus=0
@@ -110,12 +111,21 @@ function write_status
 }
 
 
-# append a message to the log file with a timestamp
+# Append a message to the log file with a timestamp
+#   logmsg [level] message
+# with just 1 argument the level is presumed to be "info"
 #
 function logmsg
 {
     TS=$(date --rfc-3339=seconds)
-    echo $TS $1 >> $LOGFILE
+    if [[ $# == 1 ]]; then
+        msg=$1
+        lvl="info"
+    else
+        lvl=$1
+        msg=$2
+    fi
+    echo "$TS <$lvl> [check_inet] $msg"  >> $LOGFILE
 }
 
 # fetch the next URL, saving next index to file UCONF
@@ -159,7 +169,7 @@ function is_up
     if ip link show dev $IFACE | grep -q 'state UP'; then
         return 0
     fi
-    logmsg "Interface $IFACE is down"
+    logmsg warning "Interface $IFACE is down"
     return 1
 }
 
@@ -173,12 +183,12 @@ function valid_ip
                  grep  -Po  'inet \d+\.\d+\.\d+\.\d+'); then
         # check for useless LL address 169.254.*.*
         if $(echo $res | grep -q ' 169.254.'); then
-            logmsg "Link local address found on $IFACE $res"
+            logmsg info "Link local address found on $IFACE $res"
             return 3
         fi
         return 0
     else
-        logmsg "Interface $IFACE lacks an IPv4 address"
+        logmsg warning "Interface $IFACE lacks an IPv4 address"
         return 2
     fi
 }
@@ -193,7 +203,7 @@ function resolver_test
             return 0;
         fi
     fi
-    logmsg "Failed to resolve $RHOST"
+    logmsg warning "Failed to resolve $RHOST"
     return 4;
 }
 
@@ -213,10 +223,10 @@ function fetch_test
                  -a $LOGFILE $url; then
             return 0
         else
-            logmsg "fetch_test failed on $url"
+            logmsg warning "fetch_test failed on $url"
         fi
     done
-    logmsg "All $nu URLs failed"
+    logmsg error "All $nu URLs failed"
     return 5
 }
 
@@ -249,12 +259,17 @@ function all_tests
 ########################################################################
 # Run tests; returns 0 so long as it can at least run the tests.
 
+# write an identifying log message if log file is missing
+if [[ ! -e $LOGFILE ]]; then
+    logmsg info "Internet connectivity checker Version $VERSION"
+fi
+
 read_last_status
 
 if all_tests; then
     write_status 0 $Err
     if [[ $LastStatus != 0 ]]; then
-        logmsg "Network usable again"
+        logmsg info "Network usable again"
     fi
     exit 0
 fi
@@ -267,5 +282,5 @@ sleep $FAIL_SECS
 all_tests
 write_status $? $Err
 if [[ $LastStatus != 0 ]]; then
-    logmsg "Network usable again"
+    logmsg info "Network usable again"
 fi
