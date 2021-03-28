@@ -1,12 +1,17 @@
 <?php
-/// This defines logbase for the installed system.
+/// Return a JSON object with fields "current" and "old", each an
+/// array of log names
+
+/// This defines logbase for the installed system, e.g. /home/pi/logs
 require('localparams.php');
 
-/// return json obj with fields current and old, each an array of log names
+/// Return an array of .log files in the directory dirname.
 ///
 function find_logs( $dirname ) {
     $d = dir($dirname);
-    $lpattern = '{ ^(cooling|check_inet|rsked|vumonitor) \S* \.log $}xms';
+    // Option: restrict it to certain application logs only:
+    // $lpattern = '{ ^(cooling|check_inet|rsked|vumonitor) \S* \.log $}xms';
+    $lpattern = '{ ^ \S* \.(log|out) $}xms';
     $lognames = array();
     $i=1;
     while (false !== ($entry = $d->read())) {
