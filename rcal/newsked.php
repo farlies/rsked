@@ -14,11 +14,17 @@ if ($dstfile) {
     fclose($dstfile);
     $output=null;
     $retval=null;
-    exec('./checknewsked.sh', $output, $retval);
-    if ($retval == 0) {
+    if (! exec('./checknewsked.sh', $output, $retval) ) {
+        echo("ERROR: unable to check new schedule");
+    }
+    else if ($retval == 0) {
         echo("accepted, version " . $sversion);
     } else {
-        echo("ERROR " . $output[0]);
+        if (count($output) > 0) {
+            echo("ERROR " . $output[0]);
+        } else {
+            echo("ERROR exit code " . $retval);
+        }
     }
 } else {
     echo("ERROR saving schedule");
