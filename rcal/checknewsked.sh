@@ -6,8 +6,24 @@
 #
 # This script accepts no arguments.
 # TODO: install a good new schedule.
-#
-RSKED=$HOME/bin/rsked
+
+#  There are problems running rsked anywhere but installed HOME :-(
+#  so instead we will use a JSON validator.
+#RSKED=$HOME/bin/rsked
+#RSKED=/home/sharp/bin/rsked
+
+VALIDATOR=/usr/local/bin/yajsv
+SCHEMA=./sked_schema-2.0.json
+
+if [[ ! -x $VALIDATOR ]]; then
+    echo "Error: unable to run the JSON validator"
+    exit 3
+fi
+if [[ ! -r $SCHEMA ]]; then
+    echo "Error: unable to access the JSON schema"
+    exit 3
+fi
+
 lout=$(mktemp -p /tmp EiEiO.XXXXXX) || exit 1
 nsked=upload/newschedule.json
 #
@@ -16,12 +32,12 @@ if [[ ! -r $nsked ]]; then
     exit 1
 fi
 
-if $RSKED --test --schedule=$nsked 2>$lout ; then
-    echo "Good schedule"
+if $VALIDATOR -s $SCHEMA $nsked >$lout ; then
+    echo "Valid schedule"
     rm $lout
     exit 0
 else
-    grep error $lout
-    rm $lout
+    cat $lout
+    #rm $lout
     exit 2
 fi
