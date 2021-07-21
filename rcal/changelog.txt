@@ -41,3 +41,13 @@ delete them by dragging them off. Have not added any default settings for these 
 - Added a title tag to the head of the HTML doc - feel free to change it
 - Slightly changed the HTML structure of the source panel to simplify the drag-and-drop script - have nested both
 the standard source list and the announcement list into one div called external-events - updated CSS to match
+
+22.2.21
+- Events dragged to calendar now take on the colour of the source they were dragged from
+- Implemented a basic version of the event modal that can be opened by clicking on a calendar event
+
+11.3.21
+- Clear button now triggers a confirmation popup as a precaution before clearing the schedule
+
+21.7.21
+- Integrated schedule saving and loading features. 

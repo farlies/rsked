@@ -14,6 +14,11 @@ var EditSource=undefined;
 var Sources = {};
 var Announcements = {};
 
+/// Global with the last loaded schedule
+var LoadedSchedule;
+/// Global for the calendar object
+var TheCalendar;
+
 const DefaultSrcName='(new name)';
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -177,14 +182,14 @@ function find_fc_source(suid) {
     }
 }
 
-// listener: respond to change of Source medium, e.g. radio -> stream
+// Listener: respond to change of Source medium, e.g. radio -> stream
 // by updating the modal dialog fields' visibility, showing only the
 // relevant fields for the type.
 //
 function src_medium_change(event) {
     if (undefined === EditSource) { return; }
     let neumedium = event.target.value;
-    //console.log('src_medium_change:', nemedium); // DEBUG only
+    //console.log('src_medium_change:', neumedium); // DEBUG only
     const neucolor = medium_to_color(neumedium);
     $('#scolor').prop('value',neucolor);
     $('#sheader')[0].style.backgroundColor = neucolor;
@@ -319,6 +324,11 @@ function config_src_fields(smedium) {
         let sf=document.getElementById("sfreq");
         sf.setAttribute( "value", EditSource.freq );
         break;
+    case 'hdradio':
+          disp_fields(['lfreq'],
+                        ['lurl','lart','lalb','lfile','lplist','lrepeat','ldynamic']);
+          sf.setAttribute( "value", EditSource.freq );
+          break;
     case 'stream':
         disp_fields(['lurl','ldynamic'],
                     ['lfreq','lart','lalb','lfile','lplist','lrepeat']);
@@ -558,25 +568,6 @@ function make_new_source() {
     editSource( new RcalSource(DefaultSrcName,'radio','wfm',99.9) );
 }
 
-/// These source objects are for small-scale testing of dialog layout only.
-/// See also: testdata.js.
-///
-/*
-function load_test_sources() {// name medium  enc. location
-    addSource( new RcalSource("KNOW",'radio','wfm', 91.1) );
-    addSource( new RcalSource("KSJN",'radio','wfm', 99.5) );
-    addSource( new RcalSource('cms','stream','mp3',
-                              "http://cms.stream.publicradio.org/cms.mp3"));
-    addSource( new RcalSource('Aja','playlist','ogg',"Steely Dan - Aja.ogg.m3u"));
-
-    addSource( new RcalSource('Demons & Wizards','directory','ogg',
-                              "Uriah Heep/Demons and Wizards"));
-
-    addSource( new RcalSource("Easy Livin",'file','ogg',
-                              "Uriah Heep/Demons and Wizards/03-Easy Livin.ogg",
-                              true, false));
-}*/
-
 /// Add a source named sname given rsked schedule definition sdef.
 ///
 function import_source(sname, sdef) {
@@ -629,12 +620,10 @@ class RcalAnnounce {
     color;        // dom color spec.
     //
     constructor(sname,suid,stext) {
-        var pfile;
-        var parts;
         this.name = sname;
         this.registered = false;
         this.suid = uuidv4();
-        this.color = "#ffcc66";
+        this.color = "#663399";
         this.text = stext;
     }
 };
@@ -644,7 +633,7 @@ var gAnnouncements = {
     "motd-md" : {"text" : "message of the day - md"},
 };
 
-// for every announcement in gAnnouncements, run 'import_announcement' FIX THIS!
+// For every announcement in gAnnouncements, run 'import_announcement'
 
 function get_announce() {
   const srcs = gAnnouncements;
@@ -666,7 +655,7 @@ function import_announcement(sname, sdef) {
 //Add announcement to announcement list as an fc event
 
 function addAnnounce( ann ) {
-    console.log("add announcement ",ann.name, ann.suid);
+    console.log("add announcement ",ann.name, ann.suid, ann.color);
     const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
     const outer=$("<div></div>",
                   {id: "outer_"+ann.name,
@@ -675,7 +664,7 @@ function addAnnounce( ann ) {
                 {id: ann.suid,
                  class: 'fc-event-main',
                }).text(ann.text);
-    inner[0].style.backgroundColor = "#663399";
+    inner[0].style.backgroundColor = ann.color;
     outer.append(inner);
     outer.appendTo('#external-announce-list');
     //
@@ -683,13 +672,17 @@ function addAnnounce( ann ) {
     Announcements[ann.name] = ann;
 }
 
-
 /// CALENDAR SCRIPTS (relies on fullcalendar)
 ///
-/// TODO: Add event menu add as well as event drag and drop add
+/// TODO: Add event menu add
 
 
 /// Initialise and render the calendar.
+
+var Event = FullCalendar.event;
+// Allow dragging from external event source lists
+var Draggable = FullCalendar.Draggable;
+var containerEl = document.getElementById('external-events');
 
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -704,19 +697,39 @@ document.addEventListener('DOMContentLoaded', function() {
             saveButton: {
               text: 'save',
               click: function() {
-                alert('saving the schedule'); // STUB! This button will run the function that converts calendar data to JSON file
-              }
+                // This button will run the function that converts calendar data to an
+                // object with the analogous fields (TBD).  Here is a stand-in object
+                // with just a few fields.When the user clicks SAVE on the calendar,
+                // a function should convert the calendar content to the rsked 2.0
+                //schema JSON and invoke the ajax upload script on the server.
+                //The various constraints on a valid schedule should be respected,
+                //e.g. empty spaces should be filled with “OFF” slots.
+                let newsked = extract_to_rsked();
+                // Ajax post schedule under key 'schedule'.
+                // Callback just notifies user of acceptance.
+                let d = new Date();            // now
+                newsked.version = d.toISOString();
+                console.log("The current schedule version is", newsked.version)
+                // Ajax post of schedule under key 'schedule'. Callback notifies user.
+                $.post( "newsked.php",  { schedule : JSON.stringify(newsked) },
+                        function (txt) {alert('Saved schedule: '+txt);},
+                        "text");              }
             },
             clearButton: {
                 text: 'clear',
                 click: function() {
                   const EvList = calendar.getEvents(Event);
-                  EvList.forEach((Event) => Event.remove()); // Removes all events from calendar
+                  var r = confirm('Are you sure you want to clear the schedule?');
+                  if (r == true) {
+                    EvList.forEach((Event) => Event.remove()); // Removes all events from calendar;
+                  }
+
                }
             },
             loadButton: {
-              text: 'load',
+              text: 'revert',
               click: function() {
+                load_schedule("schedule.json");
                 alert('loading the schedule'); // STUB! This button will run the function that converts JSON file from rsked to calendar data
                 }
               }
@@ -731,29 +744,254 @@ document.addEventListener('DOMContentLoaded', function() {
           slotDuration: '00:30:00', // Add time slots every thirty minutes
           slotLabelInterval: '01:00:00', // Display text labels every hour
           droppable: true, // Bool - User can drag and drop events
-          editable: true // Bool - User can edit calendar
+          editable: true, // Bool - User can edit calendar
+          events: [
+            { // this object will be "parsed" into an Event Object
+              title: 'Title', // Title property
+              description: 'Description', // Description property
+              start: '2018-10-07T09:00:00', // Start time property
+              end: '2018-10-07T10:00:00', // End time property
+              daysOfWeek: [], // Array of days on which event occurs. Sunday = 0
+              forceEventDuration: true,
+              overlap: false, // Events are by default not allowed to overlap
+              classNames: '', // Event classes
+              backgroundColor: 'black',  //Event colour
+              extendedProps: {
+                medium: 'radio'
+              },
+            }
+          ],
+          eventClick: function(info) {
+            info.jsEvent.preventDefault(); //in the event the URL property has been assigned, don't navigate to it.
+            console.log("Event info:",info.event.title, info.el.style.backgroundColor, info.end);
+            call_evt_modal(info); // Open the event edit modal
+          }
         });
 
-        // Allow dragging from external event source lists
-        var Draggable = FullCalendar.Draggable;
-        var containerEl = document.getElementById('external-events');
-        var announceEl = document.getElementById('external-announcements');
 
         // Initialise the external events
         // -----------------------------------------------------------------
         new Draggable(containerEl, {
-        itemSelector: '.fc-event',
+        itemSelector: '.fc-event-main',
         eventData: function(eventEl) {
           return {
             title: eventEl.innerText,
-            eventBackgroundColor: eventEl.style.backgroundColor
+            overlap: false,
+            backgroundColor: eventEl.style.backgroundColor,
+            borderColor: eventEl.style.backgroundColor,
+            description: 'programme'
           };
-        }
+
+        },
+
       });
 
+      TheCalendar = calendar;  // Set the global calendar reference:
+      calendar.render();
+    });
 
-        calendar.render();
-      });
+
+
+  /// Order two rsked events for sorting purposes.
+      function start_order(e1, e2) {
+          let s1 = e1.start, s2 = e2.start;
+          if (s1 < s2) { return -1 };
+          if (s1 > s2) { return 1 };
+          return 0;
+      }
+
+  /// Make an array of rsked events satisfy these constraints
+  /// - events must be ordered by start time
+  /// - if the first event on a day does not begin at 00:00 add
+  ///   an OFF event starting at 00:00
+  /// - if the final event of the day does not end at 24:00 add
+  ///   a terminal OFF event
+  /// - any empty days need a dummy OFF event
+  /// Arg darray (call by reference) is modified in place.
+  ///
+    function normalize_day( darray ) {
+          if (0 == darray.length) { // empty: an entirely quiet day
+              darray.push( {start : "00:00:00", program : "OFF" } );
+              return;
+          }
+          darray.sort( start_order );
+          if (darray[0].start != "00:00:00") { // start at OFF if needed
+              darray.splice(0,0,{start : "00:00:00", finish: darray[0].start,
+                                 program : "OFF" });
+          }
+          // Fill any gaps between events end and next event start with OFF
+          let j=1;
+          while (j < darray.length) {
+              let fin = darray[j-1].finish;
+              let strt = darray[j].start;
+              if (strt != fin) {
+                  darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
+              }
+              j++;
+          }
+          if (darray[j-1].finish != "00:00:00") { // maybe pad to end of day
+              darray.splice( j, 0, {start : darray[j-1].finish,
+                                    finish : "00:00:00", program : "OFF" });
+          }
+          // Remove helper properties (like 'finish') not part of rsked schema
+          for (let d of darray ) {
+              delete d['finish'];
+          }
+      }
+
+/// Contruct the dayprogram object: each element is an array
+/// associated with a day of the week.
+///
+      function extract_dayprograms() {
+          var daynames = ["sunday","monday","tuesday","wednesday","thursday",
+                          "friday","saturday"]; // days used in schedule.json
+          var dpobj = {};                       // each gets an array in dpobj
+          for (let d of daynames) {
+              dpobj[d] = Array();
+          }
+          // Collect events from TheCalendar.
+          // Note: assume events are minimally consistent with rsked constraints
+          //    e.g. do not span days, are not marked "allDay", ...
+          // Aside: getEvents returns events in no particular order
+          for (let evt of TheCalendar.getEvents()) {
+              let ts = evt.start;
+              let te = evt.end;  // null if not set, e.g. left to default 1hr duration
+              if (null == te) {
+                  te = new Date(ts);
+                  te.setHours( 1 + ts.getHours() );
+              }
+              let dow = daynames[ts.getDay()]; // Sunday==0, Monday==1, ...
+              let tstr = ts.toLocaleTimeString('en-GB');
+              let zstr = te.toLocaleTimeString('en-GB');
+              let dp = { "start" : tstr, "program" : evt.title, finish : zstr };
+              dpobj[dow].push(dp);
+              console.log(evt.title," on day",dow,"at",tstr,"\n");
+          }
+          for (let dow of daynames) {     // normalize each day:
+              normalize_day( dpobj[dow] );
+          }
+          return dpobj;
+      }
+
+  /// Return the effective rsked location field for a source s.
+  /// If a radio source, return freq.
+  /// If a file source, return file.
+  /// If a playlist source,
+  ///
+      function src_location( s ) {
+          // type===medium: 'radio|stream|file|playlist|directory'
+          switch (s.type) {
+          case 'directory':
+              return (s.artist + '/' + s.album);
+          case 'file':
+              return (s.artist + '/' + s.album + '/' + s.file);
+          case 'radio':
+              return s.freq;
+          case 'playlist':
+              return s.playlist;
+          case 'stream':
+              return s.url;
+          default:
+              return null;
+          }
+      }
+
+  /// Return an rsked-style object representation for all defined sources
+  /// (even ones not currently used in the schedule.)
+  ///
+  function extract_sources() {
+          var usrcs = {};
+          for (var skey in Sources) {
+              let x = Sources[skey];
+              let p = { encoding: x.encoding,
+                        medium: x.type,
+                        location: src_location(x),
+                        repeat: x.repeat,
+                        dynamic: x.dynamic,
+                        alternate: x.alternate };
+              // TODO:  are we tracking these??
+              if (x.hasOwnProperty('announcement')) {
+                  p.announcement = x.announcement;
+              }
+              if (x.hasOwnProperty('duration')) {
+                  p.duration = x.duration;
+              }
+              if (x.hasOwnProperty('text')) {
+                  p.text = x.text;
+              }
+              usrcs[skey] = p;
+          }
+          return usrcs;
+      }
+
+
+  /// Convert Calendar events to rsked events
+  ///
+  function extract_to_rsked() {
+          //let sked= LoadedSchedule;
+          var calendarEl = document.getElementById('calendar-widget');
+          var dpgms = extract_dayprograms();
+          var rsrcs = extract_sources();
+          var d = new Date();            // now
+          var sked = { "encoding" : "UTF-8",
+                       "schema" : "2.0",
+                       "version" : d.toISOString(),
+                       "library" : LoadedSchedule.library,
+                       "playlists" :  LoadedSchedule.playlists,
+                       "sources" : rsrcs,
+                       "dayprograms" : dpgms
+                     };
+          return sked;
+      }
+
+
+
+
+
+/// Fetch the schedule from url src. It will be globally available in
+
+/// LoadedSchedule.  Callback will trigger a 'scheduleLoaded' custom
+
+/// event (see handler below).
+
+///
+
+function load_schedule( src ) {
+
+      $.getJSON( src, function(data) {
+
+        LoadedSchedule = data;
+
+        $(document).trigger('scheduleLoaded'); });
+
+  }
+
+// Latest schedule from the server is now in global 'LoadedSchedule'.
+/// Currently just shows an alert.
+
+/// TODO:  verify it has a a compatible schema,
+
+///        fill the calendar widget and source list.
+
+///
+
+$(document).on('scheduleLoaded',
+
+        function() {
+
+                if ("object" === typeof(LoadedSchedule)) {
+
+                        alert('loaded schedule version ' +
+
+                                   LoadedSchedule["version"]);
+
+                  } else {
+
+                        alert('failed to load current schedule.');
+
+                  }
+
+                });
 
 
 
@@ -762,51 +1000,42 @@ document.addEventListener('DOMContentLoaded', function() {
 ////    when the user clicks on an event in the calendar, raise this
 ////  dialog that allows some tweeking, e.g. repeat pattern days of week.
 
-/// TODO:   !STUB! This is quite INCOMPLETE at the moment
-
-function init_evt_modal(evname) {
-    let emodal = document.getElementById("evtModal");
-    // When the user clicks the event button, adjust header color and open
-    let ebtn = document.getElementById("evtBtn");
-    ebtn.onclick = function() {
-        mdheader = emodal.childNodes[1].childNodes[1];
-        mdheader.style.backgroundColor = "blue";
-        emodal.style.display = "block";
-    }
-    // When the user clicks on a close element, close the dialog
-    let eclose = document.getElementById("eclose");
-    eclose.onclick = function() {
-        emodal.style.display = "none";
-    }
-    return emodal;
-}
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////
-//// EVENT Edit Dialog
-////    when the user clicks on an event in the calendar, raise this
-////  dialog that allows some tweeking, e.g. repeat pattern days of week.
 
 /// TODO:   !STUB! This is quite INCOMPLETE at the moment
+//
+//
 
-function init_evt_modal(evname) {
-    let emodal = document.getElementById("evtModal");
-    // When the user clicks the event button, adjust header color and open
-    let ebtn = document.getElementById("evtBtn");
-    ebtn.onclick = function() {
-        mdheader = emodal.childNodes[1].childNodes[1];
-        mdheader.style.backgroundColor = "blue";
-        emodal.style.display = "block";
-    }
-    // When the user clicks on a close element, close the dialog
-    let eclose = document.getElementById("eclose");
-    eclose.onclick = function() {
-        emodal.style.display = "none";
-    }
-    return emodal;
+
+function call_evt_modal(calEvent) {
+      let emodal = document.getElementById("evtModal");
+      let mdheader = emodal.childNodes[1].childNodes[1];
+      mdheader.style.backgroundColor = calEvent.el.style.backgroundColor;
+      let etitle = document.getElementById("evtTitle");
+      etitle.innerText = calEvent.event.title;
+      let edesc = document.getElementById("evtDesc");
+      edesc.innerText = calEvent.event.description;
+      // Something here to determine the type of source and adjust the modal accordingly
+      emodal.style.display = "block";
+
+      // When the user clicks on the close element, close the dialog
+      let eclose = document.getElementById("eclose");
+      eclose.onclick = function() {
+          emodal.style.display = "none";
+      }
+      // STUB! When the user clicks on the save element, apply changes and close the dialog
+      let esave = document.getElementById("esave");
+      esave.onclick = function() {
+          emodal.style.display = "none";
+      }
+      // STUB! When the user clicks on the delete button, remove the event from the calendar close the dialog
+      let edel = document.getElementById("edelete");
+      edel.onclick = function() {
+          confirm('Are you sure you want to delete this event?')
+          emodal.style.display = "none";
+          Event.remove(calEvent); // Removes all events from calendar
+          calendar.render();
+      }
+      return emodal;
 }
 
 /// TODO: initialize the event modal dialog
@@ -820,9 +1049,9 @@ init_source_pane();
 //load_test_sources();
 parse_rsked_sources();
 get_announce();
-
+load_schedule("schedule.json");
 ///////// TODO:
 /// [x] - Add an "alternate" selector to pick an alternate source.
 /// [x] - Show the encoding (ogg, mp3...) in source dialog (read-only)
 /// [ ] - Provide a mechanism to delete a source
-/// [ ] - Make source tabs draggable to Full Calendar
+/// [x] - Make source tabs draggable to Full Calendar

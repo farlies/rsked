@@ -161,6 +161,20 @@ body {
   cursor: pointer;
 }
 
+/* The Delete Button */
+.delete {
+  color: #aaaaaa;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.delete:hover,
+.delete:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 /* The Calendar Container */
 #calendar-container {
    grid-column: 2;
