@@ -1,4 +1,7 @@
-/// The mp3 player runs mpg321 on a playable source
+/**
+ * This mp3 player runs mpg321 on a playable mp3 source.
+ * Note: will not handle mp4.
+ */
 
 /*   Part of the rsked package.
  *   Copyright 2020 Steven A. Harp   farlies(at)gmail.com
@@ -24,6 +27,19 @@
 static const boost::filesystem::path DefaultBinPath {"/usr/bin/mpg321"};
 
 
+/// Establish baseline capabilities. Shared by all ctors.
+void Mp3_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::file,       Encoding::mp3);
+    add_cap(Medium::directory,  Encoding::mp3);
+    add_cap(Medium::playlist,   Encoding::mp3);
+    add_cap(Medium::stream,     Encoding::mp3);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
 
 /// CTOR
 ///  Quirk: mpg321 will exit(0) immediately if fed a resource that is not
@@ -34,6 +50,7 @@ Mp3_player::Mp3_player() : Base_player("Mp3_player")
 {
     LOG_INFO(Lgr) << "Created an Mp3_player";
     m_cm->set_min_run( 2 );    // shortest mp3 we might ever play, seconds
+    cap_init();
 }
 
 /// CTOR with name
@@ -42,6 +59,7 @@ Mp3_player::Mp3_player( const char* nm )
 {
     LOG_INFO(Lgr) << "Created an Mp3_player: " << m_name;
     m_cm->set_min_run( 2 );    // shortest mp3 we might ever play, seconds
+    cap_init();
 }
 
 /// DTOR.  Baseplayer will kill any child process.
@@ -59,8 +77,6 @@ void Mp3_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool(section, "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Mp3_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuraiton
-        return;
     }
 
     boost::filesystem::path binpath { DefaultBinPath };
@@ -70,21 +86,22 @@ void Mp3_player::initialize( Config& cfg, bool /* testp */ )
 }
 
 
-/// Play the given slot (if you can).
-/// If src is null, then stop the player.
+/// Play the given source.
+/// If src argument is nullptr, then stop the player.
+///
+/// * May throw Player_exceptions
 ///
 void Mp3_player::play( spSource src )
 {
     if (!src) {
         m_src = src;
-        stop();
+        stop();  // == exit()
         return;
     }
-    if ((src->medium() != Medium::stream) 
-        and (src->medium() != Medium::file)) {
-        LOG_ERROR(Lgr) << m_name << " cannot play this type of slot: "
-                       << media_name(src->medium());
-        return;
+    // Verify src is a valid type for Vlc
+    if (not has_cap(src->medium(),src->encoding())) {
+        LOG_ERROR(Lgr) << m_name << "cannot play type of source in" << src->name();
+        throw Player_media_exception();
     }
     m_src = src;
     LOG_INFO(Lgr) << m_name << " play: {" << m_src->name() << "}";
@@ -104,6 +121,7 @@ void Mp3_player::play( spSource src )
     }
     if (rt==Medium::stream) {
         m_cm->add_arg( m_src->resource().c_str() );
+        LOG_DEBUG(Lgr) << "Stream URL: " << m_src->resource();
     } else {
         boost::filesystem::path path;
         m_src->res_path( path );       // returns false if not exist...

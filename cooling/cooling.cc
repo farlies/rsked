@@ -176,8 +176,10 @@ unsigned Cooling::error_count() const
 
 /// Attempt to load the config file and populate parameters.  This can
 /// throw a config error if the file is missing or contents are
-/// invalid. It does not run anything or have filesystem side effects,
-/// and thus may be safely used in test mode.
+/// invalid. Does not run anything or have filesystem or GPIO side effects,
+/// but it WILL modify this Cooling instance.
+///
+/// * May throw a Cooling_config_exception.
 ///
 void Cooling::initialize(bool debug)
 {
@@ -202,19 +204,19 @@ void Cooling::initialize(bool debug)
         init_logging( AppName, logpath.c_str(), flags );
         m_logging_up = true;
     }
-    log_banner(true);
-
     // General: version, application
     cfg.log_about();
     m_cfgversion = "?";
     cfg.get_string("General","version",m_cfgversion);
+    m_cfgdesc = "?";
+    cfg.get_string("General","description",m_cfgdesc);
+    //
     std::string cfg_appname;
     cfg.get_string("General","application", cfg_appname);
     if (cfg_appname != AppName) {
         LOG_WARNING(Lgr) << "unexpected application name: '"
                          << cfg_appname << "' in " << m_cfg_path;
     }
-
     // General: Polling etc
     const long DefaultPollMsec=1000;
     const long MAX_POLL_MSEC = 5000;
@@ -237,6 +239,8 @@ void Cooling::initialize(bool debug)
     init_cooling( cfg );
     init_snooze_button( cfg );
     init_panel_leds( cfg );
+    //
+    log_banner(true);
 }
 
 
@@ -307,7 +311,8 @@ void Cooling::log_banner(bool force)
         return;
     }
     LOG_INFO(Lgr) << AppName << " version "
-                  << VERSION_STR "  built "  __DATE__ " " __TIME__ ;
+                  << VERSION_STR " ("  __DATE__ " " __TIME__  << ")";
+    LOG_INFO(Lgr) << "config: " << m_cfgversion << ", " << m_cfgdesc;
     m_last_banner = now;
 }
 
@@ -315,20 +320,34 @@ void Cooling::log_banner(bool force)
 /// Initialize fan control parameters and GPIO, if enabled.
 /// \arg \c cfg  Configuration object
 ///
+/// * May throw a Cooling_configuration_exception
+///
 void Cooling::init_cooling( Config &cfg )
 {
     cfg.get_bool("Cooling", "enabled", m_fan_control_enabled);
     cfg.get_double("Cooling","cool_stop_temp",m_cool_stop_temp);
     cfg.get_double("Cooling","cool_start_temp",m_cool_start_temp);
     if (m_cool_start_temp <= m_cool_stop_temp) {
-        LOG_WARNING(Lgr) << "cool_start < cool_stop; adjusting...";
-        m_cool_stop_temp = (m_cool_start_temp - 1.0);
-        LOG_INFO(Lgr) << "start cooling at " << m_cool_start_temp
-                      << "C, stop cooling at " << m_cool_stop_temp << "C";
+        LOG_ERROR(Lgr) << "cool_start_temp <= cool_stop_temp";
+        throw Cooling_config_exception();
     }
+    if (m_cool_stop_temp < Fan_lowest_stop_temp) {
+        LOG_ERROR(Lgr) << "cool_stop_temp < 25C - unreasonable!";
+        throw Cooling_config_exception();
+    }
+    if (m_cool_start_temp > Fan_highest_start_temp) {
+        LOG_ERROR(Lgr) << "cool_start_temp > 80C - CPU would be toast";
+        throw Cooling_config_exception();
+    }
+    //
     int mcs=static_cast<int>(m_min_cool_secs);
     cfg.get_int("Cooling","min_cool_secs",mcs);
+    if (mcs < Lowest_cool_secs) {
+        LOG_ERROR(Lgr) << "min_cool_secs must be at least " << Lowest_cool_secs;
+        throw Cooling_config_exception();
+    }
     m_min_cool_secs = static_cast<time_t>(mcs);
+    //
     unsigned pin_num=4;
     cfg.get_unsigned("Cooling","fan_gpio",pin_num);
 
@@ -660,7 +679,7 @@ bool Cooling::start_rsked()
 
 /// This will kill any rsked owned by this process or any rogue copy
 /// that can be identified by its pid file.  Shared memory is released.
-/// Any auxilliary processes will also be killed.
+/// Any auxiliary processes will also be killed.
 ///
 void Cooling::terminate_rsked()
 {

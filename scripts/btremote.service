@@ -1,3 +1,8 @@
+# Install this file in /usr/lib/systemd/system/
+# then:
+#    sudo systemctl enable btremote.service
+#    sudo systemctl start  btremote.service
+
 [Unit]
 Description=Service provides bluetooth controls to rsked users
 After=bluetooth.target

@@ -1,0 +1,69 @@
+{
+    "encoding" : "UTF-8",
+    "schema" : "1.1",
+
+    "General" : {
+        "application" : "rsked",
+        "sched_path" : "~/.config/rsked/schedule.json",
+        "version" : "2021-01-18T18:00",
+        "description" : "example for 32-bit RPi Linux"
+    },
+
+    "Inet_checker" : {
+        "enabled" : true,
+        "refresh" : 60
+    },
+
+    "VU_monitor" : {
+        "enabled" : true,
+        "vu_bin_path" : "~/bin/vumonitor",
+        "timeout" : 40
+    },
+
+    "Vlc_player" : {
+        "enabled" : false,
+        "debug" : false,
+        "bin_path" : "/usr/bin/vlc",
+        "volume" : 100
+    },
+
+    "Mpd_player" : {
+        "enabled" : true,
+        "debug" : false,
+        "run_mpd" : true,
+        "bin_path" : "/usr/bin/mpd",
+        "socket" : "/run/user/1000/mpd.socket",
+        "host" : "localhost",
+        "port" : 6600,
+        "volume" : 75
+    },
+
+    "Nrsc5_player" : {
+        "enabled" : true,
+        "nrsc5_bin_path"  : "~/bin/nrsc5",
+        "device_index" : 0
+    },
+
+    "Sdr_player" : {
+        "enabled" : true,
+        "gqrx_bin_path"  : "~/bin/gqrx",
+        "gqrx_work"  : "~/.config/gqrx/gqrx.conf",
+        "gqrx_gold"  : "~/.config/gqrx/gold.conf",
+        "low_s"      : -20.0,
+        "low_low_s"  : -40.0,
+        "device_vendor" : "0bda",
+        "device_product" : "2838"
+    },
+
+    "Ogg_player" : {
+        "enabled" : true,
+        "device_type" : "pulse",
+        "ogg_bin_path"   : "/usr/bin/ogg123"
+    },
+
+    "Mp3_player" : {
+        "enabled" : true,
+        "device_type" : "alsa",
+        "mp3_bin_path"   : "/usr/bin/mpg321"
+    }
+}

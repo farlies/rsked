@@ -36,6 +36,7 @@ private:
     unsigned m_quiet_timeout {40}; // seconds
     unsigned m_vumonitor_errors {0};
     unsigned m_staleness_warnings {0};
+    long m_kill_us { 10'000L };     // microseconds to wait on child exit
     boost::filesystem::path m_binpath;
     spCM m_cm { Child_mgr::create("VU_runner") };
     std::unique_ptr<VU_checker> m_vu_checker;

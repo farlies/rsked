@@ -75,7 +75,7 @@ private:
     bool m_snoozing  { false };      // have we been snoozing?
     time_t m_snooze_until { 0 };     // 0, or time to resume play when in snooze
     time_t m_check_enabled_time {0}; // when we start VU checking
-    time_t m_vu_delay { 15 };        // max windup time for src to be audible
+    time_t m_vu_delay { 24 };        // max windup time for src to be audible
     std::string m_cfgversion {"?"};  // config file's version
     //
     bool check_playback_level();
@@ -102,5 +102,7 @@ public:
     //
     void configure( const std::string&,
                     const boost::program_options::variables_map& );
+    std::shared_ptr<const ResPathSpec> get_respathspec() const;
+    const std::string& get_config_version() const { return m_cfgversion; }
     void track_schedule();
 };

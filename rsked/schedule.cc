@@ -406,6 +406,14 @@ void Schedule::load(const boost::filesystem::path &fname)
     m_valid = true;
 }
 
+/// Access the schedule's ResPathSpec via shared ptr.
+/// Will be the default until m_rps is initialized by configuration.
+///
+std::shared_ptr<ResPathSpec>
+Schedule::get_respathspec() const
+{
+    return m_rps;
+}
 
 /// Is there a source of the given name?
 ///

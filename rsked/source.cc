@@ -58,6 +58,10 @@ const char* encoding_name( const Encoding enc )
     case Encoding::flac: return "flac";
     case Encoding::wfm: return "wfm";
     case Encoding::nfm: return "nfm";
+    case Encoding::hd1fm: return "hd1fm";
+    case Encoding::hd2fm: return "hd2fm";
+    case Encoding::hd3fm: return "hd3fm";
+    case Encoding::hd4fm: return "hd4fm";
     case Encoding::mixed: return "mixed";
     default:
         return "unknown";
@@ -106,6 +110,14 @@ Encoding strtoencoding( const std::string &s )
         return Encoding::wfm;
     } else if (s == "nfm") {
         return Encoding::nfm;
+    } else if (s == "hd1fm") {
+        return Encoding::hd1fm;
+    } else if (s == "hd2fm") {
+        return Encoding::hd2fm;
+    } else if (s == "hd3fm") {
+        return Encoding::hd3fm;
+    } else if (s == "hd4fm") {
+        return Encoding::hd4fm;
     } else if (s == "mixed") {
         return Encoding::mixed;
     }
@@ -297,12 +309,17 @@ bool uri_expand_time( const std::string &src, std::string &dst )
     }
 }
 
-/// Set argument ref to the fully expanded pathname.
+/// Set argument eff_path to the fully expanded pathname or URL.
 /// If dynamic we must expand any strftime symbols in the path
-/// Return true if this path exists, false otherwise.  No throw.
+/// If the resource is a local file, directory or playlist, check its existence.
+/// Return false if we can show this path does not exist, else return true.
+///
+/// * Will NOT throw.
 ///
 bool Source::res_path(boost::filesystem::path &eff_path)
 {
+    bool pexists {true};
+
     if (not m_dynamic) {
         eff_path = m_res_path;  // '~' was already expanded to $HOME
     } else {
@@ -310,13 +327,15 @@ bool Source::res_path(boost::filesystem::path &eff_path)
         time(&rawtime);
         tm *timeinfo = localtime(&rawtime);
         char timebuf[256] = {0};
-        if (strftime(timebuf,sizeof(timebuf)-1, m_res_path.c_str(), timeinfo)) {
+        if (strftime(timebuf,sizeof(timebuf)-1, m_res_path.c_str(),timeinfo)) {
             eff_path = boost::filesystem::path(timebuf);
         }
     }
-    bool pexists = exists(eff_path);
-    if (not pexists) {
-        LOG_WARNING(Lgr) << eff_path << " is not found";
+    if (localp()) {    // check if local resource actually exists
+        pexists = exists( eff_path );
+        if (not pexists) {
+            LOG_WARNING(Lgr) << eff_path << " is not found";
+        }
     }
     return pexists;
 }

@@ -199,6 +199,20 @@ bool Config::get_long(const char *section, const char *param, long &value)
     return true;
 }
 
+/// Retrieve a Json::Value at the given section/parameter location
+/// returning true iff such a value is found.  This is an escape
+/// mechanism to permit arbitrarily complex JSON content at the location.
+///
+bool
+Config::get_jvalue(const char *section, const char *param, Json::Value &val)
+{
+    val=m_croot[section][param];
+    if (val.isNull()) {
+        return false;
+    }
+    return true;
+}
+
 /// Retrieve a string value from section/param and deposit it in value,
 /// returning true.  If the section/path cannot be found then
 /// value is unchanged and this function returns false. May throw.

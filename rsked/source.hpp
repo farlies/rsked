@@ -40,16 +40,14 @@ enum class Encoding {
     mp3,   // MPEG-1 Audio Layer III (.mp3)
     mp4,   // MPEG-4 Part 3 in Part 14 box (.mp4, .m4a, .m4b, .aac)
     flac,  // FLAC, free lossless audio compression in a FLAC box
-    wfm,   // wide FM,  typical commercial radio stations
-    nfm,   // narrow FM--weather radio, ham radio
+    wfm,   // wide FM,  analog, typical commercial radio stations
+    nfm,   // narrow FM, analog, weather radio, ham
+    hd1fm, // High Definition radio (NRSC-5), channel 1
+    hd2fm, // High Definition radio (NRSC-5), channel 2
+    hd3fm, // High Definition radio (NRSC-5), channel 3
+    hd4fm, // High Definition radio (NRSC-5), channel 4 (rare)
     mixed  // arbitrary mixture of ogg/mp3/mp4/flac, e.g. in a playlist
 };
-
-
-/// Resource types -- this is to be represented by Medium::
-// enum class ResType {
-//    None, File, Frequency, Directory, Playlist, URL  };
-///
 
 /// Defects in the schedule itself
 class Schedule_error : public std::exception {
@@ -100,6 +98,7 @@ public:
     Encoding encoding() const { return m_encoding; }
     bool failedp() const { return m_failedp; }
     freq_t freq_hz() const { return m_freq_hz; }
+    double freq_mhz() const { return (static_cast<double>(m_freq_hz) / 1.0e6); }
     time_t last_fail() const { return m_last_fail; }
     void load(const Json::Value &);
     bool localp() const;
@@ -110,6 +109,7 @@ public:
     bool repeatp() const {return m_repeatp; }
     bool res_path(boost::filesystem::path&);
     const std::string& resource() const;
+    void set_quiet_okay(bool q) { m_quiet_okay = q; }
     void validate(const ResPathSpec&);
     bool viable();
     //

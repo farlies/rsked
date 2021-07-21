@@ -97,8 +97,9 @@ void Rsked::configure(const std::string& p, const po::variables_map &vm)
     m_config->set_config_path( p );
     m_config->read_config();    // may throw
 
-    // schema - we only take 1.0
-    if (m_config->get_schema() != "1.0") {
+    // schema - we only take 1.0 or 1.1
+    std::string schema = m_config->get_schema();
+    if ((schema != "1.0") and (schema != "1.1")) {
         LOG_ERROR(Lgr) << "Invalid schema '" << m_config->get_schema()
                        << "' for file " << p;
         throw Config_error();
@@ -164,6 +165,19 @@ void Rsked::reload_schedule()
     } catch(...) {
         LOG_ERROR(Lgr) << "Reload of schedule failed--keep current schedule.";
     }
+}
+
+/// Access the schedule's ResPathSpec via shared ptr.
+/// Note that this might be null if no schedule or uninitialized schedule.
+///
+std::shared_ptr<const ResPathSpec>
+Rsked::get_respathspec() const
+{
+    if (m_sched) {
+        return m_sched->get_respathspec();
+    }
+    LOG_ERROR(Lgr) << "get_respathspec fails due to no loaded schedule!";
+    return nullptr;
 }
 
 
@@ -295,7 +309,7 @@ bool Rsked::check_playback_level()
 /// This is for very brief rsked internal announcements. It does not pause
 /// any current program, so do this prior to calling if necessary.
 /// Play a single announcement given its name.  This uses an exclusive
-/// ogg player so the announcment source must be ogg mode.
+/// ogg player so the announcement source must be ogg mode.
 /// Do not play any announcements before 7am or after 9pm.
 ///
 /// * Will not throw
@@ -306,6 +320,7 @@ void Rsked::play_announcement( const char* sname )
         LOG_ERROR(Lgr) << "play_announcement missing name or schedule";
         return;
     }
+    spPlayer player;
     try {
         spSource src = m_sched->find_viable_source( sname );
         if (!src) {
@@ -323,7 +338,7 @@ void Rsked::play_announcement( const char* sname )
                              << "} suppressed at this time of day";
             return;
         }
-        spPlayer player = m_pmgr->get_annunciator();
+        player = m_pmgr->get_annunciator();
         if (player and player->is_usable()) {
             time_limited_play( player, src, Announcement_max_secs );
             LOG_INFO(Lgr) << "Announcement {" << sname << "} complete";
@@ -331,9 +346,15 @@ void Rsked::play_announcement( const char* sname )
             LOG_ERROR(Lgr) << "Failed to get a usable annunciator for message "
                            << sname;
         }
+        player.reset();
     } catch (...) {
         LOG_ERROR(Lgr) << "play_announcement(" << sname << ") failed.";
     }
+    try {   // exit the announcement player on failure
+        if (player) {
+            player->exit();
+        }
+    } catch(...) {};
 }
 
 /// Play a *scheduled* announcement given the schedule slot, if the
@@ -360,7 +381,7 @@ void Rsked::play_announcement( spPlay_slot slot )
                       << "}: content not available, mark complete";
         return;
     }
-    // If the announcment is already playing, determine if it is
+    // If the announcement is already playing, determine if it is
     // complete. If not complete, just return.  If complete, (or the
     // player is mysteriously gone) mark it so for today, resume the
     // previous player (if paused) then return.
@@ -372,6 +393,7 @@ void Rsked::play_announcement( spPlay_slot slot )
             LOG_DEBUG(Lgr) << "play_announcement: " << m_cur_player->name()
                            << " has completed. spSlot=" << slot;
             slot->describe();
+            m_cur_player->stop(); // desired state is now: stopped
             resume_play();
         } else {
             LOG_DEBUG(Lgr) << "play_announcement: " << m_cur_player->name()
@@ -436,6 +458,7 @@ void Rsked::resume_play()
 /// Play the source on the player (which is typically the
 /// annunciator), waiting for completion up to n_secs seconds. The
 /// player is always stopped prior to return.
+///
 /// * May throw a Player exception
 ///
 void Rsked::time_limited_play( spPlayer player, spSource src, time_t n_secs )
@@ -449,11 +472,12 @@ void Rsked::time_limited_play( spPlayer player, spSource src, time_t n_secs )
     do {
         sleep(1);
         if ((time(0) - start) > n_secs) {
-            LOG_WARNING(Lgr) << "Time limit expired playing " << src->name();
+            LOG_WARNING(Lgr) << "Exceded time limit playing " << src->name();
+            break;
         }
     } while (not player->completed());
-    //
-    player->play( nullptr );
+    // Always shutdown player after completion OR timeout...
+    player->play(nullptr);
 }
 
 

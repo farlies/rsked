@@ -56,7 +56,6 @@ private:
     std::time_t m_file_writetime {0};
     Json::Value m_croot {};
     std::string m_schema {};
-    std::string m_version {};
     boost::filesystem::path m_config_path {};
 public:
     // all of these return true iff the param exists in the Config
@@ -70,6 +69,8 @@ public:
     bool get_unsigned(const char*, const char *, unsigned &);
     bool get_int(const char*, const char *, int &);
     bool get_long(const char*, const char *, long &);
+    bool get_jvalue(const char*, const char *, Json::Value &);
+    Json::Value get_root() { return m_croot; };
     //
     bool file_has_changed();
     time_t last_file_write() const { return m_file_writetime; }
@@ -80,7 +81,4 @@ public:
     Config();
     Config(const char*); // config file pathname
 };
-
-
-
 

@@ -10,6 +10,7 @@
 #    setup.sh -xr     # x86_64 release
 #    setup.sh -xd     # x86_64 debug
 #    setup.sh -ar     # armv7l release
+#    setup.sh -arf     # armv7l FINAL release
 #    setup.sh -ad     # armv7l debug
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
@@ -34,11 +35,17 @@ Options:
  -c
     use the clang compiler
 
+ -f
+    mark this as an official release for packaging
+
  -g
     use the gcc compiler
 
  -r
     select a release build
+
+ -R
+    select a release build but do not strip binaries
 
  -x
     build for x86_64 architecture
@@ -52,14 +59,18 @@ sCC=gcc
 sCXX=g++
 BTYPE='debug'
 TMACH=$(arch)
+NOSTRIP=false
+FINAL=false
 
-while getopts ":acdgrx" opt ; do
+while getopts ":acdfgrRx" opt ; do
     case $opt in
         a ) TMACH=armv7l ;;
         c ) sCC=clang; sCXX=clang++ ;;
         d ) BTYPE=debug ;;
+        f ) FINAL=true ;;
         g ) sCC=gcc; sCXX=g++ ;;
         r ) BTYPE=release ;;
+        R ) BTYPE=release ; NOSTRIP=true ;;
         x ) TMACH=x86_64 ;;
         \? ) print_usage
              exit 1
@@ -73,11 +84,18 @@ if [[ $# > 1 ]]; then
     exit 1
 fi
 
-if [ $BTYPE = 'release' ]; then
-    STRIP=true
-elif [ $BTYPE = 'debug' ]; then
+# to strip or not to strip...
+#
+if [[ $BTYPE = 'release' ]]; then
+    if [[ $NOSTRIP = 'false' ]]; then
+	STRIP=true
+    else
+	STRIP=false
+    fi
+else
     STRIP=false
 fi
+echo "Strip binaries: $STRIP"
 
 if [[ $# == 1 ]]; then
     BUILDDIR=$1
@@ -100,5 +118,6 @@ meson setup --buildtype $BTYPE \
       -Dprefix="$HOME" \
       -Dtarget_machine=$TMACH \
       -Ddatadir=.config \
+      -Dfinal=$FINAL \
       -Dstrip=$STRIP  $BUILDDIR
 

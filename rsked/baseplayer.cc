@@ -34,7 +34,7 @@ Base_player::Base_player( const char* nm )
 /// DTOR
 Base_player::~Base_player()
 {
-    m_cm->kill_child();  // will never throw
+    m_cm->kill_child( true, m_kill_us );  // will never throw
 }
 
 /// Usability
@@ -43,30 +43,65 @@ bool Base_player::is_usable()
     return m_enabled;
 }
 
+/// Enabledness
+bool Base_player::is_enabled() const
+{
+    return m_enabled;
+}
+
+/// enabled==true: Enable
+/// enabled==false; Disable
+///
+/// When disabled, the player exits and goes to state Disabled.
+/// When enabled, the player goes to state Stopped.
+/// Return the new value of the enabled flag.
+///
+bool Base_player::set_enabled( bool enabled )
+{
+    bool was_enabled = m_enabled;
+    if (was_enabled and not enabled) {
+        exit();
+        m_enabled = false;
+        m_pstate = PlayerState::Disabled;
+        LOG_WARNING(Lgr) << m_name << " is being Disabled";
+    }
+    else if (enabled and not was_enabled) {
+        m_pstate = PlayerState::Stopped;
+        m_enabled = true;
+        LOG_WARNING(Lgr) << m_name << " is being Enabled";
+    }
+    return m_enabled;
+}
+
 
 /// Exit: Terminate external player, if any.
+/// * Will NOT throw
 ///
 void Base_player::exit()
 {
-    LOG_INFO(Lgr) << m_name << " exit";
-    m_cm->kill_child();
+    LOG_INFO(Lgr) << "forcing " << m_name << " to exit";
+    m_cm->kill_child( true, m_kill_us );
     m_pstate = PlayerState::Stopped;
 }
 
 
 /// If playing a file, directory, or playlist, then signal STOP.
 ///
+/// * Might throw a CM_exception
+///
 void Base_player::pause()
 {
     // verify m_src is not mode streaming
     if (!m_src) return;
     if (m_src->medium() == Medium::stream) {
-        LOG_WARNING(Lgr) << m_name << " -- cannot pause while in stream mode.";
+        LOG_WARNING(Lgr) << m_name <<
+            "--cannot pause while streaming; exit instead.";
+        exit();
         return;
     }
     if (m_pstate == PlayerState::Playing) {
         if (m_cm->running()) {
-            m_cm->stop_child();
+            m_cm->stop_child( m_pause_us );
             m_pstate = PlayerState::Paused;
             LOG_DEBUG(Lgr) << m_name << " paused";
         }
@@ -80,7 +115,7 @@ void Base_player::resume()
     if (m_pstate == PlayerState::Paused) {
         ChildPhase cph = m_cm->last_obs_phase();
         if (ChildPhase::paused == cph) {
-            m_cm->cont_child();
+            m_cm->cont_child( m_resume_us );
             m_pstate = PlayerState::Playing;
         } else {
             LOG_WARNING(Lgr)
@@ -159,7 +194,7 @@ bool Base_player::check()
     }
 
     // some problem detected...
-    LOG_WARNING(Lgr) << m_name << "Abnormal condition detected: "
+    LOG_WARNING(Lgr) << m_name << " -- abnormal condition detected: "
                      << Child_mgr::cond_name(status);
     bool rc  { true };
 
@@ -205,7 +240,7 @@ bool Base_player::maybe_restart(RunCond status)
     //
     if (not m_src->repeatp() and not (status==RunCond::runTooShort)) {
         // tell cm it should not be running so next check won't return here
-        m_cm->kill_child();
+        m_cm->kill_child( true, m_kill_us ); // force
         if (nullptr == m_src) {
             LOG_INFO(Lgr) << m_name << " exited while not playing anything";
         } else {
@@ -217,9 +252,13 @@ bool Base_player::maybe_restart(RunCond status)
     return attempt_restart();
 }
 
-/// Attempting RESTART up to k times if we are supposed to still be
-/// running
-//
+/// Attempting restart if we are supposed to still be
+/// running. Restarts are limited to m_max_restarts in
+/// m_restart_interval seconds, after which the source is marked as
+/// failed. This is the most likely explanation, although the
+/// alternative of a bad player is also possible--difficult to
+/// distinguish these cases in general.
+///
 bool Base_player::attempt_restart()
 {
     LOG_INFO(Lgr) << m_name << " exited while playing {"
@@ -227,14 +266,17 @@ bool Base_player::attempt_restart()
 
     if (ChildPhase::running == m_cm->cmd_phase())
     {
-        if (m_cm->fails_since(time(0) - _restart_interval) < _max_restarts) {
-            LOG_INFO(Lgr) << m_name << " Attempt to restart Ogg player on source {"
+        unsigned nrestarts = m_cm->fails_since( time(0) - m_restart_interval );
+        LOG_INFO(Lgr) << m_name << ": "  << nrestarts << " restarts in the last "
+                      << m_restart_interval << " seconds";
+        if ( nrestarts < m_max_restarts) {
+            LOG_INFO(Lgr) << m_name << " Attempt to restart player on {"
                           << m_src->name() << "}";
             play( m_src );
         } else {
-            LOG_ERROR(Lgr) << m_name << " Too many failures to attempt restart";
+            LOG_ERROR(Lgr) << m_name << " Too many failures to attempt another restart";
             m_src->mark_failed(); // mark it as suspect
-            m_src = nullptr; // abandon this source
+            m_src.reset();        // abandon this source
             return false;
         }
     } else {

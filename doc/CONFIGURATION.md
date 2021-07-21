@@ -6,20 +6,16 @@
 4. [mpd](#mpd)
 5. [gqrx](#gqrx)
 6. [check_inet](#check_inet)
+7. [btremote](#btremote)
 
 ## Overview
 
-The best approach to configuration is to begin with example configuration
-files and modify them to suit your needs.  See the section
-*Configuration Files* in [INSTALLATION](INSTALLATION.md#configuration-files)
-for more information. In overview:
-
-- prepare a set of configuration files in `rsked/config/$MYCONFIG`
-- compile `rsked` in the build directory
-- use `ninja` to install the binaries and your configuration files
-- make further adjustments to configuration files, do *either*
-  - edit them in their installed locations, *or*
-  - edit the ones in `rsked/config/$MYCONFIG`, and use `ninja install` to reinstall
+The best approach to configuration is to begin with example
+configuration files, copy and modify them to suit your needs.  If you
+have *installed from a release tarball*, the example files are in their
+required places but *must be renamed*: in each case, remove the
+`example-` prefix from the name, e.g. `example-gold.conf` becomes
+`gold.conf`.
 
 The most common sorts of changes required are enabling or disabling
 features, or altering path names to reflect where you have stored
@@ -36,14 +32,24 @@ Configuration changes you will almost certainly want to make include:
 - `rsked/cooling.json` -- GPIO pin assignments matching your hardware
 
 
+If you are *building from source*, see the section *Configuration Files*
+in [INSTALLATION](INSTALLATION.md#configuration-files) for more
+information. In overview:
+
+- prepare a set of configuration files in `rsked/config/$MYCONFIG`
+- compile `rsked` in the build directory
+- use `ninja` to install the binaries and your configuration files
+- make further adjustments to configuration files, do *either*
+  - edit them in their installed locations, *or*
+  - edit the ones in `rsked/config/$MYCONFIG`, and use `ninja install` to reinstall
+
 
 ### Pathnames in Configuration Files
 
-Pathnames in the JSON configuration
-files for `rsked`, `cooling` and `schedule` may start with a tilde string
-"~/" to indicate the `$HOME` directory of the user running `rsked`, as
-with command line shells.  Other shell syntax is *not* supported, e.g.
-wildcards.
+Pathnames in the JSON configuration files for `rsked`, `cooling` and
+`schedule` may start with a tilde string "~/" to indicate the `$HOME`
+directory of the user running `rsked`, as with command line shells.
+Other shell syntax is *not* supported, e.g.  wildcards.
 
 
 ## rsked
@@ -69,103 +75,220 @@ application, *with the exception of* the [schedule](#schedule).
 It consists of a single top-level object (dictionary) with a set
 of member objects with string, boolean, or numeric members.
 
-- `schema` : identifies the format version for the configuration file
+- `schema` : string, identifies format for the configuration file
 
 ### General
 
-- `application` : identifies the application targeted by this file
-- `sched_path` : pathname of the schedule file
-- `version` : the version of this configuration file
+- `application` : string, identifies the application targeted by this file
+- `sched_path` : string, pathname of the schedule file
+- `version` : string, the version of this configuration file
+
+The version string should allow rsked to detect a newer schedule
+via lexicographical comparison.  A date string like "2020-09-23T14:41"
+works well.
 
 ### Inet_checker
 
-- `enabled` : if true, the internet monitoring feature is enabled
-- `refresh` : interval between checks of internet status, seconds
+- `enabled` : boolean, if true, the internet monitoring feature is enabled
+- `refresh` : number, interval between checks of internet status, seconds
 
 The [inet checker](#check_inet) is a separate process that
 periodically checks whether a usable internet connection is present.
 If enabled here, `rsked` will use this status information to determine
 whether internet streaming sources are viable.
 
+### player\_preference
+
+If different enabled players are able to play the same media/encoding
+for a source, `rsked` will try them according to a preferred order
+until one is found that works. The *default* order (`playermgr.cc`) is
+currently:
+
+1. Mpd_player
+2. Ogg_player
+3. Mp3_player
+4. Vlc_player
+5. Sdr_player
+6. Nrsc5_player
+
+Starting with schema 1.1, it is possible to change this order on a per
+media/encoding basis.  In JSON, a `player_preference` object contains
+nested media objects with encodings mapped to an array of player names
+
+```
+"player_preference" : {
+    "radio" : {
+        "wfm" : [ "Nrsc5_player", "Sdr_player" ]
+    },
+    "directory" : {
+        "mp3" : [ "Mpd_player", "Mp3_player" ],
+        "ogg" : [ "Ogg_player", "Mpd_player" ]
+    },
+    "file" : {
+        "mp3" : [ "Mp3_player", "Mpd_player" ],
+        "ogg" : [ "Ogg_player", "Mpd_player" ]
+    }
+}
+```
+
+It is only necessary to include entries that deviate from the
+default preferences. This section is completely optional.
+
 ### VU_monitor
 
-- `enabled` : if true, the volume monitoring feature is enabled
-- `vu_bin_path` : pathname of the VU monitor binary
-- `timeout` : number of seconds of silence to infer audio source failure
+- `enabled` : boolean, if true, the volume monitoring feature is enabled
+- `vu_bin_path` : string, pathname of the VU monitor binary
+- `timeout` : number, seconds of silence to infer audio source failure
 
 The VU monitor is a child process that checks audio output at the
 Linux sound system layer.  If no sound is emitted for timeout seconds,
 `rsked` is notified.  If silence is unexpected, `rsked` will attempt
 to restore programming, e.g. by switching to an alternate source.
 
+### Vlc_player
+
+- `enabled` : boolean, if true, the `vlc` player is enabled
+- `debug` : boolean, if true, `rsked` emits additional logging from the player
+- `bin_path` : path to the `vlc` binary
+- `wait_us` : integer, microseconds to wait for vlc to respond to commands
+
+Stock VLC Media Player on most Linux distributions will play most
+audio content. Starting with v1.0.5 it is experimentally available
+for everything except FM radio.  It seems to work well on x86, but
+has thrown odd errors on Arm (Debian 10). You might still prefer `mpd`
+which has had far more testing with `rsked`. The `wait_us` might need to
+be adjusted from its default (40,000 microseconds) if VLC proves sluggish
+on the target embedded system.
+
 ### Mpd_player
 
-- `enabled` : if true, the `mpd` player is enabled
-- `debug` : if true, emit additional diagnostic logging from mpd player
-- `run_mpd` : if true `rsked` runs `mpd` as a child process (recommended)
+- `enabled` : boolean, if true, the `mpd` player is enabled
+- `debug` : boolean, if true, emit additional diagnostic logging from mpd player
+- `run_mpd` : boolean, if true `rsked` runs `mpd` as a child process
 - `bin_path` : path to the `mpd` binary
 - `socket` : pathname of the unix domain `mpd` control socket
-- `host` : host on which `mpd` is running
-- `port` : TCP port of the `mpd` control socket
+- `host` : string, host on which `mpd` is running, default localhost
+- `port` : number, TCP port of the `mpd` control socket
 
-It is best to let `rsked` run `mpd`--it can restart it if it dies or
-becomes unresponsive.  The unix socket will be used to control `mpd` if
-available, otherwise the TCP socket (host/port) will be used.
+Experience has shown it is best to let `rsked` run `mpd` as a child
+process (`run_mpd=true`). This way, `rsked` can easily restart it if
+it dies or becomes unresponsive. Note that default installations of
+`mpd` will include *multiple* mechanisms to start `mpd` automatically at
+login: these must be removed since multiple mpd instances will
+conflict.
+
+The unix `socket` will be used to control `mpd` if available,
+otherwise the TCP socket (`host`/`port`) will be used.
+
+### Nrsc5_player
+
+- `enabled` : boolean, if true, the SDR player (`gqrx`) is enabled
+- `gqrx_bin_path` : string, pathname of the `gqrx` binary
+- `device_index` : integer, Gnuradio device index
+
+This player is experimentally available, and plays HD radio.  The
+source configuration does not yet offer any way to select alternative
+channels, so HD1 is always selected (work in progress).  If HD is
+available and the signal is strong, it will deliver noticably better
+audio quality than the analog signal on `Sdr_player`. It also less CPU
+power than the Sdr_player, possibly eliminating the need for
+cooling. But two factors might lead you to *disable* this
+player. First, it takes quite some time to start, resume, or to
+change stations (on Arm, about 18 seconds) which may annoy some
+listeners.  Second, it can be unlistenable if the station is weak or
+suffers from interference; the analog signal seems to degrade more
+gracefully.  Experiment in your listening location.
+
+The `device_index` is normally 0 (the default) when only a single SDR
+device is connected to the computer. If you have more than one, boy
+you're fancy: you might need to specify which SDR `nrsc5` should use here.
+
 
 ### Sdr_player
 
-- `enabled` : if true, the SDR player (`gqrx`) is enabled
-- `gqrx_bin_path` : pathname of the `gqrx` binary
-- `gqrx_work` : pathname of working configuration file for `gqrx`
-- `gqrx_gold` : pathname of the reference configuration file for `gqrx`
-- `low_s` : signal strength (dbm) that is considered low
-- `low_low_s` : signal strength (dbm) that is considered very low
-- `device_vendor` : 4-char hex string for the USB SDR vendor
-- `device_product` : 4-char hex string for the USB SDR product
+- `enabled` : boolean, if true, the SDR player (`gqrx`) is enabled
+- `gqrx_bin_path` : string, pathname of the `gqrx` binary
+- `gqrx_work` : string, pathname of working configuration file for `gqrx`
+- `gqrx_gold` : string, pathname of the reference configuration file for `gqrx`
+- `low_s` : number, signal strength (dbm) that is considered low
+- `low_low_s` : number, signal strength (dbm) that is considered very low
+- `device_vendor` : string, 4-char hex of the USB SDR vendor
+- `device_product` : string, 4-char hex of the USB SDR product
 
-The USB device vendor and product strings are used by `rsked` to determine if
-a suitable SDR dongle is present on the bus. You can find these strings
-by plugging in the SDR and running `lsusb`.
+The USB device vendor and product strings are used by `rsked` to
+determine if a suitable SDR dongle is present on the bus. You can find
+these strings by plugging in the SDR and running `lsusb`. For example,
+the Realtek RTL-2838 has entry: `0bda:2838`.  The `0bda` is the vendor
+and `2838` is the product.
 
-When a radio signal falls below the low low threshold `rsked` will
+When a radio signal falls below the `low_low_s` threshold `rsked` will
 switch to an alternate source, e.g. another station or recorded music.
-
+Falling below the `low_s` threshold will generate a warning message in
+the log.
 
 ### Ogg_player
 
-- `enabled` : if true, the `ogg123` player is enabled
-- `device` : audio device used for playback
-- `working_dir` : root directory for stored Music files
-- `ogg_bin_path` : pathname of the `ogg123` binary
+- `enabled` : boolean, if true, the `ogg123` player is enabled
+- `device` : string, audio device used for playback
+- `ogg_bin_path` : string, pathname of the `ogg123` binary
+
+The `device` string is any argument acceptable to the `-d` option of
+ogg123; see the `man` page.
 
 ### Mp3_player
 
-- `enabled` : if true, the `mpg321` player is enabled
-- `device` : audio device used for playback
-- `working_dir` : root directory for stored Music files
+- `enabled` : boolean, if true, the `mpg321` player is enabled
+- `device` : string, audio device used for playback
 - `mp3_bin_path` : pathname of the `mpg321` binary
 
+NOTE: the `device` attribute is not currently respected; the local
+default device will be used.
 
 ## Schedule
 
 The schedule controls what `rsked` will play at any given time during
 a week.  The configuration file is JSON, conventionally
 `~/.config/rsked/schedule.json`. It is a single object
-with these sections:
+with three main sections:
 
 - *preamble* : meta-information in top-level string members
 - *sources* : various audio sources
-- *week map* : maps each day of the week to a day schedule
-- *day programs* : times and programs for a particular day or class of days
+- *dayprograms* : times and programs for a particular day or class of days
+
+NOTE: The pre-release `rsked` schedules used schema "1.0", which had
+an additional section, the week map.  Only schemas "2.0" and later are
+supported in rsked releases. Older schedules, (if any exist!) will
+need conversion.  The new schema is structurally simpler and
+facilitates the (under construction) a web-based graphical editor,
+*rcal*.  Schedules can also easily be created and updated with a text
+editor.
 
 ### Preamble
 
-The preamble members must include:
+The preamble is a set of top level attributes. Four are required:
 
-- `schema` : identifies the format for the configuration file;
-  this must be the string `1.0` for the format described here.
-- `version` : identifies in logs this particular revision of your
-  schedule--change as needed for your reference.
+- `encoding` : string, must be `"UTF-8"`
+- `schema` : string, identifies the format for the configuration file;
+  this must be the *string* `"2.0"` for the format described here.
+- `version` : string, identifies this particular revision of the schedule
+- `description` : string, brief title for the schedule (used in the web editor)
+
+The values of `version` should be lexicographically comparable so
+newer schedules may be reliably recognized. The suggested format is an
+ISO date time stamp like: `2020-09-23T14:41`. This string will appear
+in `rsked` logs.
+
+Additionally, the preamble may specify attributes indicating 
+local directories to find audio files and directories:
+
+- `library` : string, music library path
+- `playlists` : string, playlist path
+- `announcements` : string, announcement path
+
+If specified, these must be **absolute** paths.
+If unspecified, the `library` defaults to:  `"$HOME/Music"`,
+the playlists defaults to `"$HOME/.config/mpd/playlists/"`, and
+announcements defaults to `"$HOME/.config/rsked/"`.
 
 ### Sources
 
@@ -173,74 +296,127 @@ The preamble members must include:
 audio resources that may be scheduled. Each source consists of a
 *name* (the key) and a JSON object that has a number of required or
 optional members describing its *attributes*.  Source names may be any
-unique string. `rsked` distributes with a number of [stock sources](#Stock Sources)
-with names starting with the "%" character. These are used for
-`rsked` internal announcements.
+unique string. `rsked` distributes with a number of
+[stock sources](#Stock Sources) with names starting with the "%"
+character. These are used for `rsked` internal announcements; the
+use of the "%" prefix for other source names is discouraged.
 
-#### Common attributes
+#### Common Source Attributes
 
-Several attributes apply to more than one type of source:
+Most attributes apply to more than one type of source.
+Three attributes are **required** of every source:
 
-- `mode` : one of `off`, `radio`, `ogg`, `mp3`, or `mp3_stream`
-- `alternate` : the *name* of another source to be used if the source being
-  defined is unavailable for any reason.  If no alternate is named,
-  the alternate is `off`, in effect silence.
-- `repeat` : whether to keep repeating the source for the scheduled
-  duration (true/false).
-- `dynamic` : whether the pathname should be computed at play time (true/false)
+- `medium` : string, one of `file`, `directory`, `playlist`, `stream`
+- `encoding` : string, one of `ogg`, `mp3`, `mp4`, `flac`, `wfm`, `nfm`, `mixed`
+- `location` : a pathname, frequency, or URL (see media sections below)
 
-Dynamic resources have their resource location computed at the time of
-of play by substituting certain symbols with components of the local date or time.
-The substitution is described in `man 3 strftime`. For example, `%d` in the
-string is replaced by the day of the month (01 to 31), and `%y` is the
-year (e.g. 2020).
+The encoding indicates how the audio is represented in the medium.
+Values correspond to well-known file and broadcast types.
 
-Source definitions must include exactly one of the keywords
-`frequency`, `file`, `directory`, `playlist` or `url`.
+Several more attributes are common, but have default values:
 
-#### Radio sources
+- `alternate` : string, the *name* of another source
+- `repeat` : boolean, whether to keep repeating the source
+- `quiet` : boolean, whether it is okay for the source to be silent
+- `dynamic` : boolean, whether the pathname should be computed at play time
+- `announcement` : boolean, is the source an announcement
+- `duration` : number, seconds to play
 
-- `mode` : `radio`
-- `frequency` : string indicating frequency in MHz
+The `alternate` is a source to be played if the source being
+defined is unavailable for any reason.  If no `alternate` is named,
+the default alternate is `off`, a built-in source that is silent.
+  
+If `repeat` is `true` then the source will be started again as
+many times an necessary to fill the scheduled period. The default
+is `false`.  Setting it to `true` might be sensible for a locally
+stored recording.
+
+A `quiet` source may be silent for extended periods without `rsked`
+flagging a playback problem. It is `false` by default, except for
+local media that do not have the `repeat` option set to `true`.
+
+`dynamic` resources have their actual resource location computed at the
+time of of play by substituting certain symbols with components of the
+local date or time.  The substitution is described in `man 3
+strftime`. For example, `%d` in the string is replaced by the day of
+the month (01 to 31), and `%y` is the year (e.g. 2020).
+This is handy to fetch internet resources that are date-named or
+files to be played on particular days.
+
+`announcement` sources are intended to be *briefly* interrupt normal
+programs, which resume when the announcement finishes. Default: `false`.
+NOTE: currently announcements must use **ogg** encoding.
+
+`duration` indicates the number of seconds (and fractions thereof) that
+are required for a recorded work to play to completion. Omit if not known.
+It is currently used only the `rcal` schedule editor.
 
 
-#### Locally stored MP3 or OGG Files
+#### Radio Sources
 
-- `mode` : `mp3` or `ogg`
-- `file` : local pathname of the audio file
+- `medium` : string, `radio`
+- `encoding` : string, either `wfm` or `nfm`
+- `location` : double, indicating frequency in MHz
 
-The pathname in `file` may be absolute or relative to the player
-working directory. "~/" expansion will be performed on this pathname.
+Standard FM broadcast stations use "wide" FM (wfm) and a frequency
+that is a multiple of 100KHz, e.g. `90.3`. "Narrow" FM is used for
+other stations such as weather and emergency services; it is 
+currently *not* supported by the SDRplayer, but will be in the near
+future.
+
+#### Locally Stored Music Files
+
+- `medium` : string, `file` or `directory`
+- `encoding` : string, `ogg`, `mp3`, `mp4`, or `flac`
+- `location` : string, local relative pathname of the audio file
+
+Files and directories are taken to be relative to the
+*music library path*. For example:  `"brian eno/another green world"`
+would be: `"/home/pi/Music/brian eno/another green world"`
+in a default configuration for user `pi`.
+
+There is one exception: *announcements* are taken to be relative to
+the announcement directory, e.g. `"motd/fcookie.ogg"`
+might be translated to: `"/home/pi/.config/rsked/motd/fcookie.ogg"`
+
 
 #### Playlists
 
-- `playlist` : name of a playlist naming files of the type specified by `mode`
-- `path` : pathname of the playlist
+- `medium` : `playlist`
+- `location` : string, pathname of the playlist
 
-A playlist is a file that should have one media pathname per line.
-The pathnames within the file should either be absolute, or relative to the
-*working directory* defined for the player (`working_dir`) in `rsked.json`.
-No shell expansion at all is performed on these pathnames. De facto standard
-M3U file format is acceptable, but the M3U directives will be ignored.
-Example playlists are included in the `mpd/playlists` directories;
-replace these with playlists reflecting your stored audio files.
-The simplest way to create playlists is with an `mpd` client like *Cantata*.
+The `location` filename, e.g. `foo.m3u`, is taken to be relative to
+the *playlist directory*.  A playlist is a file that should have one
+media pathname per line.  No shell expansion at all is performed on
+these pathnames. De facto standard M3U file format is acceptable, but
+the M3U directives will be ignored.  Example playlists are included in
+the `mpd/playlists` directories; replace these with playlists
+reflecting your stored audio files.
+
+There are some differences in the way different media players interpret the
+pathnames in playlists.  However in general, relative pathnames or
+bare filenames are assumed to be relative to the directory containing
+the *playlist* file.  For best interoperability you may either (or
+both) of:
+
+1. Put all of your playlists at the root of the music directory (so
+   relative paths will coincide with the assumed root), or make
+   symbolic links so that they appear in all required places.
+2. Only use *full pathnames* in playlists.  This option is arguably
+   best long term as it should be unambiguous to any current or future
+   player.
+
+
 
 #### Network Streams
 
-- `url` : a www URL for the mp3 resource, acceptable to the chosen player
+- `medium` : `stream`
+- `encoding` : string, `mp3`, `ogg`, `mp4`, or `flac`
+- `location` : string, a www URL for an audio resource
 
 Players `mpd` and `mpg321` will handle URLs ending in `.mp3`.
-In theory ogg-vorbis streams could be handled too however we have been unable
-to verify this.
-
-#### Directories
-
-- `directory` : a pathname of a directory with mp3 or ogg files as
-  indicated by `mode`
-  
-Absolute or working-directory relative directories can be handled by
-`mpg321` and `ogg123` players.
+In theory, the other encodings could be handled too (by `mpd`),
+but this has received no testing as of yet.
 
 
 #### Stock Sources
@@ -257,36 +433,22 @@ Absolute or working-directory relative directories can be handled by
 - `%goodev`  : good evening
 - `%motd` : message of the day
 
-The distributed English language computer synthesized audio messages may be
-replaced by any desired ogg files.
+The distributed English language (computer synthesized) audio messages
+may be replaced by any desired **ogg** files.
 
-### Week Map
-
-`weekmap` is a unique JSON *array* that specifies the names of day
-schedules to play on each day of the week.  The first element of
-the array specified the schedule for *Sunday* and the last element
-specifies Saturday. Each element must be the name of a day
-schedule object defined elsewhere in the file.
-
-```
-"weekmap" : [
-     "sunday",
-     "weekday", "weekday", "weekday", "weekday", "weekday",
-     "saturday" ],
-```
 
 ### Day Programs
 
-All objects within unique top level object `dayprograms` are schedules for
-particular days, or sets of days, as referenced by the week map.
-If the same schedule should be followed Monday through Friday, one
-can simply define a shared day program like "weekday":
+All objects within unique top level object `dayprograms` are schedules
+for particular days. There must be exactly 7 of them, with names:
+"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", and
+"saturday". They may appear in any order in the JSON.
 
 ```
-"weekday" : [
+"monday" : [
         {"start" : "00:00", "program" : "OFF" },
         {"start" : "07:30", "program" : "cms" },
-        {"start" : "09:00", "announce" : "motd-ymd" },
+        {"start" : "09:00", "announce" : "motd-md" },
         {"start" : "14:00", "program" : "nis" },
         {"start" : "15:00", "program" : "cms" },
         {"start" : "15:30", "announce" : "motd-ymd" },
@@ -301,19 +463,38 @@ program start time. Announcements are sources that interrupt programs
 at specified start times--the regularly scheduled program is resumed
 when an announcement finishes. In the example above, the source "cms"
 will commence playing at 07:30 and play until 14:00, when source "nis"
-begins. However at 09:00 an announcment "motd-ymd" will interrupt
+begins. However at 09:00 an announcement "motd-ymd" will interrupt
 "cms". Announcements are intended to be brief asides, e.g. a message
 of the day.
 
 Each day program must satisfy a few constraints:
 
 1. Slot `start` must specify a starting time of day (HH:MM:SS, local
-   time). The trailing seconds field is optional and is assumed to be
-   "00" if absent.
+   time) using a 24-hour clock format, e.g. "14:30:00" would be
+   2:30PM. The seconds field (:SS) is optional and is assumed to be
+   ":00" if absent.
 2. Start times must be monotonically *increasing* with index into the array.
-3. The first slot must be for time "00:00", and may *not* be an announcement.
+3. The first slot must be for time `"00:00"`, and may *not* be an announcement.
 4. Each slot must specify *either* a `program` *or* an announcement
-   (`announce`) that names a defined *source*.
+   (`announce`) whose value names a *source* defined in the schedule
+   or the special source `"OFF"`
+5. There must be at least one slot.
+
+
+### Schedule Validation
+
+A JSON schema for the schedule is in `scripts/schedule_schema.json`
+and may be used to validate a schedule with your favorite validator,
+e.g. https://github.com/neilpa/yajsv
+
+```
+$ yajsv -s scripts/sked_schema-2.0.json ~/.config/rsked/schedule.json 
+/home/qrhacker/.config/rsked/schedule.json: pass
+
+```
+
+The schema check covers syntax and basic semantics. The test mode of
+`rsked` (run with `--test`) does functional validation of settings.
 
 
 ## cooling
@@ -466,7 +647,7 @@ The example `mpd/` configuration directory includes a subdirectory
 
 `gqrx` uses an "ini" file syntax, with sections denoted by names in
 square brackets.  The `gqrx` application generates this file, and
-running it is the best way to obtain a usable configuraton.  The
+running it is the best way to obtain a usable configuration.  The
 parameters values may *vary considerably* based on the SDR hardware
 you have attached.  Run `gqrx` from the desktop and make adjustments
 as needed, e.g. selecting the right SDR hardware. Pay particular
@@ -542,3 +723,107 @@ The next time `check_inet.sh` is run, it will test the next URL in the
 list. It is best to select URLs that are very small files (robots.txt
 is *usually* small), and hosts that are reliably "up" and responsive.
 Never use a URL for a stream.
+
+## btremote
+
+The easiest way to interact with the embedded application is usually
+via IP networking--WiFi or Ethernet allows commands to be issued
+easily via SSH or web service.  However there are some environments in
+which IP networking is impractical, not permitted, or cannot be
+configured in advance.  Bluetooth is often a viable solution in these
+cases.  The optional `btremote` service offers a way to interact with
+the embedded `rsked` device from a phone or tablet to check its status
+and configure some parameters.  It uses Bluetooth as a serial port
+service on the device, and a terminal emulator on the phone is used to
+issue brief commands.
+
+
+### Interacting with btremote
+
+The `btremote` command may be used in the field to check on 
+the status of the `rsked` device and to configure certain
+parameters. Commands include:
+
+```
+  help   : print this list of commands
+  boot   : reboot rsked device now
+  halt   : power off rsked device now
+  last <lg> [<n>] : tail logfile
+  ls     : log dir list
+  quit   : end session
+  status : print the network status
+  time [<date>] <time>  : get/set time
+  warn <lg> [<n>] : tail warnings
+  wadd <ssid> <psk>  : add WiFi net
+  watt    : attach WiFi
+  wls     : list stored WiFi nets
+  wrm <j> : remove stored WiFi net
+  wscan   : scan visible WiFi nets
+```
+
+### Configuring WiFi
+
+To configure WiFi via `btremote` first run the `wscan` command.  This
+will print a list of discovered SSIDs. You can use the index number
+from this list with the `wadd` command; if your network does not
+appear here, use its literal SSID instead.  (Surround the SSID or
+preshared key with double quotes if it has spaces).
+
+```
+Sat Nov  7 15:10:22 2020
+rsked> wscan
+Starting scan...
+1 ESSIDs stored
+Successful Wi-Fi scan
+ 1. gatornet, ncryptd, 49/70
+
+rsked> wadd 1 MySecretWPAKey
+rsked> watt
+```
+
+### Setting the Time
+
+If the `rsked` device cannot use NTP, then the clock will
+inevitably drift. The `btremote` command `time` may be used
+to manually set a time (and date). This will set both the
+system time and the battery RTC. Time should be specified
+in 24-hour format and should be the *local* time.
+Examples:
+
+```
+rsked> time
+ 2020-11-11 09:07:32
+
+rsked> time 09:09:01
+rsked> time 2020-11-12 15:22:00
+```
+
+### Checking Logs
+
+The `ls` command will list the current logs.
+The `last` command will print the latest lines from a given log file
+given its name (or a prefix thereof). The `warn` command will
+print only errors and warnings from a log.
+
+```
+rsked> ls
+total 204K
+ 60K cooling_00030.log
+ 32K rsked_00032.log
+ 56K clock.log
+4.0K vumonitor_00030.log
+ 12K rsked201015_131929.out
+ 32K mpd.log
+4.0K check_inet.log
+4.0K rsked201009_093130.out
+
+rsked> last cool 4
+2020-11-07 15:30:38 <info> [cooling] rsked Playing, temperature 51.54 C
+2020-11-07 15:31:23 <info> [cooling] Halted FAN at temp=49.926
+2020-11-07 15:31:53 <info> [cooling] rsked Playing, temperature 53.692 C
+2020-11-07 15:33:08 <info> [cooling] rsked Playing, temperature 57.996 C
+
+rsked> warn vumon
+2020-11-07 11:15:24 <warning> [vumonitor] TOO QUIET check #7191
+2020-11-07 14:49:40 <warning> [vumonitor] TOO QUIET check #7294
+```

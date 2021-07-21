@@ -26,25 +26,28 @@
 #include "inetcheck.hpp"
 
 /// This object will retrieve/create a player for any given source.
+/// It also keeps an eye on internet availability.
 ///
 class Player_manager {
 private:
-    spPlayer m_annunciator {};
-    spPlayer m_ogg123 {};
-    spPlayer m_mpg321 {};
-    spPlayer m_gqrx {};
-    spPlayer m_mpd {};
-    spPlayer m_null_player {};
-    //
-    bool check_inet();
+    Player_prefs m_prefs {};
+    time_t m_last_inet_warning {0};
+    bool m_inet_ready {false};
+    std::unordered_map<std::string,spPlayer> m_players {};
+    void install_player( Config&, spPlayer, bool /*testp*/ );
+    void load_json_prefs( Config& );
     static Inet_checker c_ichecker;
 public:
     Player_manager();
     ~Player_manager();
-    void configure( Config& config, bool testp );
     //
+    bool check_inet();
+    void check_minimally_usable();
+    void configure( Config&, bool /* testp */); 
+    void configure_prefs(Config&);
     bool check_players();
     void exit_players();
+    bool fix_contention(unsigned);
     spPlayer get_annunciator();
     spPlayer get_player( spSource );
     static bool inet_available();

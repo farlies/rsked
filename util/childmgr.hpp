@@ -31,6 +31,8 @@
 #include <boost/circular_buffer.hpp>
 #include "logging.hpp"
 
+#include "cmexceptions.hpp"
+#include "chpty.hpp"
 
 /// Some symbolic values used in Child_mgr:
 ///
@@ -56,34 +58,6 @@ enum class RunCond {
     unexpectedPause,            //! obs paused but should be some other ph
     unknown,                    //! unable to get process info
     wrongState                  //! obs running when it should not be
-};
-
-/// Exceptions
-
-/// Thrown on problem with players
-struct CM_exception : public std::exception {
-    const char* what() const throw() { return "Child_mgr exception"; }
-};
-
-/// Occurs when there is no child pid but one is required.
-struct CM_nochild_exception : public CM_exception {
-    const char* what() const throw() {
-        return "Child_mgr No child process exception";
-    }
-};
-
-/// Occurs when we cannot send a signal to the child.
-struct CM_signal_exception : public CM_exception {
-    const char* what() const throw() {
-        return "Child_mgr Signal delivery exception";
-    }
-};
-
-/// Occurs when we cannot start a child process.
-struct CM_start_exception : public CM_exception {
-    const char* what() const throw() {
-        return "Child_mgr failed to start child process";
-    }
 };
 
 
@@ -150,11 +124,14 @@ private:
     time_t m_max_death_latency {2};    // maximum seconds for child to die
     boost::circular_buffer<time_t> m_fails { 5 };  // abnormal exit times
     std::string m_name {};             // user friendly name (optional)
+    std::unique_ptr<Pty_controller> m_pty {};   // pseudoterminal
     //
     bool check_child_gone( RunCond &);
     bool check_child_paused( RunCond &);
     bool check_child_running( RunCond &);
+    void launch_child_binary(std::vector<const char*>&);
     void postmortem( int, int );
+    void presume_dead( int );
     void update_status( siginfo_t & );
     Child_mgr();
     Child_mgr( const boost::filesystem::path );
@@ -175,13 +152,13 @@ public:
     void clear_status();
     ChildPhase cmd_phase() const { return m_cmd_phase; }
     bool completed() const;
-    void cont_child();
+    void cont_child(long wait_us=0);
     unsigned fails_since(time_t) const;
     int get_exit_reason() const { return m_exit_reason; }
     int get_exit_status() const { return m_exit_status; }
     const std::string & get_name() const { return m_name; }
     pid_t get_pid() const { return m_pid; }
-    void kill_child(bool force=false);
+    void kill_child(bool force=false, long wait_us=0 );
     int last_exit_status() const { return m_exit_status; }
     ChildPhase last_obs_phase() const { return m_obs_phase; }
     bool running() const;
@@ -192,10 +169,20 @@ public:
     void set_wdir(const boost::filesystem::path &);
     void signal_child(int);
     void start_child();
-    void stop_child();
+    void stop_child(long wait_us=0);
     unsigned updates() { return m_updates; }
     time_t uptime() const;
-    //
+    bool wait_for_phase( ChildPhase, long ); // usecs
+    // pseudoterminal methods
+    void enable_pty();
+    bool has_pty() const;
+    const std::string& pty_remote_name() const;
+    void set_pty_read_timeout( long, long );  // secs, usecs
+    void set_pty_write_timeout( long, long );  // secs, usecs
+    void set_pty_window_size(unsigned,unsigned);
+    ssize_t pty_read_nb( std::string&, ssize_t ); // max bytes
+    ssize_t pty_write_nb( const std::string& );
+    // factory
     template<typename... Ts>
     static std::shared_ptr<Child_mgr> create(Ts&&... params)
     {

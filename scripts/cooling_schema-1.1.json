@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://rsked.org/cooling_schema1.1.json",
+    "title": "cooling-1.1",
+    "description": "Validates cooling configuration written in JSON with schema 1.1",
+    "type": "object",
+    "required": [ "encoding", "schema", "General" ],
+    "additionalProperties" : false,
+    "properties": {
+        "encoding": { "const": "UTF-8" },
+        "schema": { "const": "1.1" },
+        "General" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "application" : { "const" : "cooling" },
+                "version" : {"type" : "string" },
+                "description" : {"type" : "string" },
+                "poll_msec" : {"type" : "integer", "minimum" : 10 },
+                "poll_trace" : {"type" : "integer", "minimum" : 1 }
+            }
+        },
+        "Rsked" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "rsked_bin_path" : {"type" : "string"},
+                "rsked_config_path" : {"type" : "string"},
+                "rsked_debug" : {"type" : "boolean"},
+                "kill_pattern" : {"type" : "string"},
+                "mpd_stop_cmd" : {"type" : "string"}
+            }
+        },
+        "Cooling" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "fan_gpio" : {"type" : "integer", "minimum" : 0},
+                "sensor" : {"type" : "string"},
+                "cool_start_temp" : {"type" : "number", "minimum" : 15},
+                "cool_stop_temp" : {"type" : "number", "minimum" : 15},
+                "min_cool_secs" : {"type" : "integer", "minimum" : 5}
+            }
+        },
+        "SnoozeButton" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "button_gpio" : {"type" : "integer", "minimum" : 0}
+            }
+        },
+        "PanelLEDs" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "red_gpio" : {"type" : "integer", "minimum" : 0},
+                "green_gpio" : {"type" : "integer", "minimum" : 0}
+            }
+        }
+    }
+}

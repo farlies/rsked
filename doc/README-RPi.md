@@ -69,7 +69,7 @@ need wired or wireless access. Select a model with integral Wi-Fi
 in latter case.
 
 In an embedded solution, the network and WEP credentials to use
-Wi-Fi must be added to the device prior to installation. Add
+Wi-Fi are easiest to add to the device prior to installation. Add
 stanzas to the file `/etc/wpa_supplicant/wpa_supplicant.conf`
 e.g. 
 
@@ -84,16 +84,26 @@ The preshared key (psk) hash may be generated with `wpa_passphrase`. See
 [Wireless-CLI](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md)
 for more details.
 
+For on-site configuration of the Wi-Fi, consult:
+[INSTALLATION:Bluetooth](INSTALLATION.md#Bluetooth).
+
 Consider adding a *firewall* package like `ufw`. Configure it to
 open only ports needed for the installation.
 
 ## FM Radio
 
-For FM demodulation with `gqrx`, one needs at least a Pi 3.  Less
-capable models will be unsatisfactory.  Consult the `gqrx` development
+For FM demodulation with SDR, one needs at least a Pi 3.  Less
+capable models will be unsatisfactory.  Consult the `gqrx` or `nrsc5` development
 site for progress with other models such as the Pi 4.  The `gqrx`
 configuration should be tailored to minimize the display features,
-e.g. the spectrum waterfall--none of these are needed here.
+e.g. the spectrum waterfall; none of these are needed here.
+
+`nrsc5` is a lighter-weight alterntives to `gqrx, albeit for HD radio only.
+Its a lower CPU load and the Pi runs cooler. However its start up is quite slow
+and must be restarted every time rsked pauses or changes frequencies.
+
+A good antenna can improve reception. The ANT500 from Great Scott Gadgets
+works well in my installations.
 
 
 ## Storage
@@ -108,7 +118,7 @@ A 16GB card should be sufficient for most applications.
 ## Cooling
 
 Even with passive heat sinks, the RPi may run hot when doing FM
-reception via `gqrx` SDR.  An inexpensive 5-volt cooling fan can make
+reception via SDR.  An inexpensive 5-volt cooling fan can make
 a huge difference.  Applications that are *not using SDR* can get by
 fine with passive cooling.  Heat sinks should be used even if active
 cooling is installed.
@@ -155,15 +165,17 @@ Other startup mechanisms are possible--feel free to experiment.
 While `rsked` is designed to run "headless" (no monitor), the `gqrx`
 application, written with a Qt5 interface, expects a display. 
 Also, the LXDE autostart mechanism depends on the presence of a display.
-Thus you will need to provide some sort of screen.
+If you are not using `gqrx` and have some other autostart mechanism
+in mind, then this configuration step may be skipped.
+Otherwise, you will need to provide some sort of screen.
 Possible solutions here include:
 
 1. attach an small HDMI display
 2. attach an HDMI "pacifier" (plug that fakes a monitor)
 3. create a virtual screen via **Xvfb**
 
-Option 1 is useful for debugging, but option 3 is cheap and easy.
-Use Option 3 for embedded deployment.
+Option 1 is useful for debugging; option 2 requires additional hardware.
+Happily, option 3 is cheap and easy.
 
 ```
 sudo apt install xvfb
@@ -210,8 +222,12 @@ The pin mapping used in the `rsked` prototypes is:
 
 **WARNING**: GPIO pins can provide only minimal drive current (OUT) and can
 tolerate only a limited range of voltages (IN). Use suitable buffer
-circuitry to protect the RPi. An example schematic (pdf) accompanies
-this file (*coming soon*).
+circuitry to protect the RPi. An example schematic is shown below:
+
+![hardware]
+
+[hardware]: hardware.png
+
 
 **Permissions** The operating user for cooling must have permissions
 to read and write to the GPIO devices. One way to achieve this is to

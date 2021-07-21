@@ -28,13 +28,14 @@ class gqrx_client;
 /// This is the high level Player interface to SDR via the gqrx
 /// application.
 ///
-class Sdr_player : public Player {
+class Sdr_player : public Player_with_caps {
     friend class gqrx_client;
 private:
     spSource m_src {};          // last assigned source object
     freq_t m_freq { 0 };        // last assigned frequency
     bool m_enabled { true };
     bool m_usable { true };
+    const long m_kill_us { 25'000 };  // allow 25ms to exit
     time_t m_last_unusable { 0 };
     time_t m_recheck_secs { 8*60*60 }; // 8 Hours
     boost::filesystem::path m_config_work {};
@@ -48,6 +49,7 @@ private:
     std::string m_name { "Sdr_player" }; // must match config section
     spCM m_cm;
     //
+    void cap_init();
     bool check_demod();
     bool check_play();
     Smeter check_signal();
@@ -64,7 +66,7 @@ public:
     Sdr_player(const Sdr_player&) = delete;
     void operator=(Sdr_player const&) = delete;
     //
-    virtual const char* name() const { return m_name.c_str(); }
+    virtual const std::string& name() const { return m_name; }
     virtual bool completed();
     virtual bool currently_playing( spSource );
     virtual void exit();
@@ -76,5 +78,7 @@ public:
     virtual PlayerState state();
     virtual void stop();
     virtual bool check();
+    virtual bool is_enabled() const;
+    virtual bool set_enabled( bool );
 };
 

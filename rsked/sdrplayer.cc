@@ -45,19 +45,35 @@ constexpr const char *Gqrx_host = "127.0.0.1";
 
 ////////////////////////////// SDR_PLAYER /////////////////////////////////////
 
+/// Establish baseline capabilities. Shared by all (1) ctors.
+/// Does not handle HD-Radio at this time.
+///
+void Sdr_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::radio,  Encoding::wfm);
+    add_cap(Medium::radio,  Encoding::nfm);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
+
+
 /// CTOR
 Sdr_player::Sdr_player() 
     : m_remote( std::make_unique<gqrx_client>(this) ),
       m_cm( Child_mgr::create( m_name ) )
 {
     LOG_INFO(Lgr) << "Created an Sdr_player";
+    cap_init();
 }
 
 /// DTOR.  Disconnects then deletes.
 Sdr_player::~Sdr_player()
 {
     m_remote->disconnect();
-    m_cm->kill_child();
+    m_cm->kill_child( true, m_kill_us );
 }
 
 /// Return Usability flag.  Might be not usable if:
@@ -73,7 +89,9 @@ Sdr_player::~Sdr_player()
 ///
 bool Sdr_player::is_usable()
 {
-    if (!m_enabled) return false;
+    if (!m_enabled) {
+        return false;
+    }
     if (!m_usable) {
         if ( (time(0) - m_last_unusable) > m_recheck_secs ) {
             mark_unusable(false);
@@ -82,8 +100,44 @@ bool Sdr_player::is_usable()
     return m_usable;
 }
 
+/// Return enabledness. (API)
+/// * Will NOT throw.
+///
+bool Sdr_player::is_enabled() const
+{
+    return m_enabled;
+}
+
+/// Enable or disable this player.
+///   enabled==true:  Enable
+///   enabled==false: Disable
+///
+/// When disabled, the player exits and goes to state Disabled.
+/// When enabled, the player goes to state Stopped.
+/// Return the new value of the enabled flag.
+///
+/// * Will not throw.
+///
+bool Sdr_player::set_enabled( bool enabled )
+{
+    bool was_enabled = m_enabled;
+    if (was_enabled and not enabled) {
+        exit();
+        m_enabled = false;
+        m_state = PlayerState::Disabled;
+        LOG_WARNING(Lgr) << m_name << " is being Disabled";
+    }
+    else if (enabled and not was_enabled) {
+        m_state = PlayerState::Stopped;
+        m_enabled = true;
+        LOG_WARNING(Lgr) << m_name << " is being Enabled";
+    }
+    return m_enabled;
+}
+
 /// Flag the player as UNusable (p==TRUE), or usable again (p==false).
 /// Kills any running child process.
+ /// * Will NOT throw
 ///
 void Sdr_player::mark_unusable( bool unusablep )
 {
@@ -92,26 +146,29 @@ void Sdr_player::mark_unusable( bool unusablep )
     if (!m_usable) {
         m_last_unusable = time(0);
         LOG_WARNING(Lgr) << "Sdr_player being marked as Unusable until future notice";
-        m_cm->kill_child();           //  < ! >
+        m_cm->kill_child( true, m_kill_us );  // will not throw
         m_state = PlayerState::Broken;
     } else {
         LOG_WARNING(Lgr) << "Sdr_player is being tentatively marked as usable again";
         m_state = PlayerState::Stopped;
-    }        
+    }
 }
 
-/// Determine if there are any matching radios on the USB bus.
-/// If the config file specifies a device_vendor and device_product
-/// use just that one, otherwise use the default set of SDRs.
+/// Determine if there are any matching radios on the USB bus
+/// if the config file specifies a device_vendor and device_product.
+/// If no vendor is specified just skip this test.
+///
+/// * May throw
 ///
 bool Sdr_player::probe_sdr(Config& cfg)
 {
     Usb_probe probe;
     std::string vendor_str;
+    const char* myname = m_name.c_str();
     
-    if (cfg.get_string(name(),"device_vendor",vendor_str)) {
+    if (cfg.get_string(myname,"device_vendor",vendor_str)) {
         std::string product_str;
-        if (cfg.get_string(name(),"device_product",product_str)) {
+        if (cfg.get_string(myname,"device_product",product_str)) {
             unsigned long vendor=0,product=0;
             try {  // convert from hex - may fail
                 vendor = std::stoul(vendor_str, nullptr, 16 );
@@ -127,6 +184,10 @@ bool Sdr_player::probe_sdr(Config& cfg)
         } else {
             LOG_ERROR(Lgr) << "Missing device_product for SDR " << m_name;
         }
+    } else {
+        LOG_WARNING(Lgr) << m_name 
+             << " config missing SDR device_vendor: skipping checks";
+        return true;
     }
     if (0 == probe.count_devices(true)) {
         if (m_usable) {
@@ -144,7 +205,7 @@ bool Sdr_player::probe_sdr(Config& cfg)
 ///
 void Sdr_player::initialize( Config& cfg, bool /* testp */ )
 {
-    const char* myname = name();
+    const char* myname = name().c_str();
     m_src = nullptr;
     m_enabled = true;
     m_usable = true;
@@ -155,7 +216,7 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool(myname, "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Sdr_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuraiton
+        // if not enabled, we do not check the rest of the configuration
         return;
     }
 
@@ -190,7 +251,7 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_unsigned(myname,"gqrx_port",port);
     m_remote->set_hostport( host, port );
     //
-    probe_sdr(cfg);
+    probe_sdr(cfg); // TODO: possibly mark the player as unusable?
     //
     LOG_INFO(Lgr) << myname << " initialized";
 }
@@ -201,7 +262,8 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
 /// The gqrx application takes a configuration file that
 /// must be correct (or it forces a deadly modal dialog to fix it).
 /// Copy a 'gold' copy of the config to the operational
-/// position.  May throw.
+/// position.
+/// * May throw
 ///
 void Sdr_player::setup_gqrx_config()
 {
@@ -219,25 +281,28 @@ void Sdr_player::setup_gqrx_config()
 
 
 /// Exit: Terminate external player, if any
+/// * Will NOT throw
 ///
 void Sdr_player::exit()
 {
     if (m_cm->running()) {
         try {
             m_remote->disconnect();
-            m_cm->kill_child();
-            LOG_INFO(Lgr) << "Sdr_player exits";
-            m_state = PlayerState::Stopped;
+            m_cm->kill_child(false,m_kill_us);
+            LOG_INFO(Lgr) << m_name << " exit";
         }
         catch (...) {
-            // Child_mgr logs error message
+            m_cm->kill_child(true,m_kill_us);
         }
-    } else {
+        m_state = PlayerState::Stopped;
+    }
+    else {
         LOG_INFO(Lgr) << "Sdr_player already exited";
     }
 }
 
 /// This is the same as Stop
+/// * May throw.
 ///
 void Sdr_player::pause()
 {
@@ -246,6 +311,7 @@ void Sdr_player::pause()
 }
 
 /// If paused, then resume demodulation
+/// * May throw.
 ///
 void Sdr_player::resume()
 {
@@ -257,6 +323,7 @@ void Sdr_player::resume()
 }
 
 /// Return the current PlayerState
+/// * Will NOT throw
 ///
 PlayerState Sdr_player::state()
 {
@@ -266,7 +333,8 @@ PlayerState Sdr_player::state()
 
 /// Stop playing. This will not terminate the child process,
 /// just halt demodulation and audio output--this is a low
-/// power state. May throw.
+/// power state.
+/// * May throw.
 ///
 void Sdr_player::stop()
 {
@@ -281,6 +349,7 @@ void Sdr_player::stop()
 /// the process first and connect to it.  A null src will cause the
 /// player to simply stop.  This operation may fail for various
 /// reasons and will throw.
+/// * May throw
 ///
 void Sdr_player::play( spSource src )
 {
@@ -289,15 +358,13 @@ void Sdr_player::play( spSource src )
         stop();
         return;
     }
-    if (src->medium() != Medium::radio) {
-        LOG_ERROR(Lgr)
-            << "Sdr_player cannot play this type of source {"
-            << src->name() << "}";
-        return;
+    if (not has_cap(src->medium(),src->encoding())) {
+        LOG_ERROR(Lgr) << m_name << "cannot play type of source in" << src->name();
+        throw Player_media_exception();
     }
     try {
         m_src = src;
-        LOG_INFO(Lgr) << "Sdr_player play {" << m_src->name() << "}";
+        LOG_INFO(Lgr) << m_name << " play {" << m_src->name() << "}";
         if ( !m_cm->running() ) { try_start(); }
         try_connect();
         set_program();
@@ -306,7 +373,7 @@ void Sdr_player::play( spSource src )
         LOG_ERROR(Lgr) << "Sdr_player play(): " << ex.what();
         m_src = nullptr;
         mark_unusable(true);
-        m_cm->kill_child();
+        m_cm->kill_child(true,m_kill_us);
         throw;
     }
     m_state = PlayerState::Playing;
@@ -315,6 +382,7 @@ void Sdr_player::play( spSource src )
 /// Attempt to start the child process and connect to its command
 /// socket.  On success, it will return and m_usable will be set
 /// to true.  It may also throw any ChildMgr or try_connect exception.
+/// * May throw
 ///
 void Sdr_player::try_start()
 {
@@ -344,6 +412,7 @@ static int take_screenshot(const char* fname)
 /// that the program is quite slow to start on platforms like RPi.  If
 /// connection fails, mark as unusable, kill the child process, and
 /// throw a Player_comm_exception.
+/// * May throw
 ///
 void Sdr_player::try_connect()
 {
@@ -355,13 +424,13 @@ void Sdr_player::try_connect()
     for (unsigned itry=1; itry<=max_attempts; itry++) {
         sleep(attempt_delay_secs);
         if (m_remote->connect()) {
-            LOG_INFO(Lgr)
-                << "Sdr_player Connected to Rx on attempt " << itry ;
+            LOG_INFO(Lgr) << m_name
+                          << " Connected to Rx on attempt " << itry ;
             return;
         }
     }
-    LOG_ERROR(Lgr)
-        << "Sdr_player failed to connect to gqrx after "
+    LOG_ERROR(Lgr) << m_name
+        << " failed to connect to gqrx after "
         << max_attempts << " attempts";
     mark_unusable(true);
     take_screenshot("logs/D%Y-%m-%d_%H:%M:%S.png");
@@ -404,11 +473,13 @@ bool Sdr_player::currently_playing( spSource src )
     return false;
 }
 
-/// Somehow gqrx process got stopped(!?) Resume it and set demod
-/// accordingly. Unlike other players, we do not use SIGSTOP to pause
-/// gqrx, but simply disable demodulation
+/// Somehow child process got stopped. Resume it and set demod
+/// accordingly. This should never happen. Unlike other players, we do
+/// not use SIGSTOP to pause gqrx since it is unlikely to work right,
+/// but simply disable demodulation
+/// Returns true if the continue signal was sent
 ///
-/// \returns true if the continue signal was sent
+/// * Will NOT throw
 ///
 bool Sdr_player::cont_gqrx()
 {
@@ -422,8 +493,8 @@ bool Sdr_player::cont_gqrx()
 
 /// Verify demodulation is on or off depending on play state.
 /// It should only be on in state Playing.
-///
-/// \returns true iff demodulation is/becomes consistent with player state
+/// Returns true iff demodulation is/becomes consistent with player state
+/// * May throw
 ///
 bool Sdr_player::check_demod()
 {
@@ -446,7 +517,7 @@ bool Sdr_player::check_demod()
 /// If Playing, verify that the frequency is correct and signal strength
 /// is adequate.
 ///
-/// \returns true if either not playing, or, playing right freq at good level
+/// Returns true if either not playing, or, playing right freq at good level
 ///
 bool Sdr_player::check_play()
 {
@@ -461,11 +532,16 @@ bool Sdr_player::check_play()
 
 
 /// Return true if the player is okay, or can be made okay.
-/// Return false otherwise.  Conditions it will check:
+/// Return false otherwise.  Conditions it SHOULD check:
+///
 /// 1. Child process health: running if player state is Paused or Playing
 /// If Playing:
 /// 2. Frequency is correct
 /// 3. Signal strength is acceptable
+///
+/// TODO: This implementation currently quite incomplete.
+///
+/// * Will NOT throw (a requirement of the API)
 ///
 bool Sdr_player::check()
 {
@@ -474,14 +550,13 @@ bool Sdr_player::check()
     // if player is marked as broken, kill the child process
     if (m_state == PlayerState::Broken) {
         // TODO: kill_gqrx();
-        return true;
+        return false;
     }
 
     if (obs_ph == ChildPhase::paused) { // Child STOPPED?
         return cont_gqrx();
     }
- 
-    /* TODO!!!
+    /* TODO:  various other checks
     if (m_cm->maybe_child_died(status)) {
         m_remote->disconnect();  // tcp client will be oblivous to death
         if (nullptr == m_src) {

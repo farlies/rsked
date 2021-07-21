@@ -167,7 +167,22 @@ const char* good_sources[] = {
 
     R"( {"encoding" : "mp3", "medium": "stream",  "duration": 3600,
          "repeat" : false, "alternate" : "nis", "dynamic" : true,
-         "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"})"
+         "location" : "https://traffic.libsyn.com/democracynow/dn%Y-%m%d.mp3"})",
+
+    R"( {"encoding" : "hd1fm", "medium": "radio", "location" : 91.1,
+         "alternate" : "master"} )",
+    
+    R"( {"encoding" : "hd2fm", "medium": "radio", "location" : 93.0,
+         "alternate" : "master"} )",
+    
+    R"( {"encoding" : "hd3fm", "medium": "radio", "location" : 99.5,
+         "alternate" : "master"} )",
+    
+    R"( {"encoding" : "hd4fm", "medium": "radio", "location" : 101.2,
+         "alternate" : "master"} )",
+
+    R"( {"encoding" : "nfm", "medium": "radio", "location" : 114.26,
+         "alternate" : "none"} )"
 };
 
 /// Parse the string as a JSON Source spec. Pass the value to a new

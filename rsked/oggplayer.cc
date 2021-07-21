@@ -25,21 +25,37 @@ static const boost::filesystem::path DefaultBinPath {"/usr/bin/ogg123"};
 
 //////////////////////////////////////////////////////////////////////////////
 
+/// Establish baseline capabilities. shared by all ctors
+void Ogg_player::cap_init()
+{
+    clear_caps();
+    add_cap(Medium::file,       Encoding::ogg);
+    add_cap(Medium::directory,  Encoding::ogg);
+    add_cap(Medium::playlist,   Encoding::ogg);
+    add_cap(Medium::stream,     Encoding::ogg);
+    //
+    std::string cstr;
+    cap_string( cstr );
+    LOG_DEBUG(Lgr) << m_name << " " << cstr;
+}
+
 /// CTOR
 Ogg_player::Ogg_player() : Base_player("Ogg_player")
 {
     LOG_INFO(Lgr) << "Created an Ogg_player";
     m_cm->set_min_run( 2 );    // shortest ogg we might ever play, seconds
+    cap_init();
 }
 
 /// CTOR with name.
-/// You may set a shortest run length, which might be 0 for a brief announcment.
+/// You may set a shortest run length, which might be 0 for a brief announcement.
 ///
 Ogg_player::Ogg_player( const char* nm, time_t min_run_secs )
     : Base_player( nm )
 {
     LOG_INFO(Lgr) << "Created an Ogg_player: " << m_name;
     m_cm->set_min_run( min_run_secs );
+    cap_init();
 }
 
 /// DTOR.  Baseplayer will kill any child process.
@@ -56,8 +72,6 @@ void Ogg_player::initialize( Config& cfg, bool /* testp */ )
     cfg.get_bool("Ogg_player", "enabled" ,m_enabled);
     if (not m_enabled) {
         LOG_INFO(Lgr) << "Ogg_player '" << m_name << "' (disabled)";
-        // if not enabled, we do not check the rest of the configuration
-        return;
     }
 
     fs::path binpath { DefaultBinPath };
@@ -76,21 +90,23 @@ void Ogg_player::initialize( Config& cfg, bool /* testp */ )
 }
 
 
-/// Play the given slot (if you can). Setting the src to nullptr stops
-/// the player and resets the source.
-/// NOTE:  No support for ogg streams yet.
+/// Play the given slot (if you can). Calling with src==nullptr stops
+/// the player and resets the source member m_src.
+/// Support for ogg streams is conjectural at this point.
+///
+/// * May throw Player_exceptions
 ///
 void Ogg_player::play( spSource src )
 {
     if (!src) {
         m_src = src;
-        stop();
+        stop();  // == exit()
         return;
     }
-    if (src->encoding() != Encoding::ogg) {
-        LOG_ERROR(Lgr) << m_name <<  " cannot play this type of source: "
-                       << encoding_name( src->encoding() );
-        return;
+    // Verify src is a valid type for Vlc
+    if (not has_cap(src->medium(),src->encoding())) {
+        LOG_ERROR(Lgr) << m_name << "cannot play type of source in" << src->name();
+        throw Player_media_exception();
     }
     m_src = src;
     LOG_INFO(Lgr) << m_name << " play: {" << m_src->name() << "}";

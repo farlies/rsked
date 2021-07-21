@@ -3,13 +3,13 @@
 #
 # Prior to using meson for builds, use the script:        ./setup.sh
 # to produce a build directory for the desired build
-# configuration.
+# configuration. See --help in that script for options.
 #
 #############################################################################
 
 
 project('rsked','cpp',
-        version: '1.0.2',
+        version: 'v1.0.7',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
@@ -18,8 +18,17 @@ btype = get_option('buildtype')
 
 
 # Create version.h with the shared version number
+rversion = meson.project_version() + '-'  + tmach + '-' + btype
+#
+gdesc = run_command('git','describe','--tags','--long','--dirty')
+gitversn = gdesc.stdout().strip() + '-'  + tmach
+#
 vers_data = configuration_data()
-vers_data.set('version',meson.project_version() + '-'  + tmach + '-' + btype)
+if get_option('final')
+  vers_data.set('version',rversion)
+else
+  vers_data.set('version',gitversn)
+endif
 configure_file(input : 'util/version.h.in',
                output : 'version.h',
                configuration : vers_data)
@@ -38,7 +47,7 @@ endif
 
 boost_dep = dependency('boost',
    modules : ['system','log','log_setup','program_options',
-              'thread','filesystem', 'date_time'])
+              'thread','filesystem', 'date_time', 'regex'])
 
 if get_option('buildtype') == 'debug'
   boost_utest_dep = dependency('boost', modules : ['unit_test_framework'])
@@ -53,7 +62,7 @@ mpd_dep = dependency('libmpdclient')
 libgpiod_dep = dependency('libgpiodcxx')
 
 utils = ['util/jobutil.cc','util/logging.cc','util/childmgr.cc',
-         'util/configutil.cc','util/config.cc']
+         'util/chpty.cc','util/configutil.cc','util/config.cc']
 
 # Include Directories
 shared_incdirs = include_directories('util')
@@ -66,12 +75,15 @@ rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
               'rsked/respath.cc',
               'rsked/source.cc',
               'rsked/schedule.cc',
+              'rsked/playpref.cc',
               'rsked/baseplayer.cc',
               'rsked/playermgr.cc',
               'rsked/inetcheck.cc',
               'rsked/vurunner.cc',
               'rsked/oggplayer.cc',
               'rsked/mp3player.cc',
+              'rsked/vlcplayer.cc',
+              'rsked/nrsc5player.cc',
               'rsked/mpdclient.cc', 'rsked/mpdplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc'
              ] + utils
@@ -101,6 +113,22 @@ tncheck_srcs = ['test/tncheck.cc', 'rsked/inetcheck.cc']+utils
 ttimeout_srcs = ['test/ttimeout.cc']
 
 mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
+
+tvlc_srcs = ['test/tvlc.cc', 'rsked/vlcplayer.cc', 'rsked/playpref.cc',
+             'rsked/source.cc', 'rsked/respath.cc', 'rsked/inetcheck.cc'
+             ]+utils
+
+tpty_srcs = ['test/tpty.cc', 'util/chpty.cc', 'util/logging.cc',
+             'util/configutil.cc']
+
+tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
+              'rsked/playermgr.cc',  'rsked/vurunner.cc',
+              'rsked/inetcheck.cc',  'rsked/baseplayer.cc',
+              'rsked/oggplayer.cc',  'rsked/mp3player.cc','rsked/nrsc5player.cc',
+              'rsked/mpdclient.cc',  'rsked/mpdplayer.cc', 'rsked/vlcplayer.cc',
+              'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc',
+              'rsked/playpref.cc',   'rsked/schedule.cc']+utils
+
 
 #------------------------------------------------------------------------------
 
@@ -187,7 +215,32 @@ executable('mpdtest',
             sources: mpdtest_srcs,
             cpp_args : my_cpp_args,
             include_directories : [shared_incdirs,rsked_incdirs],
-            dependencies : [ boost_dep, mpd_dep, json_dep ])
+            dependencies : [ boost_dep, boost_utest_dep, mpd_dep, json_dep ])
+
+# 12. Tests for player manager ... this has nearly everything in it.
+executable('tpmgr',
+            sources: tpmgr_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep, 
+                             mpd_dep, json_dep, usb_dep ])
+
+
+# 13. Tests for ChPty
+executable('tpty',
+            sources: tpty_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep ]
+          )
+
+# 14. Tests for VLC client
+executable('tvlc',
+            sources: tvlc_srcs,
+            cpp_args : my_cpp_args,
+            include_directories : [shared_incdirs,rsked_incdirs],
+            dependencies : [ boost_dep,  boost_utest_dep, json_dep ]
+          )
 
 ##########
 

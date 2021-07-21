@@ -1,0 +1,123 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://rsked.org/rsked_schema1.json",
+    "title": "rsked-1.1",
+    "description": "Validates an rsked configuration written in JSON with schema 1.1",
+    "type": "object",
+    "required": [ "encoding", "schema" ],
+    "additionalProperties" : false,
+    "properties": {
+        "encoding": { "const": "UTF-8" },
+        "schema": { "const": "1.1" },
+        "General" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "application" : { "type" : "string" },
+                "version" : {"type" : "string" },
+                "description" : {"type" : "string" },
+                "sched_path" : {"type" : "string" }
+            }
+        },
+        "Inet_checker" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "refresh" : {"type" : "integer", "minimum" : 10 }
+            }
+        },
+        "VU_monitor" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "timeout" : {"type" : "integer", "minimum" : 10 },
+                "vu_bin_path" : {"type" : "string" }
+            }
+        },
+        "Mpd_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "debug" : {"type" : "boolean" },
+                "run_mpd" : {"type" : "boolean" },
+                "bin_path" : {"type" : "string" },
+                "socket" : {"type" : "string" },
+                "host" : {"type" : "string" },
+                "port" : {"type" : "integer", "minimum" : 1 },
+                "volume" : {"type" : "integer", "minimum" : 0, "maximum" : 100 }
+            }
+        },
+        "Sdr_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "gqrx_bin_path" : {"type" : "string" },
+                "gqrx_work" : {"type" : "string" },
+                "gqrx_gold" : {"type" : "string" },
+                "low_s" : {"type" : "number" },
+                "low_low_s" : {"type" : "number" },
+                "device_vendor" : {
+                    "type" : "string",
+                    "pattern" : "^[0-9A-Fa-f]{4}$"
+                },
+                "device_product" : {
+                    "type" : "string",
+                    "pattern" : "^[0-9A-Fa-f]{4}$"
+                }
+            }
+        },
+        "Vlc_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "debug" : {"type" : "boolean" },
+                "wait_us" : {"type" : "integer", "minimum" : 100 },
+                "bin_path" : {"type" : "string" },
+                "volume" : {"type" : "integer", "minimum" : 0, "maximum" : 100 }
+            }
+        },
+        "Nrsc5_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "device_index" : {"type" : "integer", "minimum" : 0 },
+                "nrsc5_bin_path" : {"type" : "string" }
+            }
+        },
+        "Ogg_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "device_type" : {"enum" : ["alsa","pulse"] },
+                "ogg_bin_path" : {"type" : "string" }
+            }
+        },
+        "Mp3_player" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "enabled" : {"type" : "boolean" },
+                "mp3_bin_path" : {"type" : "string" },
+                "device_type" : {"enum" : ["alsa","oss"] }
+            }
+        },
+        "player_preference" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "properties" : {
+                "playlist" : {"type" : "object" },
+                "directory" : {"type" : "object" },
+                "file" : {"type" : "object" },
+                "radio" : {"type" : "object" },
+                "stream" : {"type" : "object" }
+            }
+        }
+    }
+}

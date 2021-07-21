@@ -1,1 +1,3 @@
 option('target_machine', type : 'combo', choices : ['x86_64', 'armv7l'], value : 'x86_64')
+
+option('final', type : 'boolean', value : 'false')

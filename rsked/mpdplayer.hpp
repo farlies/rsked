@@ -31,7 +31,7 @@ class Mpd_client;
 /// Note: this will kill any already running mpd if a pid file
 /// was specified in the configuration.
 ///
-class Mpd_player : public Player {
+class Mpd_player : public Player_with_caps {
 private:
     std::string m_name;
     std::unique_ptr<Mpd_client> m_remote;
@@ -45,6 +45,7 @@ private:
     bool m_run_mpd  {true};
     bool m_usable {true};
     bool m_debug {false};
+    bool m_testmode {false};
     unsigned m_stall_counter {0};
     unsigned m_stalls_max {4};
     unsigned m_last_elapsed_secs {0};
@@ -55,6 +56,7 @@ private:
     //
     bool any_mpd_running();
     void assure_connected();
+    void cap_init();
     void check_not_stalled();
     void mark_unusable();
     void shutdown_mpd();
@@ -67,7 +69,7 @@ public:
     Mpd_player(const Mpd_player&) = delete;
     void operator=(Mpd_player const&) = delete;
     //
-    virtual const char* name() const { return m_name.c_str(); }
+    virtual const std::string& name() const { return m_name; }
     virtual bool completed();
     virtual bool currently_playing( spSource );
     virtual void exit();
@@ -79,6 +81,8 @@ public:
     virtual PlayerState state();
     virtual void stop();
     virtual bool check();
+    virtual bool is_enabled() const;
+    virtual bool set_enabled( bool );
 };
 
 

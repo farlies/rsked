@@ -1,0 +1,109 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://rsked.org/schedule_schema2.json",
+    "title": "schedule-2.0",
+    "description": "Validates an rsked schedule written in JSON with schema 2.0",
+    "type": "object",
+    "required": [ "encoding", "schema", "version", "sources", "dayprograms" ],
+    "properties": {
+        "encoding": { "const": "UTF-8" },
+        "schema": { "const": "2.0" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "library": { "type": "string" },
+        "playlists": { "type": "string" },
+        "announcements": { "type": "string" },
+        "sources": { 
+            "type": "object",
+            "$comment": "may not redefine the internal OFF source",
+            "properties": {
+                "OFF": {"not": {}}
+            },
+            "minProperties": 1,
+            "additionalProperties": {
+                "anyOf": [ {"$ref": "#/defs/source"},
+                           {"$ref": "#/defs/rfsource"} ] }
+        },
+        "dayprograms": { 
+            "type": "object",
+            "properties": {
+                "sunday":    {"$ref": "#/defs/dayprogram"},
+                "monday":    {"$ref": "#/defs/dayprogram"},
+                "tuesday":   {"$ref": "#/defs/dayprogram"},
+                "wednesday": {"$ref": "#/defs/dayprogram"},
+                "thursday":  {"$ref": "#/defs/dayprogram"},
+                "friday":    {"$ref": "#/defs/dayprogram"},
+                "saturday":  {"$ref": "#/defs/dayprogram"}
+            },
+            "required" : ["sunday","monday","tuesday","wednesday",
+                          "thursday","friday","saturday"]
+        }
+    },
+    "defs": {
+        "dayprogram": { 
+            "type" : "array", "minItems": 1, 
+            "items": {"$ref": "#/defs/playslot"}
+        },
+        "playslot": {
+            "$comment:": "Either a regular program or an announcement",
+            "oneOf": [ {"$ref": "#/defs/psprogram"}, {"$ref": "#/defs/psannounce"} ]
+        },
+        "psprogram": {
+            "type": "object",
+            "properties": {
+                "start": { "type" : "string",
+                        "$comment" : "Time as hh:mm or hh:mm:ss",
+                        "pattern": "^((0|1)[0-9]|(2[0-3])):[0-5][0-9](:[0-5][0-9])*$" },
+                "program": { "type" : "string" }
+            },
+            "required": ["start","program"],
+            "additionalProperties": false
+        },
+        "psannounce": {
+            "type": "object",
+            "properties": {
+                "start": { "type" : "string",
+                   "pattern": "^((0|1)[0-9]|(2[0-3])):[0-5][0-9](:[0-5][0-9])*$" },
+                "announce": { "type" : "string" }
+            },
+            "required": ["start","announce"],
+            "additionalProperties": false
+        },
+        "source": {
+            "properties": {
+                "encoding": {"enum" : ["ogg","mp3","mp4","flac","mixed"] },
+                "medium": {"enum" : ["file","directory","stream","playlist"] },
+                "location": { "type": "string" },
+                "alternate": { "type": "string" },
+                "announcement": { "type": "boolean" },
+                "quiet": { "type": "boolean" },
+                "repeat": { "type": "boolean" },
+                "text": { "type": "string" },
+                "duration": { "type": "number" },
+                "dynamic": { "type": "boolean" }
+            },
+            "additionalProperties": false,
+            "required": ["encoding", "medium", "location"]
+        },
+        "rfsource": {
+            "$comment": "RF sources have restricted property set, numeric location",
+            "properties": {
+                "encoding": {"enum" : ["wfm","nfm","hd1fm","hd2fm","hd3fm","hd4fm"] },
+                "medium": {"const" : "radio"},
+                "location": { "type": "number",
+                              "$comment": "Frequency in MHz",
+                              "minimum": 65.0,
+                              "maximum": 135.0 },
+                "alternate": { "type": "string" },
+                "announcement": { "type": "boolean" },
+                "quiet": { "type": "boolean" },
+                "repeat": { "type": "boolean" },
+                "text": { "type": "string" },
+                "duration": { "type": "number" },
+                "dynamic": { "type": "boolean" }
+            },
+            "required": ["encoding", "medium", "location"],
+            "additionalProperties": false
+        }
+    }
+}

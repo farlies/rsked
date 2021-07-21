@@ -1,12 +1,12 @@
 // tconfig.json
 {
     "encoding"   : "UTF-8",
-    "schema" : "1.0",
+    "schema" : "1.1",
 
     "General" : {
         "sched_path" : "~/.config/rsked/schedule.json",
         "log_dir"    : "~/log",
-        "version" : "2.0"
+        "version" : "2020-12-03T07:40:00"
     },
     
     "Mpd_player" : {
@@ -15,6 +15,18 @@
         "mpd_socket" : "~/.config/mpd/socket",
         "mpd_host" : "localhost",
         "mpd_port" : 6666
+    },
+
+    "player_preference" : {
+        "radio" : {
+            "wfm" : [ "Sdr_player" ],
+            "nfm" : [ "Cubic_player", "Sdr_player" ]
+        },
+        "stream" : {
+            "mp3" : [ "Vlc_player", "Mpd_player", "Mp3_player" ],
+            "mp4" : [ "Vlc_player", "Mpd_player" ],
+            "ogg" : [ "Ogg_player", "Vlc_player" ]
+        }
     },
 
     "Sdr_player" : {

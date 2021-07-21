@@ -68,7 +68,7 @@ int main (int ac, char **av)
             cooling->run();
         }
     } catch (std::exception &ex) {
-        std::cerr << AppName << " threw a fatal error: " << ex.what();
+        std::cerr << AppName << " threw a fatal error: " << ex.what() << "\n";
         return 1;
     }
     Child_mgr::kill_all();

@@ -22,18 +22,22 @@
 ///////////////////////////////////////////////////////////////////////////
 ///                               Silent Player 
 
-/// *** Note This is meant to be included only by player.cc ***
+/// *** Note This is meant to be included only by playermgr.cc ***
+
+constexpr const char *SilentName = "Silent_player";
 
 /// This player has no audio output; it is a placeholder for silent periods
+/// It is always usable, never registers completed, and cannot be disabled.
 ///
 class Silent_player : public Player {
 private:
-    PlayerState _state {PlayerState::Stopped};
+    std::string m_name { SilentName };
+    PlayerState m_state {PlayerState::Stopped};
 public:
     Silent_player();
     virtual ~Silent_player();
     //
-    virtual const char* name() const { return "silent player"; }
+    virtual const std::string& name() const { return m_name; }
     virtual bool completed();
     virtual bool currently_playing( spSource );
     virtual void exit();
@@ -45,6 +49,12 @@ public:
     virtual PlayerState state();
     virtual void stop();
     virtual bool check();
+    //
+    virtual bool has_cap( Medium, Encoding ) const;
+    virtual void cap_string( std::string & ) const;
+    virtual void install_caps( Player_prefs& ) const;
+    virtual bool is_enabled() const;
+    virtual bool set_enabled( bool );
 };
 
 /// Mostly nothing to do.
@@ -53,13 +63,15 @@ Silent_player::~Silent_player() { }
 bool Silent_player::completed() { return false; }
 bool Silent_player::is_usable() { return true; }
 void Silent_player::initialize( Config&, bool ) {}
-void Silent_player::exit() { _state = PlayerState::Stopped; }
-void Silent_player::pause() { _state = PlayerState::Paused; }
-void Silent_player::resume() { _state = PlayerState::Playing; }
-PlayerState Silent_player::state() { return _state; }
-void Silent_player::stop() { _state = PlayerState::Stopped; }
-void Silent_player::play( spSource ) { _state = PlayerState::Playing; }
+void Silent_player::exit() { m_state = PlayerState::Stopped; }
+void Silent_player::pause() { m_state = PlayerState::Paused; }
+void Silent_player::resume() { m_state = PlayerState::Playing; }
+PlayerState Silent_player::state() { return m_state; }
+void Silent_player::stop() { m_state = PlayerState::Stopped; }
+void Silent_player::play( spSource ) { m_state = PlayerState::Playing; }
 bool Silent_player::check() { return true; }
+bool Silent_player::is_enabled() const { return true; }
+bool Silent_player::set_enabled(bool) { return true; }
 
 /// Currently Playing Check: we only play Medium::off sources
 ///
@@ -68,3 +80,27 @@ bool Silent_player::currently_playing( spSource src )
     return( src && (src->medium() == Medium::off) );
 }
 
+/// Only plays "off"
+bool Silent_player::has_cap( Medium m, Encoding ) const
+{
+    return( m == Medium::off );
+}
+
+/// Only plays "off"
+void Silent_player::cap_string( std::string &cstr ) const
+{
+    cstr = "off:none";
+}
+
+/// Plays anything "off"
+void Silent_player::install_caps( Player_prefs &prefs ) const
+{
+    prefs.add_player( Medium::off, Encoding::none, m_name );
+    prefs.add_player( Medium::off, Encoding::ogg, m_name );
+    prefs.add_player( Medium::off, Encoding::mp3, m_name );
+    prefs.add_player( Medium::off, Encoding::mp4, m_name );
+    prefs.add_player( Medium::off, Encoding::flac, m_name );
+    prefs.add_player( Medium::off, Encoding::wfm, m_name );
+    prefs.add_player( Medium::off, Encoding::nfm, m_name );
+    prefs.add_player( Medium::off, Encoding::mixed, m_name );
+}

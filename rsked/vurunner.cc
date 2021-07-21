@@ -22,7 +22,7 @@
 #include "util/config.hpp"
 #include "util/configutil.hpp"
 
-/// CTOR. Contruct a VU_runner with the default binary path for vumonitor.
+/// CTOR. Construct a VU_runner with the default binary path for vumonitor.
 /// This will not start the vumonitor--call configure to do so.
 ///
 VU_runner::VU_runner()
@@ -37,7 +37,7 @@ VU_runner::VU_runner()
 ///
 VU_runner::~VU_runner()
 {
-    m_cm->kill_child();
+    m_cm->kill_child(true, m_kill_us );
 }
 
 
@@ -112,7 +112,7 @@ void VU_runner::configure( Config &cfg, bool test_only )
     m_vu_checker = std::make_unique<VU_checker>(m_key);
     if (not m_vu_checker->attached()) {
         m_enabled = false;
-        m_cm->kill_child();
+        m_cm->kill_child(true, 10'000L);
         LOG_ERROR(Lgr) << "VU_monitor will be disabled-shared memory error";
         return;
     }

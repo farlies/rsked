@@ -4,11 +4,12 @@ rsked
 `rsked`, short for *radio scheduler*, is a Linux application that
 plays any of various audio sources at specific times on a weekly
 schedule, without any requirement for human interaction.  Sources
-include locally stored recordings (ogg, mp3), internet streams, and FM
-broadcasts (via inexpensive SDR hardware). It is intended to be run as
-an **embedded application** on an inexpensive low power microsystem
-(Raspberry Pi 3, RPi).  However it can run on x86 desktop computers as
-well, and likely on any Linux computer with a sound card.
+include locally stored recordings (ogg, mp3, mp4, flac), internet
+streams, and FM broadcasts (via inexpensive SDR hardware). It is
+intended to be run as an **embedded application** on an inexpensive
+low power microsystem (Raspberry Pi 3, RPi).  However it can run on
+x86 desktop computers as well, and likely on any Linux computer with a
+sound card.
 
 `rsked` was originally developed for people who, due to disability,
 are physically unable to operate conventional audio equipment. It
@@ -21,9 +22,9 @@ to require human interaction to schedule audio programming.
 ## Features
 
 - Weekly program schedule defined in a simple JSON file
-- Play MP3 or Ogg-Vorbis files, directories, or playlists
-- Play MP3 internet streams
-- Play FM broadcast stations
+- Play MP3, MP4, FLAC, or Ogg-Vorbis files, directories, or playlists
+- Play internet streams
+- Play FM broadcast stations, including HD
 - Audio "message of the day" at scheduled times
 - Audio source failure detected, with reversion to defined backup sources
 - Runs on Raspberry Pi-3 or x86_64, no screen required
@@ -31,6 +32,11 @@ to require human interaction to schedule audio programming.
 - Status LEDs (optional, GPIO)
 - Control of active cooling (optional, GPIO)
 - Logging of operations for remote monitoring
+- Bluetooth status monitoring and setup (optional)
+
+See [CHANGES](doc/CHANGES.md) for a summary of important changes that have
+occurred over versions of `rsked`.
+
 
 ## Usage Overview
 
@@ -49,7 +55,7 @@ A typical embedded application will:
 2. Adjust configuration parameters to select the desired features
 3. Install any desired recorded music files
 4. Configure a *schedule* that references local and remote music sources
-5. Set `rsked` to start automatically when the emedded device boots.
+5. Set `rsked` to start automatically when the embedded device boots.
 
 
 ### Recorded Music
@@ -57,15 +63,17 @@ A typical embedded application will:
 Recorded music may be played with any of these external applications
 available as packages on most Linux distributions:
 
-- [ogg123](https://wiki.xiph.org/Vorbis-tools)
 - [mpd](https://www.musicpd.org)
+- [ogg123](https://wiki.xiph.org/Vorbis-tools)
 - [mpg321](http://mpg321.sourceforge.net/)
+- [vlc](https://www.videolan.org)
 
 The `ogg123` player plays Ogg-Vorbis recordings, and is required to
-play announcments in `rsked`.  The music player daemon
-`mpd` is extremely versatile and recommended.
-The lightweight `mpg321` player is suitable for MP3 files.  All of
-these programs can play both individual files and playlists.
+play announcements in `rsked`. The music player daemon `mpd` plays a
+wide range of audio files and has been extensively tested with
+`rsked`.  `Vlc` is similarly versatile. The lightweight `mpg321`
+player is suitable for MP3 files.  All of these programs can play both
+individual files and playlists.
 
 
 ### Streaming
@@ -83,9 +91,11 @@ these have not been tested in `rsked`.
 Over-the-air FM broadcasts may be scheduled using *Software Defined
 Radio* (SDR). Attach an inexpensive USB SDR radio dongle such as
 [RTL-2832U](https://www.rtl-sdr.com/), then configure the
-desired frequencies in the schedule.  `rsked` uses a slightly modified
-fork of [gqrx](https://github.com/farlies/gqrx). Consult that project
-for further instructions.
+desired frequencies in the schedule.  `rsked` uses either of:
+
+- [gqrx](https://github.com/farlies/gqrx), a modified fork
+- [nrsc5](https://github.com/theori-io/NRSC5), an HD-FM receiver
+  compatible with RTL-SDR dongles.
 
 ### rsked application
 
@@ -134,9 +144,10 @@ internet streaming source.
 
 ## Compilation and Installation
 
-Currently `rsked` is *not* distributed in binary form, so it must
-be compiled from source.
-For details, see: [INSTALLATION](doc/INSTALLATION.md)
+For installation instructions see: [INSTALLATION](doc/INSTALLATION.md)
+
+We hope to provide occasional binary releases; check the releases link.
+Compilation from source should be straightforward.
 
 For a reference to the configuration files and command line
 options for `rsked` and `cooling`, 

@@ -118,3 +118,32 @@ BOOST_AUTO_TEST_CASE( Valid_params_test )
                       Config_path_error );
 }
 
+
+/// Parse the player_preference nested object in tconfig.json
+///
+BOOST_AUTO_TEST_CASE( Json_parse_test )
+{
+    LogFixture lf;
+    LOG_INFO(Lgr) << "Unit test: Json_parse_test";
+    const char *confname = "../test/tconfig.json";
+    Config cfg(confname);
+    cfg.read_config();
+
+    Json::Value jppref = cfg.get_root()["player_preference"];
+    BOOST_TEST(not jppref.isNull());
+    BOOST_TEST( jppref.isObject() );
+    for (auto medname : jppref.getMemberNames()) {
+        LOG_INFO(Lgr) << medname << " :"; // * validate medium here
+        auto jmed = jppref[medname];
+        BOOST_TEST( jmed.isObject() );
+        for (auto encname : jmed.getMemberNames()) {
+            LOG_INFO(Lgr) << "    " << encname << ":"; // * validate enc here
+            auto jenc = jmed[encname];
+            BOOST_TEST( jenc.isArray() );
+            unsigned i=0;
+            for (auto j : jenc) {
+                LOG_INFO(Lgr) << "       (" << i++ << ") " << j.asString();
+            }
+        }
+    }
+}

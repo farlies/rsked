@@ -8,7 +8,7 @@
 #
 # Usage examples:
 #   ./pack_rsked.sh debug x86_64
-#   ./pack_rsked.sh release armv7l
+#   ./pack_rsked.sh -c armv7l  release armv7l
 #   ./pack_rsked.sh -n debug x86_64
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
@@ -36,8 +36,16 @@ EOF
 }
 
 
-# use this tar
-TAR=${TAR:-/usr/bin/tar}
+# Find a real tar
+if [[ -e /usr/bin/tar ]]; then
+    TAR=/usr/bin/tar
+elif [[ -e /bin/tar ]]; then
+    TAR=/bin/tar
+else
+    echo "Unable to locate a canonical tar command"
+    exit 1
+fi
+       
 
 ALTCONFDIR=
 NOCOMPRESS=0
@@ -60,7 +68,8 @@ fi
 
 # Establish builddir and confdir:
 builddir="$1-$2"
-if [[ ALTCONFDIR == "" ]]; then
+build_type=$1
+if [[ $ALTCONFDIR == "" ]]; then
     confdir="config/example-$2"
 else
     confdir="config/$ALTCONFDIR"
@@ -96,8 +105,37 @@ cp $builddir/rsked $bindir
 cp $builddir/cooling $bindir
 cp $builddir/vumonitor $bindir
 
-SCRIPTS="check_inet.sh btremote.pl check_playlist.sh gpiopost.py\
- rskrape.pl startup_rsked synclogs.sh"
+if [[ "$build_type" == "release" ]]; then
+    strip $bindir/cooling
+    strip $bindir/rsked
+    strip $bindir/vumonitor
+    echo "; stripped release binaries"
+fi
+
+## GQRX
+gqrxbin="../gqrx/build/gqrx"
+# Note: assume gqrx binary is already stripped if it needs to be!
+if [[ -e $gqrxbin ]] ; then
+    cp $gqrxbin $bindir
+    strip $bindir/gqrx
+    echo "; found gqrx binary, installing"
+else
+    echo "; did Not find gqrx binary: $gqrxbin"
+fi
+
+## NRSC5
+nrsc5bin="../nrsc5/build/src/nrsc5"
+# Note: assume nrsc5 binary is already stripped if it needs to be!
+if [[ -e $nrsc5bin ]] ; then
+    cp $nrsc5bin $bindir
+    strip $bindir/nrsc5
+    echo "; found nrsc5 binary, installing"
+else
+    echo "; did Not find nrsc5 binary: $nrsc5bin"
+fi
+
+SCRIPTS="check_inet.sh btremote.pl btremote.service check_playlist.sh\
+  check_deploy.pl gpiopost.py rskrape.pl startup_rsked synclogs.sh"
 
 for scr in $SCRIPTS; do
     cp scripts/$scr $bindir
@@ -106,10 +144,11 @@ done
 # populate config/rsked
 rctarget=$tgtdir/.config/rsked
 cp $confdir/rsked/*.json $rctarget/
-cp $confdir/rsked/crontab $rctarget/
-cp $confdir/rsked/ci.conf $rctarget/
+cp $confdir/rsked/*.pl $rctarget/
+cp $confdir/rsked/example-crontab $rctarget/
+cp $confdir/rsked/example-ci.conf $rctarget/
 cp doc/*  $rctarget/
-cp scripts/schedule_schema.json $rctarget/
+cp scripts/sked_schema-2.0.json $rctarget/
 cp -R resource $rctarget/
 mkdir $rctarget/motd
 cp motd/each* $rctarget/motd/

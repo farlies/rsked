@@ -22,6 +22,8 @@
 /// Run MP3 player mpg321 on a file, directory, or URL.
 ///
 class Mp3_player : public Base_player {
+private:
+    void cap_init();
 public:
     Mp3_player();
     Mp3_player(const char*);
