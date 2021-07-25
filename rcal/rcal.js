@@ -949,8 +949,9 @@ document.addEventListener('DOMContentLoaded', function() {
   /// (even ones not currently used in the schedule.)
   ///
   function extract_sources() {
-          var usrcs = {};
-          for (var skey in Sources) {
+      var usrcs = {};
+      for (var skey in Sources) {
+              if ("length"==skey) { continue; } // not a source!
               let x = Sources[skey];
               let p = { encoding: x.encoding,
                         medium: x.type,
