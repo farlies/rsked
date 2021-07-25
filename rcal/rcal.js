@@ -21,6 +21,10 @@ var TheCalendar;
 
 const DefaultSrcName='(new name)';
 
+/// Names of days used in schedule.json
+const DayNames = ["sunday","monday","tuesday","wednesday","thursday",
+                  "friday","saturday"];
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /// These are defined in 'testdata.js' during early development:
@@ -597,10 +601,10 @@ function import_source(sname, sdef) {
     addSource(src);
 }
 
-/// Add sources from loaded var rsked_schedule
+/// Add sources from LoadedSchedule.
 ///
 function parse_rsked_sources() {
-    const srcs = rsked_schedule['sources'];
+    const srcs = LoadedSchedule['sources'];
     for (var sname of Object.keys(srcs)) {
         // we do not display built-in sources: these are added on export
         if ("%"!=sname.slice(0,1)) {
@@ -608,6 +612,45 @@ function parse_rsked_sources() {
         }
     }
 }
+
+/// Add events from LoadedSchedule to calendar.
+/// - Ignore "OFF" events--these are implicit.
+/// - Handle announcemens specially
+///
+function parse_rsked_events() {
+    // ****** TODO ******
+    const dayprograms = LoadedSchedule['dayprograms'];
+    // cycle through days of the week, sunday...saturday:
+    for (let i=0; i<7; i++) {
+        let day = DayNames[i];
+        let dslots = dayprograms[day];
+        let t_start = null;
+        let c_prog = null;
+        console.log(day," has ",dslots.length," slots");
+        for (let slot of dslots) {
+            if (slot.hasOwnProperty("program")) {
+                let prog = slot.program;
+                let t_slot = slot.start;
+                if ((t_start !== null) && (c_prog !== "OFF")) {
+                    const c_src = Sources[c_prog];
+                    if (undefined === c_src) {
+                        console.log("skipping undefined source: ", c_prog);
+                    } else {
+                        console.log(day," ",t_start,"->",t_slot," : ",c_prog);
+                        let evt = {startTime: t_start, endTime: t_slot,
+                                   daysOfWeek: [ i ], title: c_prog,
+                                   color: c_src.color };
+                        TheCalendar.addEvent(evt);
+                    }
+                }
+                c_prog = prog;
+                t_start = t_slot;
+            }
+            // else if (slot.hasOwnProperty("announce")) { TODO! }
+        }
+    }
+}
+
 
 /// Add default announcements to the announcement list
 // Model for announcements
@@ -688,8 +731,11 @@ var containerEl = document.getElementById('external-events');
 document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar-widget');
         var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'timeGridWeek',
-          initialDate: '2018-10-04',  // FC requires initial date value, otherwise it defaults to the current day, which we don't want (adds some weird 'today' formatting).
+            initialView: 'timeGridWeek',
+            initialDate: '2018-10-04',
+            // FC requires an initial date value, otherwise it defaults
+            // to the current day, which we don't want (adds some
+            // weird 'today' formatting).
           titleFormat: function(date) {
               return 'RCAL - programme scheduler for rsked';
           },  //Important! FC's built-in title format only displays dates.
@@ -843,10 +889,8 @@ document.addEventListener('DOMContentLoaded', function() {
 /// associated with a day of the week.
 ///
       function extract_dayprograms() {
-          var daynames = ["sunday","monday","tuesday","wednesday","thursday",
-                          "friday","saturday"]; // days used in schedule.json
           var dpobj = {};                       // each gets an array in dpobj
-          for (let d of daynames) {
+          for (let d of DayNames) {
               dpobj[d] = Array();
           }
           // Collect events from TheCalendar.
@@ -860,14 +904,14 @@ document.addEventListener('DOMContentLoaded', function() {
                   te = new Date(ts);
                   te.setHours( 1 + ts.getHours() );
               }
-              let dow = daynames[ts.getDay()]; // Sunday==0, Monday==1, ...
+              let dow = DayNames[ts.getDay()]; // Sunday==0, Monday==1, ...
               let tstr = ts.toLocaleTimeString('en-GB');
               let zstr = te.toLocaleTimeString('en-GB');
               let dp = { "start" : tstr, "program" : evt.title, finish : zstr };
               dpobj[dow].push(dp);
               console.log(evt.title," on day",dow,"at",tstr,"\n");
           }
-          for (let dow of daynames) {     // normalize each day:
+          for (let dow of DayNames) {     // normalize each day:
               normalize_day( dpobj[dow] );
           }
           return dpobj;
@@ -945,54 +989,50 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
 
-
+/// Call this prior to importing a new schedule.
+/// - Empty the Sources array
+/// - Empty the Announcements array
+/// - Remove dom elements from external-events-list
+/// - Remove dom elements from external-announce-list
+/// - Remove all events from the FC calendar widget
+///
+function flush_schedule() {
+    Sources.length = 0;
+    Announcements.length = 0;
+    $('#external-events-list').empty(); // remove all child nodes (<div>)
+    $('#external-announce-list').empty();
+    const EvList = TheCalendar.getEvents(Event);
+    EvList.forEach((Event) => Event.remove());
+}
 
 
 /// Fetch the schedule from url src. It will be globally available in
-
 /// LoadedSchedule.  Callback will trigger a 'scheduleLoaded' custom
-
 /// event (see handler below).
-
 ///
-
 function load_schedule( src ) {
 
       $.getJSON( src, function(data) {
+          LoadedSchedule = data;
+          $(document).trigger('scheduleLoaded'); });
+}
 
-        LoadedSchedule = data;
-
-        $(document).trigger('scheduleLoaded'); });
-
-  }
-
-// Latest schedule from the server is now in global 'LoadedSchedule'.
-/// Currently just shows an alert.
-
-/// TODO:  verify it has a a compatible schema,
-
-///        fill the calendar widget and source list.
-
+/// Display the schedule just loaded into global LoadedSchedule.
 ///
-
 $(document).on('scheduleLoaded',
-
         function() {
-
                 if ("object" === typeof(LoadedSchedule)) {
-
-                        alert('loaded schedule version ' +
-
-                                   LoadedSchedule["version"]);
-
+                    flush_schedule();  // erase old schedule rendering
+                    // * * * * * * * * * * TODO * * * * * * * * * * * * *
+                    parse_rsked_sources();
+                    get_announce();
+                    parse_rsked_events();
+                    alert('loaded schedule version ' +
+                          LoadedSchedule["version"]);
                   } else {
-
-                        alert('failed to load current schedule.');
-
+                      alert('failed to load current schedule.');
                   }
-
                 });
-
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1046,12 +1086,4 @@ function call_evt_modal(calEvent) {
 
 init_modals();
 init_source_pane();
-//load_test_sources();
-parse_rsked_sources();
-get_announce();
 load_schedule("schedule.json");
-///////// TODO:
-/// [x] - Add an "alternate" selector to pick an alternate source.
-/// [x] - Show the encoding (ogg, mp3...) in source dialog (read-only)
-/// [ ] - Provide a mechanism to delete a source
-/// [x] - Make source tabs draggable to Full Calendar
