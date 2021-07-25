@@ -8,14 +8,15 @@
 /// The source being edited, if any; otherwise undefined.
 var EditSource=undefined;
 
-/// Global object used as map of sources by their (unique) names,
-///    "cms"  => <RcalSource cms>
+/// Global objecst used as map of sources and announcements by their (unique) names,
+///  "cms"  => <RcalSource cms>
 ///
 var Sources = {};
 var Announcements = {};
 
 /// Global with the last loaded schedule
 var LoadedSchedule;
+
 /// Global for the calendar object
 var TheCalendar;
 
@@ -31,17 +32,12 @@ const DayNames = ["sunday","monday","tuesday","wednesday","thursday",
 //
 // var gFiles = { }
 // var gPlaylists = [ ]
-// var rsked_schedule = { }
 
 /// Retrieve the playlists (an ARRAY) available on the host.
 /// (This is a stub for now.)
 ///
 function host_playlists() {
     return gPlaylists;
-}
-
-function host_announcements() {
-    return gAnnouncements;
 }
 
 /// Retrieve the recorded audio resources on the host (nested Objects).
@@ -548,8 +544,6 @@ function addSource( src ) {
     outer.append(inner);
     outer.appendTo('#external-events-list');
     //
-    src.registered = true;
-    Sources[src.name] = src;
 }
 
 /// Validate all sources, displaying the result and returning true if all okay.
@@ -598,17 +592,24 @@ function import_source(sname, sdef) {
     if ('repeat' in sdef) {
         src.repeat = sdef['repeat'];
     }
-    addSource(src);
+    src.registered = true;
+    Sources[src.name] = src;
+    // Do not display utility (%) sources: they are retained for export though
+    if ("%"!=sname.slice(0,1)) {
+        addSource(src);
+    }
 }
 
-/// Add sources from LoadedSchedule.
+/// Add sources from LoadedSchedule including programs and announcements.
 ///
 function parse_rsked_sources() {
     const srcs = LoadedSchedule['sources'];
     for (var sname of Object.keys(srcs)) {
-        // we do not display built-in sources: these are added on export
-        if ("%"!=sname.slice(0,1)) {
-            import_source( sname, srcs[sname] );
+        let s = srcs[sname];
+        if (s.announcement) {
+            import_announcement( sname, s );
+        } else {
+            import_source( sname, s );
         }
     }
 }
@@ -618,7 +619,6 @@ function parse_rsked_sources() {
 /// - Handle announcemens specially
 ///
 function parse_rsked_events() {
-    // ****** TODO ******
     const dayprograms = LoadedSchedule['dayprograms'];
     // cycle through days of the week, sunday...saturday:
     for (let i=0; i<7; i++) {
@@ -646,6 +646,7 @@ function parse_rsked_events() {
                 c_prog = prog;
                 t_start = t_slot;
             }
+            // ****** TODO ******
             // else if (slot.hasOwnProperty("announce")) { TODO! }
         }
     }
@@ -671,32 +672,31 @@ class RcalAnnounce {
     }
 };
 
-var gAnnouncements = {
-    "motd-ymd" : {"text" : "message of the day - ymd"},
-    "motd-md" : {"text" : "message of the day - md"},
-};
-
-// For every announcement in gAnnouncements, run 'import_announcement'
-
-function get_announce() {
-  const srcs = gAnnouncements;
-  for (var ann of Object.keys(srcs)) {
-    import_announcement( ann, srcs[ann] );
-    }
+/// Return true if the argument names an announcment (not a program)
+/// Criterion: in the global object Announcements{}
+///
+function is_announcement(src_name) {
+    return Announcements.hasOwnProperty(src_name);
 }
 
+/// Insert an announcement. Don't display ones starting with "%".
+///
 function import_announcement(sname, sdef) {
     const suid = uuidv4();
     const stext = sdef["text"];
     console.log("anntext = ",stext)
     var ann = new RcalAnnounce(sname,suid,stext);
     console.log("import announcement ", ann.name,ann.suid,ann.text);
-    addAnnounce( ann );
-
+    ann.registered = true;
+    Announcements[sname] = ann;
+    //
+    if ("%"!=sname.slice(0,1)) { // don't display utility announcements
+        addAnnounce( ann );
+    }
 }
 
-//Add announcement to announcement list as an fc event
-
+/// Add announcement to announcement list as an fc event
+///
 function addAnnounce( ann ) {
     console.log("add announcement ",ann.name, ann.suid, ann.color);
     const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
@@ -706,15 +706,14 @@ function addAnnounce( ann ) {
     let inner=$('<div></div>',
                 {id: ann.suid,
                  class: 'fc-event-main',
-               }).text(ann.text);
+               }).text(ann.name);
     inner[0].style.backgroundColor = ann.color;
     outer.append(inner);
     outer.appendTo('#external-announce-list');
     //
-    ann.registered = true;
-    Announcements[ann.name] = ann;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 /// CALENDAR SCRIPTS (relies on fullcalendar)
 ///
 /// TODO: Add event menu add
@@ -736,9 +735,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // FC requires an initial date value, otherwise it defaults
             // to the current day, which we don't want (adds some
             // weird 'today' formatting).
-          titleFormat: function(date) {
-              return 'RCAL - programme scheduler for rsked';
-          },  //Important! FC's built-in title format only displays dates.
+            //
+            eventShortHeight: 30,
+            eventOverlap: true,
+            titleFormat: function(date) {
+                return ('RCAL scheduler for rsked radio');
+            }, // Note: FC's built-in title format only displays dates.
           customButtons: {
             saveButton: {
               text: 'save',
@@ -766,8 +768,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 click: function() {
                   const EvList = calendar.getEvents(Event);
                   var r = confirm('Are you sure you want to clear the schedule?');
-                  if (r == true) {
-                    EvList.forEach((Event) => Event.remove()); // Removes all events from calendar;
+                  if (r == true) {  // Removes all events from calendar;
+                    EvList.forEach((Event) => Event.remove());
                   }
 
                }
@@ -776,7 +778,6 @@ document.addEventListener('DOMContentLoaded', function() {
               text: 'revert',
               click: function() {
                 load_schedule("schedule.json");
-                alert('loading the schedule'); // STUB! This button will run the function that converts JSON file from rsked to calendar data
                 }
               }
             },
@@ -789,6 +790,7 @@ document.addEventListener('DOMContentLoaded', function() {
           dayHeaderFormat: { weekday: 'short' }, //Display only day of the week, no date
           slotDuration: '00:30:00', // Add time slots every thirty minutes
           slotLabelInterval: '01:00:00', // Display text labels every hour
+          displayEventTime : false,
           droppable: true, // Bool - User can drag and drop events
           editable: true, // Bool - User can edit calendar
           events: [
@@ -813,24 +815,27 @@ document.addEventListener('DOMContentLoaded', function() {
             call_evt_modal(info); // Open the event edit modal
           }
         });
-
-
-        // Initialise the external events
         // -----------------------------------------------------------------
+        // Initialise the external events
         new Draggable(containerEl, {
-        itemSelector: '.fc-event-main',
-        eventData: function(eventEl) {
-          return {
-            title: eventEl.innerText,
-            overlap: false,
-            backgroundColor: eventEl.style.backgroundColor,
-            borderColor: eventEl.style.backgroundColor,
-            description: 'programme'
-          };
-
-        },
-
-      });
+            itemSelector: '.fc-event-main',
+            eventData: function(eventEl) {
+                let src_name = eventEl.innerText;
+                let src_col = eventEl.style.backgroundColor;
+                let is_ann = is_announcement(src_name);
+                return {
+                    title: src_name,
+                    overlap: is_ann,
+                    // unfortunately, 'list-item' not supported in timeGridweek view
+                    display: (is_ann ? 'list-item' : 'auto'),
+                    duration: (is_ann ? '00:30' : '01:00'),
+                    displayEventTime : false,
+                    backgroundColor: src_col,
+                    borderColor: src_col,
+                    description: 'program'
+                };
+            },
+        });
 
       TheCalendar = calendar;  // Set the global calendar reference:
       calendar.render();
@@ -1023,12 +1028,13 @@ $(document).on('scheduleLoaded',
         function() {
                 if ("object" === typeof(LoadedSchedule)) {
                     flush_schedule();  // erase old schedule rendering
-                    // * * * * * * * * * * TODO * * * * * * * * * * * * *
                     parse_rsked_sources();
-                    get_announce();
                     parse_rsked_events();
-                    alert('loaded schedule version ' +
-                          LoadedSchedule["version"]);
+                    TheCalendar.setOption('titleFormat',function(date) {
+                        return ("schedule ver. "+LoadedSchedule.version);
+                    });
+                    // alert('loaded schedule version ' +
+                    //       LoadedSchedule["version"]);
                   } else {
                       alert('failed to load current schedule.');
                   }
@@ -1037,15 +1043,11 @@ $(document).on('scheduleLoaded',
 
 /////////////////////////////////////////////////////////////////////////////////
 //// EVENT Edit Dialog
-////    when the user clicks on an event in the calendar, raise this
-////  dialog that allows some tweeking, e.g. repeat pattern days of week.
 
-
-/// TODO:   !STUB! This is quite INCOMPLETE at the moment
-//
-//
-
-
+/// When the user clicks on an event in the calendar, raise this
+/// dialog that allows some tweeking, e.g. repeat pattern days of week.
+/// TODO: handle features like delete and repeat days
+///
 function call_evt_modal(calEvent) {
       let emodal = document.getElementById("evtModal");
       let mdheader = emodal.childNodes[1].childNodes[1];
@@ -1078,11 +1080,9 @@ function call_evt_modal(calEvent) {
       return emodal;
 }
 
-/// TODO: initialize the event modal dialog
-/// var evtModal = init_evt_modal("evtModal")
-
 /////////////////////////////////////////////////////////////////////////////
-////  DIALOG TEST JIG -- see eedit.html
+
+/// Initialize GUI and try to load a schedule.
 
 init_modals();
 init_source_pane();
