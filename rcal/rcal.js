@@ -26,6 +26,9 @@ const DefaultSrcName='(new name)';
 const DayNames = ["sunday","monday","tuesday","wednesday","thursday",
                   "friday","saturday"];
 
+/// special color for announcments
+const AnnColor = "#663399";
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /// These are defined in 'testdata.js' during early development:
@@ -646,10 +649,33 @@ function parse_rsked_events() {
                 c_prog = prog;
                 t_start = t_slot;
             }
-            // ****** TODO ******
-            // else if (slot.hasOwnProperty("announce")) { TODO! }
+            // its an announcement...does not affect regular schedule
+            else if (slot.hasOwnProperty("announce")) {
+                let ann = slot.announce;
+                let t_ann = slot.start;
+                const c_src = Sources[c_prog];
+                if (undefined === c_src) {
+                    console.log("skipping undefined announcement: ", ann);
+                } else {
+                    console.log(day," announcement ",t_ann," : ",ann);
+                    let evt = {startTime: t_ann, endTime: add_minutes(t_ann,20),
+                               daysOfWeek: [ i ], title: ann,
+                               color: AnnColor };
+                    TheCalendar.addEvent(evt);
+                }
+            }
         }
     }
+}
+
+
+/// Add number m minutes to the time string, e.g. tstr="10:00"
+/// Result suitable for an FC start or end time
+///
+function add_minutes( tstr, m ) {
+    let d = new Date('August 17, 1995 '+tstr);
+    d.setMinutes( d.getMinutes()+m )
+    return d.toLocaleTimeString('en-GB');
 }
 
 
@@ -667,7 +693,7 @@ class RcalAnnounce {
         this.name = sname;
         this.registered = false;
         this.suid = uuidv4();
-        this.color = "#663399";
+        this.color = AnnColor;
         this.text = stext;
     }
 };
