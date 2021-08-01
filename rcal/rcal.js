@@ -3,22 +3,13 @@
 
 "use strict";
 
-/// G L O B A L S
+///   C O N S T A N T S
 
-/// The source being edited, if any; otherwise undefined.
-var EditSource=undefined;
+/// Canonical name of the host library
+const gHostLibraryResource = "catalog.json";
 
-/// Global objecst used as map of sources and announcements by their (unique) names,
-///  "cms"  => <RcalSource cms>
-///
-var Sources = {};
-var Announcements = {};
-
-/// Global with the last loaded schedule
-var LoadedSchedule;
-
-/// Global for the calendar object
-var TheCalendar;
+/// Canonical name of the current schedule.
+const gScheduleResource = "schedule.json";
 
 const DefaultSrcName='(new name)';
 
@@ -26,31 +17,49 @@ const DefaultSrcName='(new name)';
 const DayNames = ["sunday","monday","tuesday","wednesday","thursday",
                   "friday","saturday"];
 
-/// special color for announcments
+/// special color for announcments on the calendar
 const AnnColor = "#663399";
 
-///////////////////////////////////////////////////////////////////////////////
 
-/// These are defined in 'testdata.js' during early development:
-//
-// var gFiles = { }
-// var gPlaylists = [ ]
+///   G L O B A L S
 
-/// Retrieve the playlists (an ARRAY) available on the host.
-/// (This is a stub for now.)
+/// The source being edited, if any; otherwise undefined.
+var EditSource=undefined;
+
+/// Global objecst used as map of sources and announcements by their
+/// unique names, "cms" => <RcalSource cms>
+///
+var Sources = {};
+var Announcements = {};
+
+/// Global with the last loaded schedule
+var LoadedSchedule;
+var SavedSchedule;
+
+/// Global with the installed music library catalog
+var HostLibrary;
+
+/// Global for the calendar object
+var TheCalendar;
+
+
+//////////////////////////////////////////////////////////////////////////////
+////                          HOST LIBRARY
+
+/// Accessor: Retrieve the playlists available on the host (object).
 ///
 function host_playlists() {
-    return gPlaylists;
+    return HostLibrary.playlists;
 }
 
-/// Retrieve the recorded audio resources on the host (nested Objects).
-/// (This is a stub for now.)
+/// Accessor: retrieve the recorded audio resources on the host
+/// (nested Objects).
 ///
 function host_res() {
-    return gFiles;
+    return HostLibrary.library;
 }
 
-/// Return the album resource for a given artist.
+/// Accessor: return the album resource for a given artist.
 /// It will return undefined if there is no such artist/album.
 ///
 function get_host_album(artist,album) {
@@ -58,6 +67,28 @@ function get_host_album(artist,album) {
     return res[artist][album];
 }
 
+
+/// Loader. Read the host library from the server src url. Upon
+/// completion emit a "libraryLoaded" event to initialize the UI,
+/// handled below.
+///
+function load_host_library( src ) {
+      $.getJSON( src, function(data) {
+          HostLibrary = data;
+          $(document).trigger('libraryLoaded'); });
+}
+
+/// If the library loaded, fill in the resource menus, load the schedule.
+///
+$(document).on('libraryLoaded',
+        function() {
+                if ("object" === typeof(HostLibrary)) {
+                    init_modals();
+                    init_source_pane();
+                    load_schedule( gScheduleResource );
+                } else {
+                    alert('failed to load host library.');
+                }} );
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -115,8 +146,12 @@ class RcalSource {
     type;        // medium: 'radio|stream|file|playlist|directory'
     repeat;      // bool
     dynamic;     // bool
+    announcement; // bool
+    ann_location; // string
     alternate;   // string name of alt source
     encoding;    // 'ogg','mp3','mp4','wfm','mixed'
+    text;        // text (announcements) e.g. "good morning"
+    duration;    // optional duration, seconds
     // location variants:
     artist;      // e.g. "Miles Davis"
     album;       // e.g. "Big Fun-Disc 1"
@@ -128,7 +163,8 @@ class RcalSource {
     // CTOR for RcalSource. Mandatory: name,medium,encoding,resource.
     // Fields are given defaults suitable for the edit dialog.
     //
-    constructor(sname,medium,encoding,sres,repeat=true,dynamic=false) {
+    constructor(sname,medium,encoding,sres,repeat=true,
+                dynamic=false,announcement=false) {
         var pfile;
         var parts;
         this.name = sname;
@@ -137,8 +173,11 @@ class RcalSource {
         this.color = medium_to_color(medium);
         this.type = medium;
         this.encoding = encoding;
+        this.text = undefined;
+        this.duration = undefined;
         this.repeat = repeat;
         this.dynamic = dynamic;
+        this.announcement = announcement;
         this.alternate = "OFF";
         this.freq = 101.1;
         this.url = 'http://some.host.com/stream.mp3';
@@ -430,15 +469,18 @@ function init_src_tracks( artist, album ) {
 }
 
 
-/// Initialize playlist selector from gPlaylists global.
+/// Initialize playlist selector from host lib
 function init_src_playlist( smodal ) {
     let splist = smodal.querySelector('#splist');
-    for (const pname of host_playlists()) {
+    const hpl = host_playlists();
+    for (const pname in Object.getOwnPropertyNames(hpl)) {
         sel_add_option( splist, pname );
     }
 }
 
-// Initialize the Source edit dialog
+/// Initialize the Source edit dialog. This should be called when the
+/// host library has been loaded.
+///
 function init_modals() {
     const hoptions=false; // TODO: determine listener option support in browser
     let smodal = document.getElementById("srcModal");
@@ -480,7 +522,8 @@ function init_modals() {
         } }
 }
 
-// source pane buttons
+/// Assign actions to the Source pane buttons: Check, New
+///
 function init_source_pane() {
     $('#check-sources').on('click',function(){ validate_sources() });
     $('#new-audio-source').on('click',function(){ make_new_source() });
@@ -569,14 +612,16 @@ function make_new_source() {
     editSource( new RcalSource(DefaultSrcName,'radio','wfm',99.9) );
 }
 
-/// Add a source named sname given rsked schedule definition sdef.
+/// Add a source named sname given rsked schedule definition object
+/// sdef.  Sources or announcements end up in lists Sources and
+/// Announcements respectively. Those with names starting'%' are imported but
+/// not displayed.
 ///
 function import_source(sname, sdef) {
     const medium = sdef['medium'];
     const encoding = sdef['encoding'];
     const location = sdef['location'];
     var src;
-    console.log("import source ",sname);
     switch( medium ) {
     case 'radio':
     case 'playlist':
@@ -588,40 +633,59 @@ function import_source(sname, sdef) {
     default:
         throw new Error("Unknown source medium on import: "+medium);
     }
-    // TODO: capture the 'alternate' source field too
+    if ('alternate' in sdef) {
+        src.alternate = sdef['alternate'];
+    }
     if ('dynamic' in sdef) {
         src.dynamic = sdef['dynamic'];
     }
     if ('repeat' in sdef) {
         src.repeat = sdef['repeat'];
     }
-    src.registered = true;
-    Sources[src.name] = src;
-    // Do not display utility (%) sources: they are retained for export though
-    if ("%"!=sname.slice(0,1)) {
-        addSource(src);
+    if ('announcement' in sdef) {
+        src.announcement = sdef['announcement'];
+        src.ann_location = sdef['location'];
     }
-}
-
-/// Add sources from LoadedSchedule including programs and announcements.
-///
-function parse_rsked_sources() {
-    const srcs = LoadedSchedule['sources'];
-    for (var sname of Object.keys(srcs)) {
-        let s = srcs[sname];
-        if (s.announcement) {
-            import_announcement( sname, s );
-        } else {
-            import_source( sname, s );
+    if ('text' in sdef) {
+        src.text = sdef['text'];
+    }
+    if ('duration' in sdef) {
+        src.duration = sdef['duration'];
+    }
+    src.registered = true;
+    if (src.announcement) {
+        Announcements[sname] = src;
+        console.log("import announcement ", src.name,src.suid,src.text);
+        if ("%"!=sname.slice(0,1)) {
+            addAnnounce( src );
+        }
+    } else {
+        Sources[src.name] = src;
+        console.log("import source ",sname,src.suid);
+        if ("%"!=sname.slice(0,1)) {
+            addSource( src );
         }
     }
 }
+
+/// Import sources from LoadedSchedule including programs and announcements.
+/// Any existing Sources and Announcments are discarded.
+///
+function import_rsked_sources() {
+    const srcs = LoadedSchedule['sources'];
+    const src_keys = Object.keys(srcs);
+    Sources = {};
+    Announcements = {};
+    src_keys.forEach( (sname,j) => { import_source( sname, srcs[sname] ); });
+}
+
+
 
 /// Add events from LoadedSchedule to calendar.
 /// - Ignore "OFF" events--these are implicit.
 /// - Handle announcemens specially
 ///
-function parse_rsked_events() {
+function import_rsked_events() {
     const dayprograms = LoadedSchedule['dayprograms'];
     // cycle through days of the week, sunday...saturday:
     for (let i=0; i<7; i++) {
@@ -679,24 +743,7 @@ function add_minutes( tstr, m ) {
 }
 
 
-/// Add default announcements to the announcement list
-// Model for announcements
-
-class RcalAnnounce {
-    name;        // string name, unique in schedule
-    registered;   // bool
-    suid;        // string uuid--unique in session; not in schedule
-    text;        // text form of announcement e.g. "good morning"
-    color;        // dom color spec.
-    //
-    constructor(sname,suid,stext) {
-        this.name = sname;
-        this.registered = false;
-        this.suid = uuidv4();
-        this.color = AnnColor;
-        this.text = stext;
-    }
-};
+///  A N N O U N C E M E N T S
 
 /// Return true if the argument names an announcment (not a program)
 /// Criterion: in the global object Announcements{}
@@ -705,21 +752,6 @@ function is_announcement(src_name) {
     return Announcements.hasOwnProperty(src_name);
 }
 
-/// Insert an announcement. Don't display ones starting with "%".
-///
-function import_announcement(sname, sdef) {
-    const suid = uuidv4();
-    const stext = sdef["text"];
-    console.log("anntext = ",stext)
-    var ann = new RcalAnnounce(sname,suid,stext);
-    console.log("import announcement ", ann.name,ann.suid,ann.text);
-    ann.registered = true;
-    Announcements[sname] = ann;
-    //
-    if ("%"!=sname.slice(0,1)) { // don't display utility announcements
-        addAnnounce( ann );
-    }
-}
 
 /// Add announcement to announcement list as an fc event
 ///
@@ -739,11 +771,10 @@ function addAnnounce( ann ) {
     //
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-/// CALENDAR SCRIPTS (relies on fullcalendar)
+///////////////////////////////////////////////////////////////////////////////
+///                               CALENDAR
+/// (relies on fullcalendar)
 ///
-/// TODO: Add event menu add
-
 
 /// Initialise and render the calendar.
 
@@ -771,22 +802,21 @@ document.addEventListener('DOMContentLoaded', function() {
             saveButton: {
               text: 'save',
               click: function() {
-                // This button will run the function that converts calendar data to an
-                // object with the analogous fields (TBD).  Here is a stand-in object
-                // with just a few fields.When the user clicks SAVE on the calendar,
-                // a function should convert the calendar content to the rsked 2.0
-                //schema JSON and invoke the ajax upload script on the server.
-                //The various constraints on a valid schedule should be respected,
-                //e.g. empty spaces should be filled with “OFF” slots.
-                let newsked = extract_to_rsked();
-                // Ajax post schedule under key 'schedule'.
-                // Callback just notifies user of acceptance.
-                let d = new Date();            // now
-                newsked.version = d.toISOString();
-                console.log("The current schedule version is", newsked.version)
-                // Ajax post of schedule under key 'schedule'. Callback notifies user.
-                $.post( "newsked.php",  { schedule : JSON.stringify(newsked) },
-                        function (txt) {alert('Saved schedule: '+txt);},
+                  let newsked = export_to_rsked();
+                  // Ajax post schedule under key 'schedule'.
+                  // Callback just notifies user of acceptance.
+                  let d = new Date();            // now
+                  newsked.version = d.toISOString();
+                  SavedSchedule = newsked;
+                  ///// LoadedSchedule = newsked; ///// ??????
+                  console.log("The current schedule version is", newsked.version)
+                  // Ajax post of schedule under key 'schedule'. Callback notifies user.
+                  $.post( "newsked.php",  { schedule : JSON.stringify(newsked) },
+                        function (txt) {
+                            alert('Saved schedule: '+txt);
+                            TheCalendar.setOption('titleFormat',function(date) {
+                                return ("schedule ver. " + SavedSchedule.version); });
+                        },
                         "text");              }
             },
             clearButton: {
@@ -803,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loadButton: {
               text: 'revert',
               click: function() {
-                load_schedule("schedule.json");
+                load_schedule( gScheduleResource );
                 }
               }
             },
@@ -867,158 +897,185 @@ document.addEventListener('DOMContentLoaded', function() {
       calendar.render();
     });
 
+/// Order two rsked events for sorting purposes.
+function start_order(e1, e2) {
+    let s1 = e1.start, s2 = e2.start;
+    if (s1 < s2) { return -1 };
+    if (s1 > s2) { return 1 };
+    return 0;
+}
 
-
-  /// Order two rsked events for sorting purposes.
-      function start_order(e1, e2) {
-          let s1 = e1.start, s2 = e2.start;
-          if (s1 < s2) { return -1 };
-          if (s1 > s2) { return 1 };
-          return 0;
-      }
-
-  /// Make an array of rsked events satisfy these constraints
-  /// - events must be ordered by start time
-  /// - if the first event on a day does not begin at 00:00 add
-  ///   an OFF event starting at 00:00
-  /// - if the final event of the day does not end at 24:00 add
-  ///   a terminal OFF event
-  /// - any empty days need a dummy OFF event
-  /// Arg darray (call by reference) is modified in place.
-  ///
-    function normalize_day( darray ) {
-          if (0 == darray.length) { // empty: an entirely quiet day
-              darray.push( {start : "00:00:00", program : "OFF" } );
-              return;
-          }
-          darray.sort( start_order );
-          if (darray[0].start != "00:00:00") { // start at OFF if needed
-              darray.splice(0,0,{start : "00:00:00", finish: darray[0].start,
-                                 program : "OFF" });
-          }
-          // Fill any gaps between events end and next event start with OFF
-          let j=1;
-          while (j < darray.length) {
-              let fin = darray[j-1].finish;
-              let strt = darray[j].start;
-              if (strt != fin) {
-                  darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
-              }
-              j++;
-          }
-          if (darray[j-1].finish != "00:00:00") { // maybe pad to end of day
-              darray.splice( j, 0, {start : darray[j-1].finish,
-                                    finish : "00:00:00", program : "OFF" });
-          }
-          // Remove helper properties (like 'finish') not part of rsked schema
-          for (let d of darray ) {
-              delete d['finish'];
-          }
-      }
+/// Make an array of rsked events satisfy these constraints
+/// - events must be ordered by start time
+/// - if the first event on a day does not begin at 00:00 add
+///   an OFF event starting at 00:00
+/// - if the final event of the day does not end at 24:00 add
+///   a terminal OFF event
+/// - any empty days need a dummy OFF event
+/// Arg darray (call by reference) is modified in place.
+///
+function normalize_day( darray, dayname ) {
+    if (0 == darray.length) { // empty: an entirely quiet day
+        darray.push( {start : "00:00:00", program : "OFF" } );
+        return;
+    }
+    darray.sort( start_order );
+    if (darray[0].start != "00:00:00") { // start at OFF if needed
+        darray.splice(0,0,{start : "00:00:00", finish: darray[0].start,
+                           program : "OFF" });
+    }
+    // Fill any gaps between events end and next event start with OFF
+    let fin = darray[0].finish; // last extended event's finish time
+    let j=1;
+    while (j < darray.length) {
+        let strt = darray[j].start;
+        if (darray[j].hasOwnProperty("program")) { // not an announcement
+            if (strt != fin) {
+                console.log(dayname," ",j," ",strt," fill program gap, last fin=",fin)
+                darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
+            }
+            fin = darray[j].finish;
+        } else {
+            console.log(dayname," ",j," ",strt," announcement: ",darray[j].announce);
+        }
+        j++;
+    }
+    if (darray[j-1].finish != "00:00:00") { // maybe pad to end of day
+        darray.splice( j, 0, {start : fin, finish : "00:00:00", program : "OFF" });
+    }
+    // Remove helper properties (like 'finish') not part of rsked schema
+    for (let d of darray ) {
+        delete d['finish'];
+    }
+}
 
 /// Contruct the dayprogram object: each element is an array
 /// associated with a day of the week.
 ///
-      function extract_dayprograms() {
-          var dpobj = {};                       // each gets an array in dpobj
-          for (let d of DayNames) {
-              dpobj[d] = Array();
-          }
-          // Collect events from TheCalendar.
-          // Note: assume events are minimally consistent with rsked constraints
-          //    e.g. do not span days, are not marked "allDay", ...
-          // Aside: getEvents returns events in no particular order
-          for (let evt of TheCalendar.getEvents()) {
-              let ts = evt.start;
-              let te = evt.end;  // null if not set, e.g. left to default 1hr duration
-              if (null == te) {
-                  te = new Date(ts);
-                  te.setHours( 1 + ts.getHours() );
-              }
-              let dow = DayNames[ts.getDay()]; // Sunday==0, Monday==1, ...
-              let tstr = ts.toLocaleTimeString('en-GB');
-              let zstr = te.toLocaleTimeString('en-GB');
-              let dp = { "start" : tstr, "program" : evt.title, finish : zstr };
-              dpobj[dow].push(dp);
-              console.log(evt.title," on day",dow,"at",tstr,"\n");
-          }
-          for (let dow of DayNames) {     // normalize each day:
-              normalize_day( dpobj[dow] );
-          }
-          return dpobj;
-      }
-
-  /// Return the effective rsked location field for a source s.
-  /// If a radio source, return freq.
-  /// If a file source, return file.
-  /// If a playlist source,
-  ///
-      function src_location( s ) {
-          // type===medium: 'radio|stream|file|playlist|directory'
-          switch (s.type) {
-          case 'directory':
-              return (s.artist + '/' + s.album);
-          case 'file':
-              return (s.artist + '/' + s.album + '/' + s.file);
-          case 'radio':
-              return s.freq;
-          case 'playlist':
-              return s.playlist;
-          case 'stream':
-              return s.url;
-          default:
-              return null;
-          }
-      }
-
-  /// Return an rsked-style object representation for all defined sources
-  /// (even ones not currently used in the schedule.)
-  ///
-  function extract_sources() {
-      var usrcs = {};
-      for (var skey in Sources) {
-              if ("length"==skey) { continue; } // not a source!
-              let x = Sources[skey];
-              let p = { encoding: x.encoding,
-                        medium: x.type,
-                        location: src_location(x),
-                        repeat: x.repeat,
-                        dynamic: x.dynamic,
-                        alternate: x.alternate };
-              // TODO:  are we tracking these??
-              if (x.hasOwnProperty('announcement')) {
-                  p.announcement = x.announcement;
-              }
-              if (x.hasOwnProperty('duration')) {
-                  p.duration = x.duration;
-              }
-              if (x.hasOwnProperty('text')) {
-                  p.text = x.text;
-              }
-              usrcs[skey] = p;
-          }
-          return usrcs;
-      }
+function export_dayprograms() {
+    var dpobj = {};                       // each gets an array in dpobj
+    for (let d of DayNames) {
+        dpobj[d] = Array();
+    }
+    // Collect events from TheCalendar.
+    // Note: assume events are minimally consistent with rsked constraints
+    //    e.g. do not span days, are not marked "allDay", ...
+    // Aside: getEvents returns events in no particular order
+    for (let evt of TheCalendar.getEvents()) {
+        let ts = evt.start;
+        let te = evt.end;  // null if not set, e.g. left to default 1hr duration
+        if (null == te) {
+            te = new Date(ts);
+            te.setHours( 1 + ts.getHours() );
+        }
+        let dow = DayNames[ts.getDay()]; // Sunday==0, Monday==1, ...
+        let tstr = ts.toLocaleTimeString('en-GB');
+        let zstr = te.toLocaleTimeString('en-GB');
+        if (is_announcement(evt.title)) {
+            dpobj[dow].push({"start" : tstr, "announce" : evt.title, finish : tstr});
+        } else {
+            dpobj[dow].push({"start" : tstr, "program" : evt.title, finish : zstr});
+        }
+        console.log(evt.title," on day",dow,"at",tstr,"\n");
+    }
+    for (let dow of DayNames) {     // normalize each day:
+        normalize_day( dpobj[dow], dow );
+    }
+    return dpobj;
+}
+// cms  on day monday at 07:30:00 
+// dnow  on day monday at 12:00:00 
+// cms  on day monday at 13:00:00 
+// nis  on day monday at 14:00:00 
+// motd-ymd  on day monday at 15:30:00 
+// ksjn  on day monday at 15:00:00
 
 
-  /// Convert Calendar events to rsked events
-  ///
-  function extract_to_rsked() {
-          //let sked= LoadedSchedule;
-          var calendarEl = document.getElementById('calendar-widget');
-          var dpgms = extract_dayprograms();
-          var rsrcs = extract_sources();
-          var d = new Date();            // now
-          var sked = { "encoding" : "UTF-8",
-                       "schema" : "2.0",
-                       "version" : d.toISOString(),
-                       "library" : LoadedSchedule.library,
-                       "playlists" :  LoadedSchedule.playlists,
-                       "sources" : rsrcs,
-                       "dayprograms" : dpgms
-                     };
-          return sked;
-      }
+/// Return the effective rsked location field for a source s.
+/// If an announcement, return the original location field
+/// If a radio source, return freq.
+/// If a file/directory source, return file/directory
+/// If a playlist source, return playlist
+/// If a stream, return the url
+///
+function src_location( s ) {
+    if (s.announcement) {
+        return s.ann_location;
+    }
+    switch (s.type) {
+    case 'directory':
+        return (s.artist + '/' + s.album);
+    case 'file':
+        return (s.artist + '/' + s.album + '/' + s.file);
+    case 'radio':
+        return s.freq;
+    case 'playlist':
+        return s.playlist;
+    case 'stream':
+        return s.url;
+    default:
+        return null;
+    }
+}
+
+
+/// Export an RcalSource object x as a plain source object for rsked.
+///
+function src_export(x) {
+    let p = { encoding: x.encoding,
+              medium: x.type,
+              location: src_location(x),
+              repeat: x.repeat,
+              dynamic: x.dynamic,
+              alternate: x.alternate };
+    if (x.hasOwnProperty('announcement')) {
+        p.announcement = x.announcement;
+    }
+    if (x.hasOwnProperty('duration')) {
+        p.duration = x.duration;
+    }
+    if (x.hasOwnProperty('text')) {
+        p.text = x.text;
+    }
+    return p
+}
+
+/// Return an rsked-style object representation for all defined
+/// sources including hidden announcements and sources not currently
+/// used in the schedule.
+///
+function export_sources() {
+    var usrcs = {};
+    const src_keys = Object.keys(Sources).sort();
+    src_keys.forEach( (skey,i) => {
+        usrcs[skey] = src_export( Sources[skey] );
+    })
+    const ann_keys = Object.keys(Announcements).sort();
+    ann_keys.forEach( (akey,j) => {
+        usrcs[akey] = src_export( Announcements[akey] );
+    });
+    return usrcs;
+}
+
+
+/// Convert Calendar events to rsked events
+///
+function export_to_rsked() {
+    //let sked= LoadedSchedule;
+    var calendarEl = document.getElementById('calendar-widget');
+    var dpgms = export_dayprograms();
+    var rsrcs = export_sources();
+    var d = new Date();            // now
+    var sked = { "encoding" : "UTF-8",
+                 "schema" : "2.0",
+                 "version" : d.toISOString(),
+                 "library" : LoadedSchedule.library,
+                 "playlists" :  LoadedSchedule.playlists,
+                 "sources" : rsrcs,
+                 "dayprograms" : dpgms
+               };
+    return sked;
+}
 
 
 /// Call this prior to importing a new schedule.
@@ -1055,8 +1112,8 @@ $(document).on('scheduleLoaded',
         function() {
                 if ("object" === typeof(LoadedSchedule)) {
                     flush_schedule();  // erase old schedule rendering
-                    parse_rsked_sources();
-                    parse_rsked_events();
+                    import_rsked_sources();
+                    import_rsked_events();
                     TheCalendar.setOption('titleFormat',function(date) {
                         return ("schedule ver. "+LoadedSchedule.version);
                     });
@@ -1091,12 +1148,13 @@ function call_evt_modal(calEvent) {
       eclose.onclick = function() {
           emodal.style.display = "none";
       }
-      // STUB! When the user clicks on the save element, apply changes and close the dialog
+      // STUB! When user clicks save element, apply changes and close dialog
       let esave = document.getElementById("esave");
       esave.onclick = function() {
           emodal.style.display = "none";
       }
-      // STUB! When the user clicks on the delete button, remove the event from the calendar close the dialog
+      // STUB! When the user clicks on the delete button, remove the
+      // event from the calendar, close the dialog
       let edel = document.getElementById("edelete");
       edel.onclick = function() {
           confirm('Are you sure you want to delete this event?')
@@ -1111,6 +1169,4 @@ function call_evt_modal(calEvent) {
 
 /// Initialize GUI and try to load a schedule.
 
-init_modals();
-init_source_pane();
-load_schedule("schedule.json");
+load_host_library( gHostLibraryResource );
