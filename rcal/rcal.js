@@ -717,14 +717,14 @@ function import_rsked_events() {
             else if (slot.hasOwnProperty("announce")) {
                 let ann = slot.announce;
                 let t_ann = slot.start;
-                const c_src = Sources[c_prog];
-                if (undefined === c_src) {
-                    console.log("skipping undefined announcement: ", ann);
+                const c_ann = Announcements[ann];
+                if (undefined === c_ann) {
+                    console.log("WARNING: skipping undefined announcement: ", ann);
                 } else {
                     console.log(day," announcement ",t_ann," : ",ann);
                     let evt = {startTime: t_ann, endTime: add_minutes(t_ann,20),
                                daysOfWeek: [ i ], title: ann,
-                               color: AnnColor };
+                               color: c_ann.color };
                     TheCalendar.addEvent(evt);
                 }
             }
