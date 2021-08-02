@@ -219,7 +219,7 @@ function find_fc_source(suid) {
     if (srcs.length > 0) {
         return srcs[0];
     } else {
-        console.log("Cannot find an fc-event-main div for ",suid);
+        console.error("Cannot find an fc-event-main div for ",suid);
         return undefined;
     }
 }
@@ -332,7 +332,7 @@ function src_unpack_modal() {
     EditSource.alternate = $('#salternate').prop('value');
     if (!EditSource.registered) {
         EditSource.name = $('#sname').prop('value');
-        console.log("registering new source: ",EditSource.name);
+        console.info("registering new source: ",EditSource.name);
         addSource(EditSource);
     }
     const srctab = find_fc_source(EditSource.suid);
@@ -440,10 +440,10 @@ function init_src_alts(banned) {
 function init_src_albums( artist ) {
     let salbselect = $('#salbselect')[0];
     sel_clear_options( salbselect );
-    console.log("albums for artist ",artist);
+    //console.info("albums for artist ",artist);
     if (artist in host_res()) {
         for (const albname of Object.keys(host_res()[artist])) {
-            console.log(" album: ",albname);
+            //console.info(" album: ",albname);
             sel_add_option( salbselect, albname );
         }
     }
@@ -489,7 +489,7 @@ function init_modals() {
         // TODO: cancel changes
         smodal.style.display = "none";
         EditSource = undefined;
-        console.log("cancel changes to src ");
+        console.warn("cancel changes to src ");
     });
     $('#ssave').on('click',function() {
         if (validate_src_dialog()) {
@@ -608,7 +608,7 @@ function validate_sources() {
 /// It will be registered if the edit modal is successfully saved.
 ///
 function make_new_source() {
-    console.log("provisionally create new audio source");
+    console.info("provisionally create new audio source");
     editSource( new RcalSource(DefaultSrcName,'radio','wfm',99.9) );
 }
 
@@ -655,13 +655,13 @@ function import_source(sname, sdef) {
     src.registered = true;
     if (src.announcement) {
         Announcements[sname] = src;
-        console.log("import announcement ", src.name,src.suid,src.text);
+        console.info("import announcement ", src.name,src.suid,src.text);
         if ("%"!=sname.slice(0,1)) {
             addAnnounce( src );
         }
     } else {
         Sources[src.name] = src;
-        console.log("import source ",sname,src.suid);
+        console.info("import source ",sname,src.suid);
         if ("%"!=sname.slice(0,1)) {
             addSource( src );
         }
@@ -693,7 +693,7 @@ function import_rsked_events() {
         let dslots = dayprograms[day];
         let t_start = null;
         let c_prog = null;
-        console.log(day," has ",dslots.length," slots");
+        console.info(day," has ",dslots.length," slots");
         for (let slot of dslots) {
             if (slot.hasOwnProperty("program")) {
                 let prog = slot.program;
@@ -701,9 +701,9 @@ function import_rsked_events() {
                 if ((t_start !== null) && (c_prog !== "OFF")) {
                     const c_src = Sources[c_prog];
                     if (undefined === c_src) {
-                        console.log("skipping undefined source: ", c_prog);
+                        console.error("skipping undefined source: ", c_prog);
                     } else {
-                        console.log(day," ",t_start,"->",t_slot," : ",c_prog);
+                        console.info(day," ",t_start,"->",t_slot," : ",c_prog);
                         let evt = {startTime: t_start, endTime: t_slot,
                                    daysOfWeek: [ i ], title: c_prog,
                                    color: c_src.color };
@@ -719,9 +719,9 @@ function import_rsked_events() {
                 let t_ann = slot.start;
                 const c_ann = Announcements[ann];
                 if (undefined === c_ann) {
-                    console.log("WARNING: skipping undefined announcement: ", ann);
+                    console.error("skipping undefined announcement: ", ann);
                 } else {
-                    console.log(day," announcement ",t_ann," : ",ann);
+                    console.info(day," announcement ",t_ann," : ",ann);
                     let evt = {startTime: t_ann, endTime: add_minutes(t_ann,20),
                                daysOfWeek: [ i ], title: ann,
                                color: c_ann.color };
@@ -756,7 +756,7 @@ function is_announcement(src_name) {
 /// Add announcement to announcement list as an fc event
 ///
 function addAnnounce( ann ) {
-    console.log("add announcement ",ann.name, ann.suid, ann.color);
+    console.info("add announcement ",ann.name, ann.suid, ann.color);
     const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
     const outer=$("<div></div>",
                   {id: "outer_"+ann.name,
@@ -802,21 +802,23 @@ document.addEventListener('DOMContentLoaded', function() {
             saveButton: {
               text: 'save',
               click: function() {
+                  console.group("Save schedule");
                   let newsked = export_to_rsked();
                   // Ajax post schedule under key 'schedule'.
                   // Callback just notifies user of acceptance.
                   let d = new Date();            // now
                   newsked.version = d.toISOString();
                   SavedSchedule = newsked;
-                  ///// LoadedSchedule = newsked; ///// ??????
-                  console.log("The current schedule version is", newsked.version)
+                  console.info("The current schedule version is", newsked.version)
                   // Ajax post of schedule under key 'schedule'. Callback notifies user.
                   $.post( "newsked.php",  { schedule : JSON.stringify(newsked) },
-                        function (txt) {
-                            alert('Saved schedule: '+txt);
-                            TheCalendar.setOption('titleFormat',function(date) {
-                                return ("schedule ver. " + SavedSchedule.version); });
-                        },
+                          function (txt) {
+                              console.groupEnd();
+                              alert('Saved schedule: '+txt);
+                              // LoadedSchedule = newsked; ???
+                              TheCalendar.setOption('titleFormat',function(date) {
+                                  return ("schedule ver. " + SavedSchedule.version); });
+                          },
                         "text");              }
             },
             clearButton: {
@@ -867,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ],
           eventClick: function(info) {
             info.jsEvent.preventDefault(); //in the event the URL property has been assigned, don't navigate to it.
-            console.log("Event info:",info.event.title, info.el.style.backgroundColor, info.end);
+            console.info("Event info:",info.event.title, info.el.style.backgroundColor, info.end);
             call_evt_modal(info); // Open the event edit modal
           }
         });
@@ -931,12 +933,12 @@ function normalize_day( darray, dayname ) {
         let strt = darray[j].start;
         if (darray[j].hasOwnProperty("program")) { // not an announcement
             if (strt != fin) {
-                console.log(dayname," ",j," ",strt," fill program gap, last fin=",fin)
+                console.info(dayname," ",j," ",strt," fill program gap, last fin=",fin)
                 darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
             }
             fin = darray[j].finish;
         } else {
-            console.log(dayname," ",j," ",strt," announcement: ",darray[j].announce);
+            console.info(dayname," ",j," ",strt," announcement: ",darray[j].announce);
         }
         j++;
     }
@@ -976,7 +978,7 @@ function export_dayprograms() {
         } else {
             dpobj[dow].push({"start" : tstr, "program" : evt.title, finish : zstr});
         }
-        console.log(evt.title," on day",dow,"at",tstr,"\n");
+        console.info(evt.title," on day",dow,"at",tstr,"\n");
     }
     for (let dow of DayNames) {     // normalize each day:
         normalize_day( dpobj[dow], dow );
@@ -1058,7 +1060,7 @@ function export_sources() {
 }
 
 
-/// Convert Calendar events to rsked events
+/// Convert Calendar events to rsked events, returning the rsked object.
 ///
 function export_to_rsked() {
     //let sked= LoadedSchedule;
@@ -1100,29 +1102,28 @@ function flush_schedule() {
 /// event (see handler below).
 ///
 function load_schedule( src ) {
-
-      $.getJSON( src, function(data) {
-          LoadedSchedule = data;
-          $(document).trigger('scheduleLoaded'); });
+    console.group("Load Schedule");
+    $.getJSON( src, function(data) {
+        LoadedSchedule = data;
+        $(document).trigger('scheduleLoaded'); });
 }
 
 /// Display the schedule just loaded into global LoadedSchedule.
 ///
 $(document).on('scheduleLoaded',
-        function() {
-                if ("object" === typeof(LoadedSchedule)) {
-                    flush_schedule();  // erase old schedule rendering
-                    import_rsked_sources();
-                    import_rsked_events();
-                    TheCalendar.setOption('titleFormat',function(date) {
-                        return ("schedule ver. "+LoadedSchedule.version);
-                    });
-                    // alert('loaded schedule version ' +
-                    //       LoadedSchedule["version"]);
-                  } else {
-                      alert('failed to load current schedule.');
-                  }
-                });
+               function() {
+                   if ("object" === typeof(LoadedSchedule)) {
+                       flush_schedule();  // erase old schedule rendering
+                       import_rsked_sources();
+                       import_rsked_events();
+                       TheCalendar.setOption('titleFormat',function(date) {
+                           return ("schedule ver. "+LoadedSchedule.version);
+                       });
+                   } else {
+                       alert('failed to load current schedule.');
+                   }
+                   console.groupEnd();
+               });
 
 
 /////////////////////////////////////////////////////////////////////////////////
