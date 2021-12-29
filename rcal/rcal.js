@@ -1140,7 +1140,7 @@ function call_evt_modal(calEvent) {
       let etitle = document.getElementById("evtTitle");
       etitle.innerText = calEvent.event.title;
       let edesc = document.getElementById("evtDesc");
-      edesc.innerText = calEvent.event.description;
+      edesc.innerText = (undefined===calEvent.event.description)?'-':calEvent.event.description;
       // Something here to determine the type of source and adjust the modal accordingly
       emodal.style.display = "block";
 
