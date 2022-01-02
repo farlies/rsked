@@ -59,6 +59,21 @@ function host_res() {
     return HostLibrary.library;
 }
 
+/// Return an array containing strings for the first extant file resource:
+/// [artist,album,track,enc].  This is used as a default in the source
+/// dialog.
+///
+function default_lib_resource() {
+    var da = Object.getOwnPropertyNames( HostLibrary.library )[0];
+    var dad = HostLibrary.library[da];
+    var dd = Object.getOwnPropertyNames( dad )[0];
+    var alb = dad[ dd ];
+    var dt = alb.tracks[0];
+    var den = alb.encoding;
+    return [da,dd,dt,den];
+}
+
+
 /// Accessor: return the album resource for a given artist.
 /// It will return undefined if there is no such artist/album.
 ///
@@ -258,7 +273,7 @@ function validURL(str) {
   return !!pattern.test(str);
 }
 
-/// Are form contents consistent enough to allow it to be saved?
+/// Are Source Edit contents consistent enough to allow it to be saved?
 ///
 function validate_src_dialog() {
     if (undefined === EditSource) { return; }
@@ -280,6 +295,7 @@ function validate_src_dialog() {
     }
     //
     const smedium = $('#smedium').prop('value');
+    console.info("Medium check for",smedium);
     if (smedium == 'stream') {
         const su=$('#iurl')[0];
         if ( ! su.validity.valid ) {
@@ -294,6 +310,30 @@ function validate_src_dialog() {
             return false;
         }
     }
+    if ((smedium == 'directory') || (smedium == 'file')) {
+        // verify artist and album fields for directory or file
+        const artist_sel = $('#sartselect')[0];
+        console.info("Artist selected:",artist_sel.selectedIndex); // DEBUG
+        if ( -1 == artist_sel.selectedIndex ) {
+            console.warn("You must select an artist");
+            artist_sel.focus();
+            return false;
+        }
+        const album_sel = $('#salbselect')[0];
+        if ( -1 == album_sel.selectedIndex ) {
+            console.warn("You must select an album");
+            album_sel.focus();
+            return false;
+        }
+        if (smedium == 'file') {
+            const track_sel = $('#strackselect')[0];
+            if ( -1 == track_sel.selectedIndex ) {
+                console.warn("You must select a track");
+                track_sel.focus();
+                return false;
+            }
+        }
+    }
     // ... other checks
     return true;
 }
@@ -306,7 +346,29 @@ function src_artist_change(event) {
     init_src_albums( neuart );
 }
 
-// listener for album change; update file select options
+/// Init source dialog for a new default library resource
+/// by setting default field values for artist/album/track.
+///
+function config_new_file_res() {
+    if (undefined === EditSource) { return; }
+    console.info("Initialzing default local resource")
+    const tetra = default_lib_resource(); // artist, album, trac, encoding
+    console.info("default file res =",tetra);
+    const artist_name = tetra[0];
+    const album_name  = tetra[1];
+    const track_name = tetra[2];
+    const encoding = tetra[3];
+    $('#sartselect')[0].value = artist_name;
+    init_src_albums( artist_name );
+    $('#salbselect')[0].value = album_name;
+    init_src_tracks( artist_name, album_name );
+    $('#strackselect')[0].value = track_name;
+    $('#sencoding')[0].value = encoding;
+}
+
+
+/// Listener for album change; update file select options and encoding
+///
 function src_album_change(event) {
     if (undefined === EditSource) { return; }
     const album = event.target.value;
@@ -453,7 +515,7 @@ function init_src_albums( artist ) {
 }
 
 /// Initialize the TRACK selector with all files in a directory,
-/// given artist and album names.
+/// given artist and album names. Update encoding.
 //
 function init_src_tracks( artist, album ) {
     const stselect = $('#strackselect')[0];
@@ -464,16 +526,17 @@ function init_src_tracks( artist, album ) {
             for (const tname of alb["tracks"]) {
                 sel_add_option( stselect, tname );
             }
+            $('#sencoding')[0].value = alb.encoding;
         }
     }
 }
 
-
 /// Initialize playlist selector from host lib
+///
 function init_src_playlist( smodal ) {
     let splist = smodal.querySelector('#splist');
     const hpl = host_playlists();
-    for (const pname in Object.getOwnPropertyNames(hpl)) {
+    for (const pname of Object.getOwnPropertyNames(hpl)) {
         sel_add_option( splist, pname );
     }
 }
@@ -486,7 +549,6 @@ function init_modals() {
     let smodal = document.getElementById("srcModal");
     //
     $('#scancel').on('click', function() {
-        // TODO: cancel changes
         smodal.style.display = "none";
         EditSource = undefined;
         console.warn("cancel changes to src ");
@@ -497,6 +559,12 @@ function init_modals() {
             smodal.style.display = "none";
             EditSource = undefined;
         } // else not valid, don't close
+    });
+    $('#strash').on('click', function() {
+        // TODO: delete source from sources pane and from calendar object too
+        smodal.style.display = "none";
+        EditSource = undefined;
+        console.warn("delete src: UNIMPLEMENTED");
     });
     smodal.querySelector('#smedium').addEventListener("change",
                                                     src_medium_change,hoptions);
@@ -540,12 +608,25 @@ function editSource( srcobj )
     const sn_input=dialog.querySelector('#sname');
     if (srcobj.registered) {
         $('#sm_editlabel').hide();
+        $('#strash').show();
         $('#sm_staticname').html(srcobj.name).show();
+        dialog.querySelector('#smedium').disabled=true;
+        dialog.querySelector('#sfreq').disabled=true;
+        dialog.querySelector('#sartselect').disabled=true;
+        dialog.querySelector('#salbselect').disabled=true;
+        dialog.querySelector('#strackselect').disabled=true;
+
     } else {
         // unregistered: allow user to edit name (initially selected)
         $('#sm_staticname').hide();
+        $('#strash').hide();
         $('#sm_editlabel').show()
         sn_input.value=srcobj.name;
+        dialog.querySelector('#smedium').disabled=false;
+        dialog.querySelector('#sfreq').disabled=false;
+        dialog.querySelector('#sartselect').disabled=false;
+        dialog.querySelector('#salbselect').disabled=false;
+        dialog.querySelector('#strackselect').disabled=false;
     }
     init_src_alts(srcobj.name); // don't include this source as an alternate
     config_src_fields(srcobj.type);
@@ -557,11 +638,15 @@ function editSource( srcobj )
     dialog.querySelector('#sencoding').value = srcobj.encoding;
     dialog.querySelector('#sencoding').disabled=true; // always?
     //.........
-    dialog.querySelector('#sartselect').value = srcobj.artist;
-    init_src_albums( srcobj.artist );
-    dialog.querySelector('#salbselect').value = srcobj.album;
-    init_src_tracks(srcobj.artist, srcobj.album);
-    dialog.querySelector('#strackselect').value = srcobj.file;
+    if (undefined != srcobj.artist) {
+        dialog.querySelector('#sartselect').value = srcobj.artist;
+        init_src_albums( srcobj.artist );
+        dialog.querySelector('#salbselect').value = srcobj.album;
+        init_src_tracks(srcobj.artist, srcobj.album);
+        dialog.querySelector('#strackselect').value = srcobj.file;
+    } else {
+        config_new_file_res();
+    }
     //.........
     dialog.querySelector('#splist').value = srcobj.playlist;
     dialog.querySelector('#iurl').value = srcobj.url;
@@ -574,7 +659,7 @@ function editSource( srcobj )
 }
 
 /// Add src to Sources and add a button for it that will invoke
-/// the edit modal dialog named.
+/// the edit modal dialog named. The source is marked as 'registered'.
 ///
 function addSource( src ) {
     const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
@@ -587,6 +672,7 @@ function addSource( src ) {
                  click: function(evt) { editSource( src );
                                         return false;}}).text(src.name);
     inner[0].style.backgroundColor = src.color;
+    src.registered = true;
     outer.append(inner);
     outer.appendTo('#external-events-list');
     //
@@ -669,7 +755,7 @@ function import_source(sname, sdef) {
 }
 
 /// Import sources from LoadedSchedule including programs and announcements.
-/// Any existing Sources and Announcments are discarded.
+/// Any existing Sources and Announcements are discarded.
 ///
 function import_rsked_sources() {
     const srcs = LoadedSchedule['sources'];
@@ -678,8 +764,6 @@ function import_rsked_sources() {
     Announcements = {};
     src_keys.forEach( (sname,j) => { import_source( sname, srcs[sname] ); });
 }
-
-
 
 /// Add events from LoadedSchedule to calendar.
 /// - Ignore "OFF" events--these are implicit.
