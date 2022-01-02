@@ -62,6 +62,26 @@
    "encoding" : "UTF-8",
    "library" : {
       "Oliver Nelson" : {
+         "Blues and the Abstract Truth" : {
+            "encoding" : "mp3",
+            "tracks" : [
+               "01-Stolen_moments.mp3",
+               "02-Hoe-down.mp3",
+               "03-Cascades.mp3",
+               "04-Yearnin.mp3",
+               "05-Butch_and_Butch.mp3",
+               "06-Teenies_blues.mp3"
+            ],
+            "durations" : [
+               527,
+               285,
+               332,
+               384,
+               277,
+               395
+            ],
+            "totalsecs" : 2200.0
+         },
          "More Blues and the Abstract Truth" : {
             "encoding" : "ogg",
             "tracks" : [
