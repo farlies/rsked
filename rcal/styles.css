@@ -163,14 +163,14 @@ body {
 
 /* The Delete Button */
 .delete {
-  color: #aaaaaa;
+  color: #eeaaaa;
   font-size: 28px;
   font-weight: bold;
 }
 
 .delete:hover,
 .delete:focus {
-  color: #000;
+  color: #FF0000;
   text-decoration: none;
   cursor: pointer;
 }
