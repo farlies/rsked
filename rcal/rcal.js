@@ -1215,17 +1215,28 @@ $(document).on('scheduleLoaded',
 
 /// When the user clicks on an event in the calendar, raise this
 /// dialog that allows some tweeking, e.g. repeat pattern days of week.
-/// TODO: handle features like delete and repeat days
+/// Argument is an eventClickInfo object: {event,el,jsEvent,view}
+///
+/// TODO: handle functions:  save, repeat days
 ///
 function call_evt_modal(calEvent) {
+      const evt = calEvent.event;
       let emodal = document.getElementById("evtModal");
       let mdheader = emodal.childNodes[1].childNodes[1];
       mdheader.style.backgroundColor = calEvent.el.style.backgroundColor;
       let etitle = document.getElementById("evtTitle");
-      etitle.innerText = calEvent.event.title;
+      etitle.innerText = evt.title;
       let edesc = document.getElementById("evtDesc");
-      edesc.innerText = (undefined===calEvent.event.description)?'-':calEvent.event.description;
-      // Something here to determine the type of source and adjust the modal accordingly
+      const estart = evt.start; // a property (a Date object)
+      const efinal = evt.end;
+      if (undefined===calEvent.event.description) {
+          edesc.innerText = estart.toLocaleTimeString()+
+              ' to '+efinal.toLocaleTimeString();
+      } else {
+          edesc.innerText = calEvent.event.description;
+      }
+    
+      // TODO: determine type of source and adjust the modal accordingly(?)
       emodal.style.display = "block";
 
       // When the user clicks on the close element, close the dialog
@@ -1233,19 +1244,20 @@ function call_evt_modal(calEvent) {
       eclose.onclick = function() {
           emodal.style.display = "none";
       }
-      // STUB! When user clicks save element, apply changes and close dialog
+      // TODO: When user clicks save element, apply changes and close dialog
       let esave = document.getElementById("esave");
       esave.onclick = function() {
           emodal.style.display = "none";
       }
-      // STUB! When the user clicks on the delete button, remove the
-      // event from the calendar, close the dialog
+      // When the user clicks on the delete button, confirm and then remove the
+      // event from the calendar, close the dialog and refresh calendar.
       let edel = document.getElementById("edelete");
       edel.onclick = function() {
-          confirm('Are you sure you want to delete this event?')
-          emodal.style.display = "none";
-          Event.remove(calEvent); // Removes all events from calendar
-          calendar.render();
+          if (confirm('Delete this "'+etitle.innerText+'" event?')) {
+              emodal.style.display = "none";
+              calEvent.event.remove(); // removes this one event
+              calendar.render();
+          }
       }
       return emodal;
 }
