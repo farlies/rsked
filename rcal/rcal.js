@@ -396,6 +396,7 @@ function src_unpack_modal() {
         EditSource.name = $('#sname').prop('value');
         console.info("registering new source: ",EditSource.name);
         addSource(EditSource);
+        Sources[EditSource.name] = EditSource;
     }
     const srctab = find_fc_source(EditSource.suid);
     if (srctab != undefined) {
@@ -541,6 +542,23 @@ function init_src_playlist( smodal ) {
     }
 }
 
+/// Delete from the calendar widget all events with title eq to sname.
+/// If testp is true, it just counts the matching events.
+/// Returns the number of events matched/deleted.
+///
+function delEventsByTitle(sname,testp=true) {
+    const sameName = function(einfo) { return(einfo.title == sname); }
+    let matches = TheCalendar.getEvents().filter( sameName );
+    const nm = matches.length;
+    if (testp) { return nm; }
+    if (nm > 0) {
+        for (let einfo of matches) {
+            einfo.remove();
+        }
+    }
+    return nm;
+}
+
 /// Initialize the Source edit dialog. This should be called when the
 /// host library has been loaded.
 ///
@@ -561,10 +579,21 @@ function init_modals() {
         } // else not valid, don't close
     });
     $('#strash').on('click', function() {
-        // TODO: delete source from sources pane and from calendar object too
-        smodal.style.display = "none";
+        if (undefined === EditSource) { return; }
+        const sname = EditSource.name;
+        const nce=delEventsByTitle(sname,true);   // any matching in calendar?
+        if (nce > 0)  {
+            if (!confirm("Delete "+nce+" matching event(s) from calendar?")) {
+                return;         // user changes mind...abort
+            }
+            delEventsByTitle(sname,false);  // delete matching events
+        }
+        // $('#outer_'+sname).empty();     // remove button from DOM
+        $('#outer_'+sname).remove();     // remove container from DOM
+        delete Sources[sname];          // Delete from Sources array
+        smodal.style.display = "none";  // hide modal
         EditSource = undefined;
-        console.warn("delete src: UNIMPLEMENTED");
+
     });
     smodal.querySelector('#smedium').addEventListener("change",
                                                     src_medium_change,hoptions);
