@@ -42,6 +42,9 @@ var HostLibrary;
 /// Global for the calendar object
 var TheCalendar;
 
+/// Base the viewable week at a certain date
+// const gDay0Str = '2018-10-04';
+const gDay0Str = '2020-03-01'; // a Sunday
 
 //////////////////////////////////////////////////////////////////////////////
 ////                          HOST LIBRARY
@@ -889,6 +892,7 @@ function addAnnounce( ann ) {
 /// (relies on fullcalendar)
 ///
 
+
 /// Initialise and render the calendar.
 
 var Event = FullCalendar.event;
@@ -901,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var calendarEl = document.getElementById('calendar-widget');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'timeGridWeek',
-            initialDate: '2018-10-04',
+            initialDate: gDay0Str,
             // FC requires an initial date value, otherwise it defaults
             // to the current day, which we don't want (adds some
             // weird 'today' formatting).
@@ -968,8 +972,8 @@ document.addEventListener('DOMContentLoaded', function() {
             { // this object will be "parsed" into an Event Object
               title: 'Title', // Title property
               description: 'Description', // Description property
-              start: '2018-10-07T09:00:00', // Start time property
-              end: '2018-10-07T10:00:00', // End time property
+              start: gDay0Str+'T09:00:00', // Start time property
+              end:   gDay0Str+'T10:00:00', // End time property
               daysOfWeek: [], // Array of days on which event occurs. Sunday = 0
               forceEventDuration: true,
               overlap: false, // Events are by default not allowed to overlap
@@ -1239,12 +1243,24 @@ $(document).on('scheduleLoaded',
                });
 
 
+/// Find all events that have the same title, start time and end time.
+///
+function peerEvents(evt) {
+    const etitle = evt.title;
+    const tstart = evt.start.toLocaleTimeString();
+    const tfinal = evt.end.toLocaleTimeString();
+    // collect events that match
+    return TheCalendar.getEvents().filter(e => (e.title == etitle) &&
+                                          (e.end.toLocaleTimeString() == tfinal) &&
+                                          (e.start.toLocaleTimeString()==tstart));
+}
+
 /////////////////////////////////////////////////////////////////////////////////
 //// EVENT Edit Dialog
 
 /// When the user clicks on an event in the calendar, raise this
 /// dialog that allows some tweeking, e.g. repeat pattern days of week.
-/// Argument is an eventClickInfo object: {event,el,jsEvent,view}
+/// @arg calEvent  eventClickInfo object, {event,el,jsEvent,view}
 ///
 /// TODO: handle functions:  save, repeat days
 ///
@@ -1257,6 +1273,7 @@ function call_evt_modal(calEvent) {
       etitle.innerText = evt.title;
       let edesc = document.getElementById("evtDesc");
       const estart = evt.start; // a property (a Date object)
+      const eDay = estart.getDay(); // 0=Sun, ..., 6=Sat
       const efinal = evt.end;
       if (undefined===calEvent.event.description) {
           edesc.innerText = estart.toLocaleTimeString()+
@@ -1264,18 +1281,49 @@ function call_evt_modal(calEvent) {
       } else {
           edesc.innerText = calEvent.event.description;
       }
-    
+      // Set up check boxes. Rather than yoking events into a group,
+      // we treat all other events with same title and times as a group.
+      const cbs  = $('#eCbSet > label > input');
+      cbs.prop('checked',false);
+      cbs.prop('disabled',false);
+      const peersByDay = new Array(7); // [0..6] initially undefined
+      for (const ep of peerEvents(evt)) {
+          const u = ep.start.getDay();
+          peersByDay[ u ] = ep; // memo existing peer
+          cbs[ u ].checked = true;
+      }
+      // The checkbox for the day clicked on is disabled hence locked ON
+      cbs[eDay].disabled = true;
+
       // TODO: determine type of source and adjust the modal accordingly(?)
       emodal.style.display = "block";
 
-      // When the user clicks on the close element, close the dialog
+      // When the user clicks on the close element (X), just close the dialog
       let eclose = document.getElementById("eclose");
       eclose.onclick = function() {
           emodal.style.display = "none";
       }
-      // TODO: When user clicks save element, apply changes and close dialog
+      // When user clicks save element, apply changes and close dialog
       let esave = document.getElementById("esave");
       esave.onclick = function() {
+          // react to any implicit changes in repeat pattern
+          for (let i=0; i<7; i++) {
+              if (cbs[i].checked && peersByDay[i]===undefined) {
+                  console.info("Add new peer for day ",i);
+                  // new clone for day=i
+                  TheCalendar.addEvent(
+                      { title: evt.title,
+                        startTime: estart.toLocaleTimeString('en-US',{hour12: false }),
+                        endTime: efinal.toLocaleTimeString('en-US',{hour12: false }),
+                        daysOfWeek: [ i ],
+                        backgroundColor: evt.backgroundColor,
+                        borderColor: evt.borderColor } );
+              }
+              else if (peersByDay[i]!=undefined && ! cbs[i].checked) {
+                  console.info("Delete peer on day ",i);
+                  peersByDay[i].remove(); // removes this peer
+              }
+          }
           emodal.style.display = "none";
       }
       // When the user clicks on the delete button, confirm and then remove the
