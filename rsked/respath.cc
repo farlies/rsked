@@ -23,6 +23,7 @@
 
 #include "logging.hpp"
 #include "respath.hpp"
+#include "configutil.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -34,7 +35,7 @@ ResPathSpec::ResPathSpec()
     const char *hptr = getenv("HOME");
     std::string home {""};
     if (hptr==nullptr) {
-        LOG_WARNING(Lgr) << "ResPathSpec: HOME not set in environment";
+        LOG_WARNING(Lgr) << "ResPathSpec: variable 'HOME' is not set in environment";
         home = "/";
     } else {
         home = hptr;
@@ -52,7 +53,7 @@ ResPathSpec::ResPathSpec()
 ///
 void ResPathSpec::set_library_base(const fs::path &base)
 {
-    m_library_path = fs::canonical( base );
+    m_library_path = fs::canonical( expand_home(base) );
     LOG_INFO(Lgr) << "Music library: " << m_library_path;
 }
 
@@ -60,7 +61,7 @@ void ResPathSpec::set_library_base(const fs::path &base)
 ///
 void ResPathSpec::set_playlist_base(const fs::path &base)
 {
-    m_playlist_path = fs::canonical( base );
+    m_playlist_path = fs::canonical( expand_home(base) );
     LOG_INFO(Lgr) << "Play lists:    " << m_playlist_path;
 }
 
@@ -68,7 +69,7 @@ void ResPathSpec::set_playlist_base(const fs::path &base)
 ///
 void ResPathSpec::set_announcement_base(const fs::path &base)
 {
-    m_announcement_path = fs::canonical( base );
+    m_announcement_path = fs::canonical( expand_home(base) );
     LOG_INFO(Lgr) << "Announcements: " << m_announcement_path;
 }
 
