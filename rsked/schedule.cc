@@ -435,7 +435,8 @@ spPlay_slot Schedule::make_slot(unsigned ix, const Json::Value& slot,
     }
     // Ensure strictly increasing and valid start times
     if (ix > 0 and last_time >= ps->start_day_sec()) {
-        LOG_ERROR(Lgr) << "Program times not monotonic: "
+        LOG_ERROR(Lgr) << "Times not monotonic '"
+                       << ps->name() << "': "
                        << ps->start_day_sec() << " <= " << last_time;
         throw Schedule_error();
     }
