@@ -18,7 +18,8 @@ const DayNames = ["sunday","monday","tuesday","wednesday","thursday",
                   "friday","saturday"];
 
 /// special color for announcments on the calendar
-const AnnColor = "#663399";
+//const AnnColor = "#663399";
+const AnnColor = "#101010";
 
 
 ///   G L O B A L S
@@ -43,8 +44,11 @@ var HostLibrary;
 var TheCalendar;
 
 /// Base the viewable week at a certain date
-// const gDay0Str = '2018-10-04';
-const gDay0Str = '2020-03-01'; // a Sunday
+const gDay0Str = '2020-03-01'; // a Sunday, day 0
+const gYear0  = 2020;  // year 2020
+const gMonth0 = 2;     // March==2
+const gDay0   = 1;     // Day 1
+const gDate0 = new Date(gYear0, gMonth0, gDay0, 0, 0, 0);
 
 //////////////////////////////////////////////////////////////////////////////
 ////                          HOST LIBRARY
@@ -167,7 +171,7 @@ class RcalSource {
     announcement; // bool
     ann_location; // string
     alternate;   // string name of alt source
-    encoding;    // 'ogg','mp3','mp4','wfm','mixed'
+    encoding;    // 'ogg','mp3','mp4','wfm','mixed', 'flac'
     text;        // text (announcements) e.g. "good morning"
     duration;    // optional duration, seconds
     // location variants:
@@ -773,6 +777,7 @@ function import_source(sname, sdef) {
     src.registered = true;
     if (src.announcement) {
         Announcements[sname] = src;
+        src.color = AnnColor;
         console.info("import announcement ", src.name,src.suid,src.text);
         if ("%"!=sname.slice(0,1)) {
             addAnnounce( src );
@@ -1289,7 +1294,7 @@ function call_evt_modal(calEvent) {
       const peersByDay = new Array(7); // [0..6] initially undefined
       for (const ep of peerEvents(evt)) {
           const u = ep.start.getDay();
-          peersByDay[ u ] = ep; // memo existing peer
+          peersByDay[ u ] = ep; // memo existing peer, possibly self
           cbs[ u ].checked = true;
       }
       // The checkbox for the day clicked on is disabled hence locked ON
@@ -1309,13 +1314,16 @@ function call_evt_modal(calEvent) {
           // react to any implicit changes in repeat pattern
           for (let i=0; i<7; i++) {
               if (cbs[i].checked && peersByDay[i]===undefined) {
-                  console.info("Add new peer for day ",i);
+                  const neuStart = new Date(gYear0, gMonth0, gDay0+i, estart.getHours(),
+                                            estart.getMinutes(), estart.getSeconds());
+                  const neuEnd= new Date(gYear0, gMonth0, gDay0+i, efinal.getHours(),
+                                         efinal.getMinutes(), efinal.getSeconds());
+                  console.info("Add new peer for day ",i," ",neuStart,"->",neuEnd);
                   // new clone for day=i
                   TheCalendar.addEvent(
                       { title: evt.title,
-                        startTime: estart.toLocaleTimeString('en-US',{hour12: false }),
-                        endTime: efinal.toLocaleTimeString('en-US',{hour12: false }),
-                        daysOfWeek: [ i ],
+                        start: neuStart,
+                        end: neuEnd,
                         backgroundColor: evt.backgroundColor,
                         borderColor: evt.borderColor } );
               }
