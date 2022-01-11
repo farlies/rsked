@@ -32,7 +32,7 @@ cp $UPLOAD  $tsked  || exit 2
 if [ -e "$TARGET" ] ; then
     if /usr/bin/diff -q $TARGET $tsked &> /dev/null ; then
         echo "Schedules are identical--bypass installation"
-        rm -f $tsked
+        /usr/bin/rm -f $tsked
         exit 0
     fi
 fi
@@ -42,8 +42,12 @@ echo $tlog
 
 # Run test
 if $RSKED --test --schedule $tsked &> $tlog ; then
+    # Pass: install, making numbered backup of existing schedule.json
+    /usr/bin/mv --backup=numbered $tsked "$TARGET"
     echo "Valid schedule"
-    rm -f $tsked $tlog
+    # Signal rsked HUP to reload, and cleanup
+    /usr/bin/pkill --signal HUP --euid $USER --oldest --exact rsked
+    /usr/bin/rm -f $tlog
     exit 0
 fi
 
