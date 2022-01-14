@@ -9,7 +9,8 @@
 const gHostLibraryResource = "catalog.json";
 
 /// Canonical name of the current schedule.
-const gScheduleResource = "schedule.json";
+//const gScheduleResource = "schedule.json";
+const gScheduleResource = "getschedule.php";
 
 const DefaultSrcName='(new name)';
 
@@ -721,7 +722,7 @@ function validate_sources() {
     //
     // TODO: make it really validate the sources.
     //
-    alert(n+" of "+n+" sources are well formed.");
+    // alert(n+" of "+n+" sources are well formed.");
     return true;
 }
 
@@ -802,6 +803,41 @@ function import_rsked_sources() {
     src_keys.forEach( (sname,j) => { import_source( sname, srcs[sname] ); });
 }
 
+
+/// Return a Date object for canonical day /i/ (0=Sun) given time
+/// string /tstr/ e.g. "08:30:00"
+///
+function canon_date(i,tstr) {
+    if (! Number.isInteger(i) || i < 0 || i > 6) {
+        console.error("canon_date():: bad day of week: ",i);
+        return null;
+    }
+    let j=0, ta= [0,0,0]; // h, m, s
+    for ( let te of tstr.split(':') ) {
+        const i = parseInt(te);
+        if (NaN === i) {
+            console.error("canon_date():: bad time ",tstr);
+            break;
+        }
+        ta[j++] = i;
+    }
+    return new Date(gYear0, gMonth0, gDay0+i, ta[0], ta[1], ta[2]);
+}
+
+
+/// Return a new Date by adding a small amount of time to start time
+/// for announcement /d1/ to make it large enough to show up on the
+/// calendar.  Currently: 20 minutes.
+///
+function extend_announcement( d1 ) {
+    let d2 = new Date(d1);
+    // TODO: avoid letting announcements creep over midnight boundary.
+    d2.setMinutes( d1.getMinutes()+20 );
+    return d2;
+}
+
+
+
 /// Add events from LoadedSchedule to calendar.
 /// - Ignore "OFF" events--these are implicit.
 /// - Handle announcemens specially
@@ -824,9 +860,10 @@ function import_rsked_events() {
                     if (undefined === c_src) {
                         console.error("skipping undefined source: ", c_prog);
                     } else {
-                        console.info(day," ",t_start,"->",t_slot," : ",c_prog);
-                        let evt = {startTime: t_start, endTime: t_slot,
-                                   daysOfWeek: [ i ], title: c_prog,
+                        let dstart = canon_date(i,t_start);
+                        let dslot  = canon_date(i,t_slot);
+                        console.info(day," program ",t_start,"->",t_slot," : ",c_prog);
+                        let evt = {start: dstart, end: dslot, title: c_prog,
                                    color: c_src.color };
                         TheCalendar.addEvent(evt);
                     }
@@ -834,35 +871,25 @@ function import_rsked_events() {
                 c_prog = prog;
                 t_start = t_slot;
             }
-            // its an announcement...does not affect regular schedule
+            // its an announcement and thus does not affect regular schedule
             else if (slot.hasOwnProperty("announce")) {
                 let ann = slot.announce;
                 let t_ann = slot.start;
+                const dstart = canon_date(i,t_ann);
+                const dend = extend_announcement( dstart );
                 const c_ann = Announcements[ann];
                 if (undefined === c_ann) {
                     console.error("skipping undefined announcement: ", ann);
                 } else {
                     console.info(day," announcement ",t_ann," : ",ann);
-                    let evt = {startTime: t_ann, endTime: add_minutes(t_ann,20),
-                               daysOfWeek: [ i ], title: ann,
-                               color: c_ann.color };
+                    let evt = {start: dstart, end: dend,
+                               title: ann, color: c_ann.color };
                     TheCalendar.addEvent(evt);
                 }
             }
         }
     }
 }
-
-
-/// Add number m minutes to the time string, e.g. tstr="10:00"
-/// Result suitable for an FC start or end time
-///
-function add_minutes( tstr, m ) {
-    let d = new Date('August 17, 1995 '+tstr);
-    d.setMinutes( d.getMinutes()+m )
-    return d.toLocaleTimeString('en-GB');
-}
-
 
 ///  A N N O U N C E M E N T S
 
@@ -897,13 +924,20 @@ function addAnnounce( ann ) {
 /// (relies on fullcalendar)
 ///
 
-
 /// Initialise and render the calendar.
 
 var Event = FullCalendar.event;
 // Allow dragging from external event source lists
 var Draggable = FullCalendar.Draggable;
 var containerEl = document.getElementById('external-events');
+
+/// DEBUG-only:  list the calendar events on the console
+function dumpcal() {
+    let j=1;
+    for (let jev of TheCalendar.getEvents()) { 
+        console.info(j++,'. ',jev.title,jev.start.toString());
+    }
+}
 
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -915,7 +949,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // to the current day, which we don't want (adds some
             // weird 'today' formatting).
             //
-            eventShortHeight: 30,
+            // eventShortHeight: 30,
             eventOverlap: true,
             titleFormat: function(date) {
                 return ('RCAL scheduler for rsked radio');
@@ -979,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
               description: 'Description', // Description property
               start: gDay0Str+'T09:00:00', // Start time property
               end:   gDay0Str+'T10:00:00', // End time property
-              daysOfWeek: [], // Array of days on which event occurs. Sunday = 0
+              // daysOfWeek: [], // Array of days on which event occurs. Sunday = 0
               forceEventDuration: true,
               overlap: false, // Events are by default not allowed to overlap
               classNames: '', // Event classes
@@ -990,8 +1024,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           ],
           eventClick: function(info) {
-            info.jsEvent.preventDefault(); //in the event the URL property has been assigned, don't navigate to it.
-            console.info("Event info:",info.event.title, info.el.style.backgroundColor, info.end);
+              // In the event the URL property has been assigned, do NOT navigate to it!
+              info.jsEvent.preventDefault();
+              // nb. event may have just been deleted..
+              // console.info("Event info:",info.event.title, info.el.style.backgroundColor,
+              //               info.end);
             call_evt_modal(info); // Open the event edit modal
           }
         });
