@@ -4,10 +4,15 @@
 #
 
 # These might not be set if invoked via sudo from another account...
-export USER=sharp
+export USER=$(/usr/bin/id -un)
 export HOME="/home/$USER"
+umask 022
 
 RSKED="$HOME/bin/rsked"
+
+# could be /tmp instead
+LOGDIR="$HOME/logs"
+
 TARGET="$HOME/.config/rsked/schedule.json"
 
 UPLOAD=/var/www/html/upload/newschedule.json
@@ -37,13 +42,14 @@ if [ -e "$TARGET" ] ; then
     fi
 fi
 
-tlog=$(mktemp -p /home/sharp/logs tstrskedlog.XXXXXX) || exit 1
-echo $tlog
+tlog=$(mktemp -p $LOGDIR tstrskedlog.XXXXXX) || exit 1
 
 # Run test
 if $RSKED --test --schedule $tsked &> $tlog ; then
     # Pass: install, making numbered backup of existing schedule.json
     /usr/bin/mv --backup=numbered $tsked "$TARGET"
+    # It must be made world readable so web server can grab it
+    /usr/bin/chmod ugo+r "$TARGET"
     echo "Valid schedule"
     # Signal rsked HUP to reload, and cleanup
     /usr/bin/pkill --signal HUP --euid $USER --oldest --exact rsked
@@ -52,9 +58,10 @@ if $RSKED --test --schedule $tsked &> $tlog ; then
 fi
 
 # Failed--emit error lines and cleanup
-rm -f $tsked
+
+##rm -f $tsked
 /usr/bin/grep error $tlog
 
-#rm -f $tlog
+##rm -f $tlog
 exit 2
 

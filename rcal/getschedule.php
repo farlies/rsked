@@ -14,9 +14,21 @@ if (array_key_exists("version",$_REQUEST)) {
 
 if (0==strlen($reqvers) or $reqvers=="current") {
     $sfilepath = $cfgbase . "schedule.json";
-    readfile($sfilepath);
-    // TODO: handle case of reqvers=='previous';
+} elseif ($reqvers == 'previous') {
+    // TODO: not generally correct... fix with knownscheds.php
+    $sfilepath = $cfgbase . "schedule.json.~1~";
 } else {
     echo '{"error":"version unavailable"}';
+    return;
+}
+
+// echo $reqvers, ": ", $sfilepath;
+if (file_exists($sfilepath)) {
+    $nb = readfile($sfilepath);
+    if ($nb == false) {
+        echo "\n{}\n";
+    }
+} else {
+    echo "\n{}\n";
 }
 ?>
