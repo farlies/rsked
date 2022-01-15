@@ -137,6 +137,38 @@ function medium_to_color( medium ) {
     }
 }
 
+
+/// return a short string describing a time interval of /dur_secs/ seconds
+/// in hrs/mins/secs following informal conventions. Fractions of seconds ignored.
+///    >= 60 minutes:     N hr {M min}
+///    >= 1 minute:       M min {S sec}
+///    < 1 minute:        S sec
+///
+function timeIntStr( dur_secs )
+{
+    const dsecs = Math.round(dur_secs);   // ignore fractional seconds
+    if (dsecs >= 3600) {
+        const hrs = Math.floor( dsecs / 3600);
+        const min = Math.round( (dsecs - 3600*hrs)/60 );
+        let v = hrs+" hr";
+        if (min > 0) {
+            v += " "+min+" min";
+        }
+        return v;
+    }
+    if (dsecs >= 60) {
+        const min = Math.floor( dsecs / 60);
+        const sec = (dsecs - 60*min);
+        let v = min+" min";
+        if (sec > 0) {
+            v += " "+sec+" sec";
+        }
+        return v;
+    }
+    return dsecs+" sec";   
+}
+
+
 /// Given a linux pathname, return an object with properties:
 /// - name:  base name including extension, e.g. 'foobar.mp3'
 /// - directory: trailing slash is removed, e.g. '/foo/bar'
@@ -683,6 +715,12 @@ function editSource( srcobj )
         dialog.querySelector('#strackselect').value = srcobj.file;
     } else {
         config_new_file_res();
+    }
+    //.........
+    if (isFinite(srcobj.duration)) {
+        $('#smDuration').text("Duration: "+timeIntStr( srcobj.duration ));
+    } else {
+        $('#smDuration').text("Duration: indefinite");
     }
     //.........
     dialog.querySelector('#splist').value = srcobj.playlist;
@@ -1297,14 +1335,13 @@ function peerEvents(evt) {
                                           (e.start.toLocaleTimeString()==tstart));
 }
 
+
 /////////////////////////////////////////////////////////////////////////////////
 //// EVENT Edit Dialog
 
 /// When the user clicks on an event in the calendar, raise this
 /// dialog that allows some tweeking, e.g. repeat pattern days of week.
 /// @arg calEvent  eventClickInfo object, {event,el,jsEvent,view}
-///
-/// TODO: handle functions:  save, repeat days
 ///
 function call_evt_modal(calEvent) {
       const evt = calEvent.event;
@@ -1313,13 +1350,23 @@ function call_evt_modal(calEvent) {
       mdheader.style.backgroundColor = calEvent.el.style.backgroundColor;
       let etitle = document.getElementById("evtTitle");
       etitle.innerText = evt.title;
+      const src = Sources[evt.title]; // lookup the source
       let edesc = document.getElementById("evtDesc");
       const estart = evt.start; // a property (a Date object)
       const eDay = estart.getDay(); // 0=Sun, ..., 6=Sat
       const efinal = evt.end;
       if (undefined===calEvent.event.description) {
-          edesc.innerText = estart.toLocaleTimeString()+
-              ' to '+efinal.toLocaleTimeString();
+        // description will show timings unless otherwise defined as some string
+        const diffSec = (efinal - estart)/1000; // cvt from milliseconds
+        let dtxt = estart.toLocaleTimeString()+' to '+efinal.toLocaleTimeString()
+            + ": "+timeIntStr(diffSec);
+        if (undefined != src) {
+            const sdur = src.duration;
+            if (isFinite(sdur)) {
+                dtxt += (" (Src dur.: "+timeIntStr(sdur)+")")
+            }
+        }
+        edesc.innerText = dtxt;
       } else {
           edesc.innerText = calEvent.event.description;
       }
