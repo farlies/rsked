@@ -141,7 +141,7 @@ body {
 
 .close:hover,
 .close:focus {
-  color: #000;
+  color: #ffffff;
   text-decoration: none;
   cursor: pointer;
 }
@@ -156,7 +156,7 @@ body {
 
 .cancel:hover,
 .cancel:focus {
-  color: #000;
+  color: #ffffff;
   text-decoration: none;
   cursor: pointer;
 }
