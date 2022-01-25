@@ -44,7 +44,9 @@ var HostLibrary;
 /// Global for the calendar object
 var TheCalendar;
 
-/// Base the viewable week at a certain date
+/// Base the viewable week on a certain date: 2020-03-01 This will
+/// never include the DST switch (which is on the second Sunday,
+/// Mar. 8).
 const gDay0Str = '2020-03-01'; // a Sunday, day 0
 const gYear0  = 2020;  // year 2020
 const gMonth0 = 2;     // March==2
@@ -135,6 +137,23 @@ function medium_to_color( medium ) {
     case 'directory': return  "#996633";
     default: return "#ffcc66"; // yellow matter custard
     }
+}
+
+/// return the number of seconds into the local day of the string time
+/// e.g. for "03:10:12" it would be (3*60 + 10)*60 + 12
+///
+/*
+function getDaySecs( dstr ) {
+    const ta = dstr.split(':').map( s => { return Number.parseInt(s); } );
+    return ta[2] + 60*( ta[1] + 60*ta[0] );
+}
+*/
+
+/// return the number of seconds into the local day of JS Date object
+/// e.g. for "2020-05-01 03:10:12" it would be (3*60 + 10)*60 + 12
+///
+function getDaySecsDate( d ) {
+    return d.getSeconds() + 60*( d.getMinutes() + 60*d.getHours() );
 }
 
 
@@ -994,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, // Note: FC's built-in title format only displays dates.
           customButtons: {
             saveButton: {
-              text: 'save',
+              text: 'Save',
               click: function() {
                   console.group("Save schedule");
                   let newsked = export_to_rsked();
@@ -1030,13 +1049,17 @@ document.addEventListener('DOMContentLoaded', function() {
               text: 'revert',
               click: function() {
                 load_schedule( gScheduleResource );
-                }
               }
             },
+            compactButton: {
+              text: 'compact',
+              click: function() { compactSchedule(); }
+              }
+            }, // ^customButtons^
           headerToolbar: {
-            left: 'clearButton',
-            center: 'title',
-            right: 'saveButton,loadButton'
+              right: 'loadButton clearButton',
+              center: 'title',
+              left: 'saveButton compactButton'
           },
           allDaySlot: false, //Disallow all-day events
           dayHeaderFormat: { weekday: 'short' }, //Display only day of the week, no date
@@ -1080,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let is_ann = is_announcement(src_name);
                 return {
                     title: src_name,
-                    overlap: is_ann,
+                    overlap: true,    // is_ann, -- hmm then you cannot cross anns
                     // unfortunately, 'list-item' not supported in timeGridweek view
                     display: (is_ann ? 'list-item' : 'auto'),
                     duration: (is_ann ? '00:30' : '01:00'),
@@ -1096,13 +1119,14 @@ document.addEventListener('DOMContentLoaded', function() {
       calendar.render();
     });
 
-/// Order two rsked events for sorting purposes.
+/// Order two rsked (or FullCalendar) events for sorting purposes.
 function start_order(e1, e2) {
     let s1 = e1.start, s2 = e2.start;
     if (s1 < s2) { return -1 };
     if (s1 > s2) { return 1 };
     return 0;
 }
+
 
 /// Make an array of rsked events satisfy these constraints
 /// - events must be ordered by start time
@@ -1148,10 +1172,11 @@ function normalize_day( darray, dayname ) {
     }
 }
 
-/// Contruct the dayprogram object: each element is an array
-/// associated with a day of the week.
+/// Return a dictionary of arrays indexed by DayNames containing the events
+/// Each array element is an object with fields start, end, announce/program
+/// as needed for writing schedules.
 ///
-function export_dayprograms() {
+function extract_dayprograms() {
     var dpobj = {};                       // each gets an array in dpobj
     for (let d of DayNames) {
         dpobj[d] = Array();
@@ -1177,11 +1202,22 @@ function export_dayprograms() {
         }
         console.info(evt.title," on day",dow,"at",tstr,"\n");
     }
+    return dpobj;
+}
+
+
+/// Contruct the dayprogram object: each element is an array
+/// associated with a day of the week.
+///
+function export_dayprograms() {
+    var dpobj = extract_dayprograms();
     for (let dow of DayNames) {     // normalize each day:
         normalize_day( dpobj[dow], dow );
     }
     return dpobj;
 }
+
+
 // cms  on day monday at 07:30:00 
 // dnow  on day monday at 12:00:00 
 // cms  on day monday at 13:00:00 
@@ -1335,6 +1371,90 @@ function peerEvents(evt) {
                                           (e.start.toLocaleTimeString()==tstart));
 }
 
+/// Return an object with attributes corresponding to days of the week
+/// and each value an array of ordered /program/ calendar events (no
+/// announcements).  This structure is used for *compaction* of programs.
+///
+function extract_pevents() {
+    var dpobj = {};                       // each gets an array in dpobj
+    for (let d of DayNames) {
+        dpobj[d] = Array();
+    }
+    // Collect events from TheCalendar.
+    for (let evt of TheCalendar.getEvents()) {
+        let ts = evt.start;
+        let te = evt.end;  // null if not set, e.g. left to default 1hr duration
+        if (null == te) {  // this should really not occur...
+            te = new Date(ts);
+            te.setHours( 1 + ts.getHours() );
+        }
+        let dow = DayNames[ts.getDay()]; // Sunday==0, Monday==1, ...
+        let tstr = ts.toLocaleTimeString('en-GB');
+        let zstr = te.toLocaleTimeString('en-GB');
+        if (! is_announcement(evt.title)) {  // programs only
+            dpobj[dow].push(evt);
+        }
+    }
+    return dpobj;
+}
+
+
+/// analyze the events on a given day and autofix any that overlap
+/// darray is an (unsorted) array of FullCalendar events for the given day
+/// corresponding to programs (no announcements).
+///
+/// Compaction Policy:
+/// 0.  Events with no overlap are untouched
+/// 1.  If an overlapping event has a natural duration, shrink it to that
+///     duration
+/// 2.  If overlap is properly within the earlier, split the earlier event
+///     to a before and after pair; if the later event's duration goes beyond
+///     the end of the earlier one, just foreshorten the earlier one to abut.
+///
+function compact_day( darray, dow ) {
+    console.info("; compacting ",dow );
+    let elast = undefined;  // previous event
+    let tfin = 0;  // end time (seconds into day) of previous event
+    let j=0;
+    darray.sort( start_order );
+    while (j < darray.length) {
+        let ej = darray[j];
+        // TODO: maybe shrink
+        let tstrt = getDaySecsDate( ej.start );
+        if (tstrt < tfin) {
+            console.warn(";  ", tstrt," : ",ej.title," overlaps ",elast.title);
+            // fix it per policy
+            let tend = getDaySecsDate( ej.end );
+            if ( tfin <= tend ) {
+                elast.setEnd( ej.start );
+                console.info(";   foreshorten ", elast.title);
+            } else {
+                console.info(";   split ", elast.title);
+                const enew =  { start:  ej.end, end: elast.end, overlap: true,
+                                color: elast.backgroundColor,  title: elast.title,  };
+                let ep = TheCalendar.addEvent( enew );
+                elast.setEnd( ej.start );
+                darray.splice( j+1, 0, ep );
+            }
+        } else {
+            console.info(";  ",tstrt," : ",ej.title);
+        }
+        tfin = getDaySecsDate( ej.end );
+        elast = ej;
+        j++;
+    }
+}
+
+
+
+/// Find and fix overlaps of program events
+///
+function compactSchedule() {
+    var dpobj = extract_pevents();
+    for (let dow of DayNames) {     // compact each day of the week
+        compact_day( dpobj[dow], dow );
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////
 //// EVENT Edit Dialog
