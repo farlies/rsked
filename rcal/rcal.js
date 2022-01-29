@@ -37,6 +37,7 @@ var Announcements = {};
 /// Global with the last loaded schedule
 var LoadedSchedule;
 var SavedSchedule;
+var ScheduleModified=false;
 
 /// Global with the installed music library catalog
 var HostLibrary;
@@ -187,6 +188,17 @@ function timeIntStr( dur_secs )
     return dsecs+" sec";   
 }
 
+/// Adds seconds to a Date object, returning a new Date.
+/// TODO: option to stop at midnight boundary.
+///
+function dateAddSecs(date, secs) {
+    if(!(date instanceof Date)) {
+        return undefined;
+    }
+    var ret = new Date(date);
+    ret.setTime(ret.getTime() + secs*1000);
+    return ret;
+}
 
 /// Given a linux pathname, return an object with properties:
 /// - name:  base name including extension, e.g. 'foobar.mp3'
@@ -634,6 +646,7 @@ function init_modals() {
         if (validate_src_dialog()) {
             src_unpack_modal();   // save changes
             smodal.style.display = "none";
+            markModified();
             EditSource = undefined;
         } // else not valid, don't close
     });
@@ -651,6 +664,7 @@ function init_modals() {
         $('#outer_'+sname).remove();     // remove container from DOM
         delete Sources[sname];          // Delete from Sources array
         smodal.style.display = "none";  // hide modal
+        markModified();
         EditSource = undefined;
 
     });
@@ -989,11 +1003,42 @@ var Draggable = FullCalendar.Draggable;
 var containerEl = document.getElementById('external-events');
 
 /// DEBUG-only:  list the calendar events on the console
+/// TODO: disable in release
 function dumpcal() {
     let j=1;
     for (let jev of TheCalendar.getEvents()) { 
         console.info(j++,'. ',jev.title,jev.start.toString());
     }
+}
+
+/// Mark the schedule (including sources) as modified and requiring Save.
+///
+function markModified() {
+    ScheduleModified = true;
+    updateCalTitle();
+}
+
+/// Force the calendar to show the new title.
+function updateCalTitle() {
+    TheCalendar.setOption('titleFormat',
+                          function(date) {
+                              return("v." + SavedSchedule.version 
+                                     + (ScheduleModified ? " - Modified" : '')); });
+}
+
+/// Used on events whose sources have a known duration, it will adjust
+/// the end time of the event to be the start time + the duration.
+/// We insist on at least 1 second of gap
+/// Invoked via callback when, for example, recording sources are added.
+///
+function maybeResize(evt) {
+    const src = Sources[evt.title];
+    if (undefined === src) { return; }
+    const dur = src.duration;
+    if (undefined === dur) { return; } // no defined duration--don't touch
+    const new_end = dateAddSecs(evt.start, Math.floor(dur+1));
+    console.info("Adjust ",evt.title," @ ",evt.start," to ",dur," seconds");
+    evt.setEnd(new_end);
 }
 
 
@@ -1028,9 +1073,9 @@ document.addEventListener('DOMContentLoaded', function() {
                           function (txt) {
                               console.groupEnd();
                               alert('Saved schedule: '+txt);
-                              // LoadedSchedule = newsked; ???
-                              TheCalendar.setOption('titleFormat',function(date) {
-                                  return ("schedule ver. " + SavedSchedule.version); });
+                              // Note well: LoadedSchedule != newsked
+                              ScheduleModified = false;
+                              updateCalTitle();
                           },
                         "text");              }
             },
@@ -1084,6 +1129,11 @@ document.addEventListener('DOMContentLoaded', function() {
               },
             }
           ],
+          eventReceive: function(info) {
+              const evt = info.event;
+              markModified();
+              maybeResize( evt );
+          },
           eventClick: function(info) {
               // In the event the URL property has been assigned, do NOT navigate to it!
               info.jsEvent.preventDefault();
@@ -1349,9 +1399,9 @@ $(document).on('scheduleLoaded',
                        flush_schedule();  // erase old schedule rendering
                        import_rsked_sources();
                        import_rsked_events();
-                       TheCalendar.setOption('titleFormat',function(date) {
-                           return ("schedule ver. "+LoadedSchedule.version);
-                       });
+                       SavedSchedule = LoadedSchedule;
+                       ScheduleModified = false;
+                       updateCalTitle();
                    } else {
                        alert('failed to load current schedule.');
                    }
