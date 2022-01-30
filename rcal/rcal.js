@@ -317,7 +317,7 @@ function find_fc_source(suid) {
 function src_medium_change(event) {
     if (undefined === EditSource) { return; }
     let neumedium = event.target.value;
-    //console.log('src_medium_change:', neumedium); // DEBUG only
+    //console.info('src_medium_change:', neumedium);
     const neucolor = medium_to_color(neumedium);
     $('#scolor').prop('value',neucolor);
     $('#sheader')[0].style.backgroundColor = neucolor;
@@ -366,7 +366,7 @@ function validate_src_dialog() {
     }
     //
     const smedium = $('#smedium').prop('value');
-    console.info("Medium check for",smedium);
+    //console.info("Medium check for",smedium);
     if (smedium == 'stream') {
         const su=$('#iurl')[0];
         if ( ! su.validity.valid ) {
@@ -384,7 +384,7 @@ function validate_src_dialog() {
     if ((smedium == 'directory') || (smedium == 'file')) {
         // verify artist and album fields for directory or file
         const artist_sel = $('#sartselect')[0];
-        console.info("Artist selected:",artist_sel.selectedIndex); // DEBUG
+        //console.info("Artist selected:",artist_sel.selectedIndex); // DEBUG
         if ( -1 == artist_sel.selectedIndex ) {
             console.warn("You must select an artist");
             artist_sel.focus();
@@ -422,9 +422,9 @@ function src_artist_change(event) {
 ///
 function config_new_file_res() {
     if (undefined === EditSource) { return; }
-    console.info("Initialzing default local resource")
+    //console.info("Initialzing default local resource")
     const tetra = default_lib_resource(); // artist, album, trac, encoding
-    console.info("default file res =",tetra);
+    //console.info("default file res =",tetra);
     const artist_name = tetra[0];
     const album_name  = tetra[1];
     const track_name = tetra[2];
@@ -465,7 +465,7 @@ function src_unpack_modal() {
     EditSource.alternate = $('#salternate').prop('value');
     if (!EditSource.registered) {
         EditSource.name = $('#sname').prop('value');
-        console.info("registering new source: ",EditSource.name);
+        //console.info("registering new source: ",EditSource.name);
         addSource(EditSource);
         Sources[EditSource.name] = EditSource;
     }
@@ -802,7 +802,7 @@ function validate_sources() {
 /// It will be registered if the edit modal is successfully saved.
 ///
 function make_new_source() {
-    console.info("provisionally create new audio source");
+    //console.info("provisionally create new audio source");
     editSource( new RcalSource(DefaultSrcName,'radio','wfm',99.9) );
 }
 
@@ -850,13 +850,13 @@ function import_source(sname, sdef) {
     if (src.announcement) {
         Announcements[sname] = src;
         src.color = AnnColor;
-        console.info("import announcement ", src.name,src.suid,src.text);
+        //console.info("import announcement ", src.name,src.suid,src.text);
         if ("%"!=sname.slice(0,1)) {
             addAnnounce( src );
         }
     } else {
         Sources[src.name] = src;
-        console.info("import source ",sname,src.suid);
+        //console.info("import source ",sname,src.suid);
         if ("%"!=sname.slice(0,1)) {
             addSource( src );
         }
@@ -921,7 +921,7 @@ function import_rsked_events() {
         let dslots = dayprograms[day];
         let t_start = null;
         let c_prog = null;
-        console.info(day," has ",dslots.length," slots");
+        //console.info(day," has ",dslots.length," slots");
         for (let slot of dslots) {
             if (slot.hasOwnProperty("program")) {
                 let prog = slot.program;
@@ -933,7 +933,7 @@ function import_rsked_events() {
                     } else {
                         let dstart = canon_date(i,t_start);
                         let dslot  = canon_date(i,t_slot);
-                        console.info(day," program ",t_start,"->",t_slot," : ",c_prog);
+                        //console.info(day," program ",t_start,"->",t_slot," : ",c_prog);
                         let evt = {start: dstart, end: dslot, title: c_prog,
                                    color: c_src.color };
                         TheCalendar.addEvent(evt);
@@ -952,7 +952,7 @@ function import_rsked_events() {
                 if (undefined === c_ann) {
                     console.error("skipping undefined announcement: ", ann);
                 } else {
-                    console.info(day," announcement ",t_ann," : ",ann);
+                    //console.info(day," announcement ",t_ann," : ",ann);
                     let evt = {start: dstart, end: dend,
                                title: ann, color: c_ann.color };
                     TheCalendar.addEvent(evt);
@@ -975,7 +975,7 @@ function is_announcement(src_name) {
 /// Add announcement to announcement list as an fc event
 ///
 function addAnnounce( ann ) {
-    console.info("add announcement ",ann.name, ann.suid, ann.color);
+    //console.info("add announcement ",ann.name, ann.suid, ann.color);
     const xclasses='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event fc-event-draggable'
     const outer=$("<div></div>",
                   {id: "outer_"+ann.name,
@@ -1007,7 +1007,7 @@ var containerEl = document.getElementById('external-events');
 function dumpcal() {
     let j=1;
     for (let jev of TheCalendar.getEvents()) { 
-        console.info(j++,'. ',jev.title,jev.start.toString());
+        //console.info(j++,'. ',jev.title,jev.start.toString());
     }
 }
 
@@ -1037,7 +1037,7 @@ function maybeResize(evt) {
     const dur = src.duration;
     if (undefined === dur) { return; } // no defined duration--don't touch
     const new_end = dateAddSecs(evt.start, Math.floor(dur+1));
-    console.info("Adjust ",evt.title," @ ",evt.start," to ",dur," seconds");
+    //console.info("Adjust ",evt.title," @ ",evt.start," to ",dur," seconds");
     evt.setEnd(new_end);
 }
 
@@ -1067,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   let d = new Date();            // now
                   newsked.version = d.toISOString();
                   SavedSchedule = newsked;
-                  console.info("The current schedule version is", newsked.version)
+                  //console.info("The current schedule version is", newsked.version)
                   // Ajax post of schedule under key 'schedule'. Callback notifies user.
                   $.post( "newsked.php",  { schedule : JSON.stringify(newsked) },
                           function (txt) {
@@ -1204,13 +1204,15 @@ function normalize_day( darray, dayname ) {
         let strt = darray[j].start;
         if (darray[j].hasOwnProperty("program")) { // not an announcement
             if (strt != fin) {
-                console.info(dayname," ",j," ",strt," fill program gap, last fin=",fin)
+                //console.info(dayname," ",j," ",strt," fill program gap, last fin=",fin)
                 darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
             }
             fin = darray[j].finish;
-        } else {
-            console.info(dayname," ",j," ",strt," announcement: ",darray[j].announce);
         }
+        // else {
+        //  console.info(dayname," ",j," ",strt," announcement: ",
+        //               darray[j].announce);
+        // }
         j++;
     }
     if (darray[j-1].finish != "00:00:00") { // maybe pad to end of day
@@ -1250,7 +1252,7 @@ function extract_dayprograms() {
         } else {
             dpobj[dow].push({"start" : tstr, "program" : evt.title, finish : zstr});
         }
-        console.info(evt.title," on day",dow,"at",tstr,"\n");
+        //console.info(evt.title," on day",dow,"at",tstr,"\n");
     }
     return dpobj;
 }
@@ -1462,7 +1464,7 @@ function extract_pevents() {
 ///     the end of the earlier one, just foreshorten the earlier one to abut.
 ///
 function compact_day( darray, dow ) {
-    console.info("; compacting ",dow );
+    // console.info("; compacting ",dow );
     let elast = undefined;  // previous event
     let tfin = 0;  // end time (seconds into day) of previous event
     let j=0;
@@ -1477,18 +1479,19 @@ function compact_day( darray, dow ) {
             let tend = getDaySecsDate( ej.end );
             if ( tfin <= tend ) {
                 elast.setEnd( ej.start );
-                console.info(";   foreshorten ", elast.title);
+                //console.info(";   foreshorten ", elast.title);
             } else {
-                console.info(";   split ", elast.title);
+                //console.info(";   split ", elast.title);
                 const enew =  { start:  ej.end, end: elast.end, overlap: true,
                                 color: elast.backgroundColor,  title: elast.title,  };
                 let ep = TheCalendar.addEvent( enew );
                 elast.setEnd( ej.start );
                 darray.splice( j+1, 0, ep );
             }
-        } else {
-            console.info(";  ",tstrt," : ",ej.title);
         }
+        // else {
+        //     console.info(";  ",tstrt," : ",ej.title);
+        // }
         tfin = getDaySecsDate( ej.end );
         elast = ej;
         j++;
@@ -1572,7 +1575,7 @@ function call_evt_modal(calEvent) {
                                             estart.getMinutes(), estart.getSeconds());
                   const neuEnd= new Date(gYear0, gMonth0, gDay0+i, efinal.getHours(),
                                          efinal.getMinutes(), efinal.getSeconds());
-                  console.info("Add new peer for day ",i," ",neuStart,"->",neuEnd);
+                  //console.info("Add new peer for day ",i," ",neuStart,"->",neuEnd);
                   // new clone for day=i
                   TheCalendar.addEvent(
                       { title: evt.title,
@@ -1582,7 +1585,7 @@ function call_evt_modal(calEvent) {
                         borderColor: evt.borderColor } );
               }
               else if (peersByDay[i]!=undefined && ! cbs[i].checked) {
-                  console.info("Delete peer on day ",i);
+                  //console.info("Delete peer on day ",i);
                   peersByDay[i].remove(); // removes this peer
               }
           }
