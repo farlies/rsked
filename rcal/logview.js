@@ -4,8 +4,10 @@
 var gScheduleWin=undefined;
 var all_menus=undefined;
 
+/// Link to schedule editor--just change focus if already open
+///
 function open_rcal() {
-    if (undefined==gScheduleWin) {
+    if (undefined==gScheduleWin || gScheduleWin.closed) {
         gScheduleWin = window.open("./rcal.html","rcal");
     }
     gScheduleWin.focus();
