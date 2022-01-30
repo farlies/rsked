@@ -1,7 +1,15 @@
 //// Rsked log viewer (needs jquery.js), code for logview.html
 "use strict";
 
+var gScheduleWin=undefined;
 var all_menus=undefined;
+
+function open_rcal() {
+    if (undefined==gScheduleWin) {
+        gScheduleWin = window.open("./rcal.html","rcal");
+    }
+    gScheduleWin.focus();
+}
 
 function populate_log_menus(resp,status,jxref) {
     // assume status=="success" if we get here...
