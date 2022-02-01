@@ -9,7 +9,7 @@
 
 
 project('rsked',['cpp','c'],
-        version: 'v1.0.7',
+        version: 'v1.0.8',
         license: 'Apache 2.0')
 
 # Target machine  'x86_64' or 'armv7l' (RPi)
