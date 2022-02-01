@@ -26,12 +26,20 @@
 namespace fs = boost::filesystem;
 
 
-// CTOR
-//   default status_file="$XDG_RUNTIME_DIR/netstat"
-//
+/// CTOR
+///   Initialize the default status_file="$XDG_RUNTIME_DIR/netstat"
+///   if the environment variable XDG_RUNTIME_DIR exists,
+///   otherwise use:  /run/user/<uid>/netstat
+///
 Inet_checker::Inet_checker()
-    : m_status_path(std::string(getenv("XDG_RUNTIME_DIR"))+"/netstat")
+    : m_status_path("")
 {
+    auto xrd = getenv("XDG_RUNTIME_DIR");  // often NULL in nondesktop environ
+    if (NULL == xrd) {
+        m_status_path = std::string("/run/user/")+std::to_string(getuid())+"/netstat";
+    } else {
+        m_status_path = std::string(xrd)+"/netstat";
+    }
 }
 
 

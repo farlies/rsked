@@ -43,14 +43,16 @@ namespace fs = boost::filesystem;
 ///
 void get_pid_path( const char* prog, fs::path &ppath )
 {
-    std::string rtdir(getenv("XDG_RUNTIME_DIR"));
-    std::string homedir(getenv("HOME"));
-    std::string fname(prog);
+    const char *xrd = getenv("XDG_RUNTIME_DIR");
+    std::string fname(prog);  // TODO: trap prog==nullptr here
     fname += ".pid";
-    if (not rtdir.empty()) {
+    //
+    if (xrd) {
+        std::string rtdir(xrd);
         ppath = fs::path(rtdir);
     }
-    else if (not homedir.empty()) {
+    else if (getenv("HOME")) {
+        std::string homedir(getenv("HOME"));
         ppath = fs::path(homedir);
     }
     else {

@@ -208,8 +208,10 @@ int main(int ac, char **av)
     // ---------------------------------------------------------
     Child_mgr::kill_all();
     LOG_INFO(Lgr) << "Exiting on signal " << gTermSignal;
-    if (not test_mode) finish_logging();
-    mark_ended(AppName);
+    if (not test_mode) {
+        finish_logging();
+        mark_ended(AppName);
+    }
     return return_code;
 }
 

@@ -52,8 +52,8 @@
             "type": "object",
             "properties": {
                 "start": { "type" : "string",
-                           "$comment" : "Time as hh:mm or hh:mm:ss",
-                           "pattern": "^[0-9]{2}:[0-9]{2}(:[0-9]{2})*$" },
+                        "$comment" : "Time as hh:mm or hh:mm:ss",
+                        "pattern": "^((0|1)[0-9]|(2[0-3])):[0-5][0-9](:[0-5][0-9])*$" },
                 "program": { "type" : "string" }
             },
             "required": ["start","program"],
@@ -63,7 +63,7 @@
             "type": "object",
             "properties": {
                 "start": { "type" : "string",
-                           "pattern": "^[0-9]{2}:[0-9]{2}(:[0-9]{2})*$" },
+                   "pattern": "^((0|1)[0-9]|(2[0-3])):[0-5][0-9](:[0-5][0-9])*$" },
                 "announce": { "type" : "string" }
             },
             "required": ["start","announce"],
@@ -76,6 +76,7 @@
                 "location": { "type": "string" },
                 "alternate": { "type": "string" },
                 "announcement": { "type": "boolean" },
+                "quiet": { "type": "boolean" },
                 "repeat": { "type": "boolean" },
                 "text": { "type": "string" },
                 "duration": { "type": "number" },
@@ -93,7 +94,13 @@
                               "$comment": "Frequency in MHz",
                               "minimum": 65.0,
                               "maximum": 135.0 },
-                "alternate": { "type": "string" }
+                "alternate": { "type": "string" },
+                "announcement": { "type": "boolean" },
+                "quiet": { "type": "boolean" },
+                "repeat": { "type": "boolean" },
+                "text": { "type": "string" },
+                "duration": { "type": "number" },
+                "dynamic": { "type": "boolean" }
             },
             "required": ["encoding", "medium", "location"],
             "additionalProperties": false

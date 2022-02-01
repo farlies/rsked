@@ -1,0 +1,38 @@
+
+
+#logevents th, #logevents td {
+  border: 1px solid black;
+  padding: 4px;
+}
+
+#logevents th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  color: white;
+  background-color: #4CAF50;
+}
+
+#logevents tr:hover {
+  background-color: #ddd;
+}
+
+tr.misc {
+  background-color: Lavender;
+}
+
+tr.debug {
+  background-color: LightGray;
+}
+
+tr.info {
+  background-color: AliceBlue;
+}
+
+tr.warning {
+  background-color: PaleGoldenRod;
+}
+
+tr.error {
+  background-color: Coral;
+}

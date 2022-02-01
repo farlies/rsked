@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href='styles.css' rel='stylesheet' />
 <link href='fullcalendar/main.css' rel='stylesheet' />
-<title>rcal - rsked schedule calendar</title>
+<title>rcal</title>
 </head>
 <body>
 
@@ -13,17 +13,22 @@
 <div id="evtModal" class="modal">
   <div id="content" class="modal-content">
     <div id="mheader" class="modal-header">
-      <span class="close" id="eclose">&times;</span>
-      <h4>KSJN</h4>
+      <span class="close" id="esave" title="save and close">&nbsp;&#10004;&nbsp;</span>
+      <span class="cancel" id="eclose">&times;&nbsp;</span>
+      <span class="delete" id="edelete" title="delete event">&nbsp;&#x267B;&nbsp;</span>
+      <h4 id="evtTitle">KSJN</h4>
+      <h5 id="evtDesc">programme</h5>
     </div>
-    Days:
-    <label><input type="checkbox" name="Sun">Sun</label>&nbsp;
-    <label><input type="checkbox" name="Mon">Mon</label>&nbsp;
-    <label><input type="checkbox" name="Tue">Tue</label>&nbsp;
-    <label><input type="checkbox" name="Wed">Wed</label>&nbsp;
-    <label><input type="checkbox" name="Thu">Thu</label>&nbsp;
-    <label><input type="checkbox" name="Fri">Fri</label>&nbsp;
-    <label><input type="checkbox" name="Sat">Sat</label>&nbsp;
+    <p id="eCbSet">
+      Days:
+      <label><input id="eCb0" type="checkbox" name="Sun">Sun</label>&nbsp;
+      <label><input id="eCb1" type="checkbox" name="Mon">Mon</label>&nbsp;
+      <label><input id="eCb2" type="checkbox" name="Tue">Tue</label>&nbsp;
+      <label><input id="eCb3" type="checkbox" name="Wed">Wed</label>&nbsp;
+      <label><input id="eCb4" type="checkbox" name="Thu">Thu</label>&nbsp;
+      <label><input id="eCb5" type="checkbox" name="Fri">Fri</label>&nbsp;
+      <label><input id="eCb6" type="checkbox" name="Sat">Sat</label>&nbsp;
+    </p>
   </div>
 </div>
 
@@ -34,9 +39,11 @@
       <span id="sm_staticname" class="staticname">Source Name Here</span>
       <label id="sm_editlabel">Source&nbsp;<input type="text" id="sname"
                                                  required></label>&nbsp;
-      <span class="close" id="ssave" title="save and close">&nbsp;&#10004;</span>
+      <span class="close" id="ssave" title="save & close">&nbsp;&#10004;&nbsp;</span>
       <span class="cancel" id="scancel" title="cancel and close">&times;&nbsp;</span>
+      <span class="delete" id="strash" title="delete">&nbsp;&#x267B;&nbsp;</span>
     </div><br>
+    <h4 id="smDuration"></h4>
     <p>
       <label for="smedium">Type:</label>
       <select id="smedium">
@@ -52,6 +59,7 @@
         <option value="ogg">ogg</option>
         <option value="mp3">mp3</option>
         <option value="mp4">mp4</option>
+        <option value="flac">flac</option>
         <option value="mixed">mixed</option>
       </select>&nbsp;
       <input type="color" id="scolor" name="scolor">
@@ -104,7 +112,7 @@
 
 <script src="fullcalendar/main.js"></script>
 <script src="jquery.js"></script>
-<script src="testdata.js" type="text/javascript"></script>
+<!-- script src="testdata.js" type="text/javascript"></script -->
 <script src="rcal.js" type="text/javascript"></script>
 
 </body>

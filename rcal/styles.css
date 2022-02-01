@@ -141,7 +141,7 @@ body {
 
 .close:hover,
 .close:focus {
-  color: #000;
+  color: #ffffff;
   text-decoration: none;
   cursor: pointer;
 }
@@ -156,7 +156,21 @@ body {
 
 .cancel:hover,
 .cancel:focus {
-  color: #000;
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* The Delete Button */
+.delete {
+  color: #eeaaaa;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.delete:hover,
+.delete:focus {
+  color: #FF0000;
   text-decoration: none;
   cursor: pointer;
 }
