@@ -5,6 +5,10 @@
   padding: 4px;
 }
 
+#logarea {
+    overflow: scroll;
+}
+
 #logevents th {
   padding-top: 12px;
   padding-bottom: 12px;
