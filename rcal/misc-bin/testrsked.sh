@@ -10,12 +10,42 @@ umask 022
 
 RSKED="$HOME/bin/rsked"
 
+DIFF=/usr/bin/diff
+
+RM=/bin/rm
+#RM=/usr/bin/rm
+
+MKTEMP=/bin/mktemp
+#MKTEMP=/usr/bin/mktemp
+
+PKILL=/usr/bin/pkill
+
+GREP=/bin/grep
+#GREP=/usr/bin/grep
+
+MV=/bin/mv
+#MV=/usr/bin/mv
+
+CHMOD=/bin/chmod
+#CHMOD=/usr/bin/chmod
+
 # could be /tmp instead
 LOGDIR="$HOME/logs"
 
 TARGET="$HOME/.config/rsked/schedule.json"
 
 UPLOAD=/var/www/html/upload/newschedule.json
+
+# Any local overrides for the above parameters will be loaded from
+# file localparams.sh.  Examples include utility paths above, with
+# defaults for Raspbian and commented-out alternatives being for
+# Ubuntu and similar.
+#
+LOCALS=/var/www/misc-bin/localparams.sh
+
+if [ -r ${LOCALS} ]; then
+    source ${LOCALS}
+fi
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ ! -x $RSKED ] ; then
@@ -30,37 +60,37 @@ fi
 
 # Copy the new schedule away from uploads (since it might change
 # there unexpectedly)...
-tsked=$(mktemp -p /tmp tstrsked.XXXXXX) || exit 1
+tsked=$(${MKTEMP} -p /tmp tstrsked.XXXXXX) || exit 1
 cp $UPLOAD  $tsked  || exit 2
 
 # Nothing to do if it is identical to running schedule--normal exit
 if [ -e "$TARGET" ] ; then
-    if /usr/bin/diff -q $TARGET $tsked &> /dev/null ; then
+    if ${DIFF} -q $TARGET $tsked &> /dev/null ; then
         echo "Schedules are identical--bypass installation"
-        /usr/bin/rm -f $tsked
+        ${RM} -f $tsked
         exit 0
     fi
 fi
 
-tlog=$(mktemp -p $LOGDIR tstrskedlog.XXXXXX) || exit 1
+tlog=$(${MKTEMP} -p $LOGDIR tstrskedlog.XXXXXX) || exit 1
 
 # Run test
 if $RSKED --test --schedule $tsked &> $tlog ; then
     # Pass: install, making numbered backup of existing schedule.json
-    /usr/bin/mv --backup=numbered $tsked "$TARGET"
+    ${MV} --backup=numbered $tsked "$TARGET"
     # It must be made world readable so web server can grab it
-    /usr/bin/chmod ugo+r "$TARGET"
+    ${CHMOD} ugo+r "$TARGET"
     echo "Valid schedule"
     # Signal rsked HUP to reload, and cleanup
-    /usr/bin/pkill --signal HUP --euid $USER --oldest --exact rsked
-    /usr/bin/rm -f $tlog
+    ${PKILL} --signal HUP --euid $USER --oldest --exact rsked
+    ${RM} -f $tlog
     exit 0
 fi
 
 # Failed--emit error lines and cleanup
 
 ##rm -f $tsked
-/usr/bin/grep error $tlog
+${GREP} error $tlog
 
 ##rm -f $tlog
 exit 2

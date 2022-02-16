@@ -7,14 +7,23 @@
 #
 # This script accepts no arguments.
 # A peer script file, localparams.sh, will be sourced if it exists
-# and may redefine variables for the site as needed, e.g. TUSER.
+# and may redefine variables for the site as needed, e.g. TUSER,
+# or utilities that are stored elswhere on target distro.
 
 TESTRSKED=../misc-bin/testrsked.sh
 TMPDIR=/tmp
 TUSER=pi
 
+SUDO=/usr/bin/sudo
+
+RM=/bin/rm
+#RM=/usr/bin/rm
+
+MKTEMP=/bin/mktemp
+#MKTEMP=/usr/bin/mktemp
+
 # Create a tmp file for any output from installation...
-lout=$(/usr/bin/mktemp -p $TMPDIR EiEiO.XXXXXX) || exit 1
+lout=$($MKTEMP -p $TMPDIR EiEiO.XXXXXX) || exit 1
 
 
 if [ -r ../misc-bin/localparams.sh ]; then
@@ -26,12 +35,12 @@ if [ ! -x $TESTRSKED ]; then
     exit 1
 fi
 
-if /usr/bin/sudo -u $TUSER $TESTRSKED &>$lout ; then
+if ${SUDO} -u $TUSER $TESTRSKED &>$lout ; then
     echo "Valid schedule"
-    /usr/bin/rm $lout
+    ${RM} $lout
     exit 0
 else
     cat $lout     # TODO: emit the error lines only
-    /usr/bin/rm $lout
+    ${RM} $lout
     exit 2
 fi
