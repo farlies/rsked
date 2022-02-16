@@ -1007,7 +1007,7 @@ var containerEl = document.getElementById('external-events');
 function dumpcal() {
     let j=1;
     for (let jev of TheCalendar.getEvents()) { 
-        //console.info(j++,'. ',jev.title,jev.start.toString());
+        console.info(j++,'. ',jev.title,jev.start.toString());
     }
 }
 
@@ -1598,7 +1598,7 @@ function call_evt_modal(calEvent) {
           if (confirm('Delete this "'+etitle.innerText+'" event?')) {
               emodal.style.display = "none";
               calEvent.event.remove(); // removes this one event
-              calendar.render();
+              TheCalendar.render();
           }
       }
       return emodal;
