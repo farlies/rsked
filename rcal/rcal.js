@@ -5,6 +5,8 @@
 
 ///   C O N S T A N T S
 
+const gRcalVersion = '220217c'
+
 /// Canonical name of the host library
 const gHostLibraryResource = "catalog.json";
 
@@ -1005,10 +1007,15 @@ var containerEl = document.getElementById('external-events');
 /// DEBUG-only:  list the calendar events on the console
 /// TODO: disable in release
 function dumpcal() {
+    console.info("rcal version",gRcalVersion);
     let j=1;
-    for (let jev of TheCalendar.getEvents()) { 
-        console.info(j++,'. ',jev.title,jev.start.toString());
+    let evts_sorted = TheCalendar.getEvents();
+    evts_sorted.sort(  (e1, e2) => { e1.start.getTime() - e2.start.getTime() }   );
+    for (let jev of evts_sorted) { 
+        console.info(j++,'. ',jev.title,jev.start.toString(),"=>",
+                     jev.end.toLocaleTimeString());
     }
+    return (j-1);
 }
 
 /// Mark the schedule (including sources) as modified and requiring Save.
@@ -1183,7 +1190,7 @@ function start_order(e1, e2) {
 /// - if the first event on a day does not begin at 00:00 add
 ///   an OFF event starting at 00:00
 /// - if the final event of the day does not end at 24:00 add
-///   a terminal OFF event
+///   a terminal OFF event (unless less program was OFF)
 /// - any empty days need a dummy OFF event
 /// Arg darray (call by reference) is modified in place.
 ///
@@ -1200,9 +1207,11 @@ function normalize_day( darray, dayname ) {
     // Fill any gaps between events end and next event start with OFF
     let fin = darray[0].finish; // last extended event's finish time
     let j=1;
+    let nprograms=0;  // count how many program events this day
     while (j < darray.length) {
         let strt = darray[j].start;
         if (darray[j].hasOwnProperty("program")) { // not an announcement
+            nprograms++;
             if (strt != fin) {
                 //console.info(dayname," ",j," ",strt," fill program gap, last fin=",fin)
                 darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
@@ -1215,7 +1224,7 @@ function normalize_day( darray, dayname ) {
         // }
         j++;
     }
-    if (darray[j-1].finish != "00:00:00") { // maybe pad to end of day
+    if (nprograms>0 && darray[j-1].finish != "00:00:00") { // maybe pad to end of day
         darray.splice( j, 0, {start : fin, finish : "00:00:00", program : "OFF" });
     }
     // Remove helper properties (like 'finish') not part of rsked schema
@@ -1607,5 +1616,5 @@ function call_evt_modal(calEvent) {
 /////////////////////////////////////////////////////////////////////////////
 
 /// Initialize GUI and try to load a schedule.
-
+console.info("rcal version",gRcalVersion);
 load_host_library( gHostLibraryResource );
