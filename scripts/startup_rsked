@@ -5,7 +5,7 @@
 # It will start cooling and hence rsked each time the user session starts.
 
 # Part of rsked
-# Copyright 2020 Steven A. Harp
+# Copyright 2020,2022 Steven A. Harp
 
 #----------------------------------------------------------------------
 #                     Adjustable Parameters:
@@ -25,8 +25,10 @@ XRDFILES="cooling.pid rsked.pid vumonitor.pid mpd.pid mpd.socket"
 # Master volume setting (comment out to leave level as is)
 #MASTERVOL="75%"
 
-# Set to "yes" to cause check_inet to run once before starting rsked
-FIRSTCHECKINET="yes"
+# Set to "yes" to cause check_inet to run once before starting rsked.
+# N.b. this is not advisable if WiFi network attachment is sluggish.
+#FIRSTCHECKINET="yes"
+FIRSTCHECKINET="no"
 
 # Set to "yes" to cause the gpio lines to be strobed prior to starting
 # cooling.  They can be in funny states at boot time. Comment out
