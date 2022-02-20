@@ -131,11 +131,12 @@ on your system--check what is available and substitute accordingly.
 ```
 sudo apt-get update
 sudo apt install build-essential gcc
-sudo apt install git meson
+sudo apt install git meson cmake
 sudo apt install libboost1.67-dev libboost-system1.67-dev
 sudo apt install libboost-log1.67-dev libboost-program-options1.67-dev
 sudo apt install libboost-test1.67-dev  libboost-regex1.67-dev
 sudo apt install libjsoncpp-dev
+sudo apt install libao-dev
 sudo apt install libpulse-dev
 sudo apt install libgpiod-dev
 sudo apt install libusb-1.0-0-dev
@@ -215,7 +216,19 @@ Otherwise, retrieve the source from GitHub, then build and install per
 directions. Adjust the pathname in the `rsked.json` file to reference
 the correct binary.
 
-- https://github.com/theori-io/NRSC5
+- Background:   https://github.com/theori-io/NRSC5
+
+```
+sudo apt install libfftw3-dev librtlsdr-dev autoconf libtool
+git clone https://github.com/farlies/nrsc5.git
+cd nrsc5
+mkdir build
+cd build
+cmake -DUSE_NEON=ON ..
+make
+sudo make install
+sudo ldconfig
+```
 
 
 ## gqrx
