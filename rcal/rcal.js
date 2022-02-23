@@ -841,6 +841,7 @@ function import_source(sname, sdef) {
     if ('announcement' in sdef) {
         src.announcement = sdef['announcement'];
         src.ann_location = sdef['location'];
+        src.repeat = false; // announcements are not repeated
     }
     if ('text' in sdef) {
         src.text = sdef['text'];
