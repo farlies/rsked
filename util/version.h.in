@@ -1,5 +1,4 @@
-#ifndef __VERSION_H__
+#pragma once
 
-#define __VERSION_H__
 #define VERSION_STR "@version@"
-#endif
+#define WITH_NRSC5 @with_nrsc5@

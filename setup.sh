@@ -41,6 +41,9 @@ Options:
  -g
     use the gcc compiler
 
+- n
+    include the NRSC5 radio player
+
  -r
     select a release build
 
@@ -61,14 +64,16 @@ BTYPE='debug'
 TMACH=$(arch)
 NOSTRIP=false
 FINAL=false
+NRSC5=false
 
-while getopts ":acdfgrRx" opt ; do
+while getopts ":acdfngrRx" opt ; do
     case $opt in
         a ) TMACH=armv7l ;;
         c ) sCC=clang; sCXX=clang++ ;;
         d ) BTYPE=debug ;;
         f ) FINAL=true ;;
         g ) sCC=gcc; sCXX=g++ ;;
+        n ) NRSC5=true ;;
         r ) BTYPE=release ;;
         R ) BTYPE=release ; NOSTRIP=true ;;
         x ) TMACH=x86_64 ;;
@@ -119,5 +124,6 @@ meson setup --buildtype $BTYPE \
       -Dtarget_machine=$TMACH \
       -Ddatadir=.config \
       -Dfinal=$FINAL \
+      -Dwith_nrsc5=$NRSC5 \
       -Dstrip=$STRIP  $BUILDDIR
 

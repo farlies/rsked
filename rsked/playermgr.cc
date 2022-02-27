@@ -21,6 +21,7 @@
  *   limitations under the License.
  */
 #include <algorithm>
+#include "version.h"
 #include "logging.hpp"
 #include "player.hpp"
 #include "playermgr.hpp"
@@ -33,7 +34,9 @@
 #include "oggplayer.hpp"
 #include "mp3player.hpp"
 #include "mpdplayer.hpp"
+#if WITH_NRSC5
 #include "nrsc5player.hpp"
+#endif
 #include "sdrplayer.hpp"
 #include "silentplayer.hpp"
 #include "vlcplayer.hpp"
@@ -52,7 +55,9 @@ std::vector<std::string> RankedPlayers {
     "Mp3_player",
     "Vlc_player",
     "Sdr_player",
+#if WITH_NRSC5
     "Nrsc5_player",
+#endif
     // *EXTEND*
     SilentName
 };
@@ -62,7 +67,6 @@ std::vector<std::string> RankedPlayers {
     install_player( config, std::make_shared<Ogg_player>(), testp);\
     install_player( config, std::make_shared<Mp3_player>(), testp);\
     install_player( config, std::make_shared<Vlc_player>(), testp);\
-    install_player( config, std::make_shared<Nrsc5_player>(), testp);\
     install_player( config, std::make_shared<Sdr_player>(), testp);
 
     // ^ *EXTEND* ^
@@ -136,6 +140,9 @@ void Player_manager::configure( Config& config, bool testp )
 {
     install_player( config, std::make_shared<Ogg_player>(AnnName,0),testp);
     INSTALL_PLAYERS
+#if WITH_NRSC5
+    install_player( config, std::make_shared<Nrsc5_player>(), testp);
+#endif
     c_ichecker.configure( config );
     configure_prefs( config );
     check_minimally_usable();

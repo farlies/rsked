@@ -15,6 +15,7 @@ project('rsked',['cpp','c'],
 # Target machine  'x86_64' or 'armv7l' (RPi)
 tmach = get_option('target_machine')
 btype = get_option('buildtype')
+bnrsc5 = get_option('with_nrsc5')
 
 
 # Create version.h with the shared version number
@@ -29,6 +30,14 @@ if get_option('final')
 else
   vers_data.set('version',gitversn)
 endif
+
+# version.h also has player compilation options:
+if bnrsc5
+  vers_data.set('with_nrsc5',1)
+else
+  vers_data.set('with_nrsc5',0)
+endif  
+
 configure_file(input : 'util/version.h.in',
                output : 'version.h',
                configuration : vers_data)
@@ -67,8 +76,10 @@ ao_dep = dependency('ao')
 local_inc = include_directories('/usr/local/include')
 
 ccompiler = meson.get_compiler('c')
-libnrsc5 = ccompiler.find_library('nrsc5',dirs : ['/usr/local/lib'])
 
+if bnrsc5
+  libnrsc5 = ccompiler.find_library('nrsc5',dirs : ['/usr/local/lib'])
+endif
 
 utils = ['util/jobutil.cc','util/logging.cc','util/childmgr.cc',
          'util/chpty.cc','util/configutil.cc','util/config.cc']
@@ -92,10 +103,13 @@ rsked_srcs = ['rsked/main.cc', 'rsked/rsked.cc',
               'rsked/oggplayer.cc',
               'rsked/mp3player.cc',
               'rsked/vlcplayer.cc',
-              'rsked/nrsc5player.cc',
               'rsked/mpdclient.cc', 'rsked/mpdplayer.cc',
               'rsked/gqrxclient.cc', 'rsked/sdrplayer.cc', 'util/usbprobe.cc'
              ] + utils
+
+if bnrsc5
+  rsked_srcs += ['rsked/nrsc5player.cc']
+endif
 
 # COOLING application
 cooling_srcs = ['cooling/main.cc', 'cooling/cooling.cc' ] + utils

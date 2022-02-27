@@ -274,6 +274,9 @@ cd ./mybuild
 ninja
 ```
 
+Note: If you wish to include support for the nrcs5 radio player, add `-n`
+option to the `setup.sh` command. (It is disabled by default.)
+
 Note: If compiling on the RPi, adding the argument `-j1` to `ninja`
 may be more efficient.  Cross compilation (e.g. build ARM binaries on
 x86_64) is not currently supported (TODO).
