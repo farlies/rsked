@@ -44,6 +44,8 @@ deb packages are required for a typical installation:
 ### Notes
 
 - On Ubuntu 20.04, replace `boost1.67` packages with `boost1.71`.
+  and libgnuradio-osmosdr0.1.4  with libgnuradio-osmosdr0.2.0 and
+  and libvolk1-bin with libvolk2-bin
 
 - The VLC Media player is typically included in the minimal install, but
   if command `vlc` is missing, install `vlc`.
@@ -112,12 +114,13 @@ additionally require the following development tools and libraries:
 ```
 sudo apt-get update
 sudo apt install build-essential gcc
-sudo apt install git meson
+sudo apt install git meson cmake
 sudo apt install libboost1.71-dev libboost-system1.71-dev
 sudo apt install libboost-log1.71-dev libboost-program-options1.71-dev
 sudo apt install libboost-test1.71-dev libboost-regex1.71-dev
 sudo apt install libjsoncpp-dev
 sudo apt install libpulse-dev
+sudo apt install libao-dev
 sudo apt install libgpiod-dev
 sudo apt install libusb-1.0-0-dev
 sudo apt install libmpdclient-dev
