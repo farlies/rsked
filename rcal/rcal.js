@@ -27,6 +27,9 @@ const AnnColor = "#101010";
 
 ///   G L O B A L S
 
+/// used to hold any exported day array that we detect is faulty
+var DebugDarray=undefined;
+
 /// The source being edited, if any; otherwise undefined.
 var EditSource=undefined;
 
@@ -1098,6 +1101,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
                }
             },
+              /*
+            testButton: {        // Debugging only
+              text: 'test',
+              click: function() {
+                  DebugDarray=undefined;
+                  export_dayprograms();  // trap error in debugger
+              }
+            },*/
             loadButton: {
               text: 'revert',
               click: function() {
@@ -1112,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', function() {
           headerToolbar: {
               right: 'loadButton clearButton',
               center: 'title',
-              left: 'saveButton compactButton'
+              left: 'saveButton compactButton'  // testButton -- debug only
           },
           allDaySlot: false, //Disallow all-day events
           dayHeaderFormat: { weekday: 'short' }, //Display only day of the week, no date
@@ -1208,14 +1219,22 @@ function normalize_day( darray, dayname ) {
     // Fill any gaps between events end and next event start with OFF
     let fin = darray[0].finish; // last extended event's finish time
     let j=1;
+    let bugged=false;  // debugging only
     let nprograms=0;  // count how many program events this day
     while (j < darray.length) {
         let strt = darray[j].start;
         if (darray[j].hasOwnProperty("program")) { // not an announcement
             nprograms++;
+            if (strt == darray[j-1].start) {  // the dread phantom event with same start!
+                console.error(dayname," duplicate start time ",strt," at program ",j,
+                              ", ", darray[j].program," follows ",darray[j-1].program);
+                alert('Duplicate event start--see console and DebugDarray');
+                bugged = true;
+            }
             if (strt != fin) {
                 //console.info(dayname," ",j," ",strt," fill program gap, last fin=",fin)
                 darray.splice( j, 0, {start : fin, finish : strt, program : "OFF" } );
+                j++; // original event has been shifted up by 1
             }
             fin = darray[j].finish;
         }
@@ -1231,6 +1250,9 @@ function normalize_day( darray, dayname ) {
     // Remove helper properties (like 'finish') not part of rsked schema
     for (let d of darray ) {
         delete d['finish'];
+    }
+    if (bugged) {
+        DebugDarray=darray;
     }
 }
 
