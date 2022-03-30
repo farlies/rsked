@@ -16,7 +16,7 @@ project('rsked',['cpp','c'],
 tmach = get_option('target_machine')
 btype = get_option('buildtype')
 bnrsc5 = get_option('with_nrsc5')
-
+jsoncpp_inc = get_option('jsoncpp_inc')
 
 # Create version.h with the shared version number
 rversion = meson.project_version() + '-'  + tmach + '-' + btype
@@ -73,16 +73,21 @@ libgpiod_dep = dependency('libgpiodcxx')
 thread_dep = dependency('threads')
 ao_dep = dependency('ao')
 
-local_inc = include_directories('/usr/local/include')
-
 ccompiler = meson.get_compiler('c')
 
+# optional nrsc5 normally installed in /usr/local -- to be generalized
 if bnrsc5
+  local_inc = include_directories('/usr/local/include')
   libnrsc5 = ccompiler.find_library('nrsc5',dirs : ['/usr/local/lib'])
 endif
 
 utils = ['util/jobutil.cc','util/logging.cc','util/childmgr.cc',
          'util/chpty.cc','util/configutil.cc','util/config.cc']
+
+# Add a compiler argument for including jsoncpp h files if needed
+if jsoncpp_inc != ''
+  add_project_arguments(['-I' + jsoncpp_inc], language : ['c','cpp'])
+endif
 
 # Include Directories
 shared_incdirs = include_directories('util')

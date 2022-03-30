@@ -28,7 +28,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <memory>
-#include <jsoncpp/json/json.h>
 
 #include "logging.hpp"
 #include "config.hpp"

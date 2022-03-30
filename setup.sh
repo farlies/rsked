@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 
 # Use this script to initialize common build configurations:
 #
@@ -102,6 +102,16 @@ else
 fi
 echo "Strip binaries: $STRIP"
 
+# canonical place in most distros for jsoncpp
+JSONCPP=/usr/include/jsoncpp
+if [[ -e "$JSONCPP/json/json.h" ]]; then
+    echo "jsoncpp include directory is: $JSONCPP"
+else
+    # Nix, e.g. will add it to CFLAG search path
+    echo "jsoncpp include directory TBD by environment"
+    JSONCPP=''
+fi
+
 if [[ $# == 1 ]]; then
     BUILDDIR=$1
 else
@@ -125,5 +135,6 @@ meson setup --buildtype $BTYPE \
       -Ddatadir=.config \
       -Dfinal=$FINAL \
       -Dwith_nrsc5=$NRSC5 \
+      -Djsoncpp_inc="$JSONCPP" \
       -Dstrip=$STRIP  $BUILDDIR
 

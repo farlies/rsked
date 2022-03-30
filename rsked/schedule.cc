@@ -20,7 +20,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <jsoncpp/json/json.h>      /* apt install libjsoncpp-dev */
+#include <json/json.h>      /* apt install libjsoncpp-dev */
 #include <initializer_list>
 
 

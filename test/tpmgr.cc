@@ -38,9 +38,9 @@
 #include "util/config.hpp"
 #include "fake_rsked.hpp"
 
-
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/reader.h>
+/* jsoncpp */
+#include <json/json.h>
+#include <json/reader.h>
 
 
 namespace bdata = boost::unit_test::data;

@@ -30,7 +30,7 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 #include <memory>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>  /* jsoncpp */
 
 #include "logging.hpp"
 #include "vlcplayer.hpp"

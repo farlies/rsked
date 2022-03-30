@@ -3,3 +3,5 @@ option('target_machine', type : 'combo', choices : ['x86_64', 'armv7l'], value :
 option('final', type : 'boolean', value : 'false')
 
 option('with_nrsc5', type : 'boolean', value : 'false')
+
+option('jsoncpp_inc', type : 'string', value : '/usr/include/jsoncpp')

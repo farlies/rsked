@@ -20,7 +20,7 @@
  */
 
 #include <boost/filesystem.hpp>
-#include <jsoncpp/json/json.h>
+#include <json/json.h> /* jsoncpp */
 
 /// Conditions for testing pathnames
 enum class FileCond { NA, MustExist, MustNotExist, MustExistDir };

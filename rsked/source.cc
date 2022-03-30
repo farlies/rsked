@@ -18,7 +18,7 @@
  *   limitations under the License.
  */
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>  /* jsoncpp */
 #include "source.hpp"
 #include "logging.hpp"
 #include "configutil.hpp"
