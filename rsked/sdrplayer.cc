@@ -222,17 +222,17 @@ void Sdr_player::initialize( Config& cfg, bool /* testp */ )
 
     // gqrx configuration info
     boost::filesystem::path binpath { Gqrx_bin_path };
-    cfg.get_pathname(myname,"gqrx_bin_path", FileCond::MustExist, binpath);
+    cfg.get_pathname(myname,"bin_path", FileCond::MustExist, binpath);
     m_cm->set_binary( binpath );
     //
     // Note: the working config file will be created by copying the gold file
     //  each time gqrx is started. This gets around the policy of gqrx to
     //  add a disabler to configuration files it thinks may have caused a crash.
     m_config_work = Gqrx_config_work;
-    cfg.get_pathname(myname, "gqrx_work", FileCond::NA, m_config_work);
+    cfg.get_pathname(myname, "work_conf", FileCond::NA, m_config_work);
     //
     m_config_gold = expand_home(Gqrx_config_gold);
-    cfg.get_pathname(myname, "gqrx_gold", FileCond::MustExist, m_config_gold);
+    cfg.get_pathname(myname, "gold_conf", FileCond::MustExist, m_config_gold);
 
     // S-level thresholds
     m_low_s = Low_s;

@@ -80,7 +80,7 @@ void Nrsc5_player::initialize( Config& cfg, bool testp )
         return;
     }
     fs::path binpath { DefaultBinPath };
-    cfg.get_pathname( myName, "nrsc5_bin_path",
+    cfg.get_pathname( myName, "bin_path",
                       FileCond::MustExist, binpath);
     m_cm->set_binary( binpath );
     //

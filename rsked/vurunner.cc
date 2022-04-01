@@ -90,7 +90,7 @@ void VU_runner::configure( Config &cfg, bool test_only )
     cfg.get_unsigned("VU_monitor","timeout",m_quiet_timeout);
 
     // get the binary path for vumonitor
-    cfg.get_pathname("VU_monitor","vu_bin_path",FileCond::MustExist, m_binpath);
+    cfg.get_pathname("VU_monitor","bin_path",FileCond::MustExist, m_binpath);
 
     // Pick a fresh key
     m_key = ftok( m_binpath.c_str(), 'V' );

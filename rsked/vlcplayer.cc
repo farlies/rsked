@@ -33,7 +33,12 @@
 #include "config.hpp"
 #include "vlcplayer.hpp"
 #include "playermgr.hpp"
-#include "rsked.hpp"
+
+#ifdef BOOST_TEST_DYN_LINK
+  #include "test/fake_rsked.hpp"
+#else
+  #include "rsked.hpp"
+#endif
 
 #include <boost/filesystem.hpp>
 #include <boost/asio.hpp>

@@ -75,7 +75,7 @@ void Ogg_player::initialize( Config& cfg, bool /* testp */ )
     }
 
     fs::path binpath { DefaultBinPath };
-    cfg.get_pathname("Ogg_player","ogg_bin_path",
+    cfg.get_pathname("Ogg_player","bin_path",
                  FileCond::MustExist, binpath);
     m_cm->set_binary( binpath );
     //

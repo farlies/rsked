@@ -80,7 +80,7 @@ void Mp3_player::initialize( Config& cfg, bool /* testp */ )
     }
 
     boost::filesystem::path binpath { DefaultBinPath };
-    cfg.get_pathname(section, "mp3_bin_path", FileCond::MustExist, binpath );
+    cfg.get_pathname(section, "bin_path", FileCond::MustExist, binpath );
     m_cm->set_binary( binpath );
     LOG_INFO(Lgr) << m_name << " initialized";
 }
