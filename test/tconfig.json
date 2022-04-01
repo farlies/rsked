@@ -1,20 +1,20 @@
-// tconfig.json
 {
     "encoding"   : "UTF-8",
-    "schema" : "1.1",
+    "schema" : "1.2",
 
     "General" : {
+        "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "log_dir"    : "~/log",
-        "version" : "2020-12-03T07:40:00"
+        "version" : "2022-03-30T17:19:00",
+	"description" : "tconfig.json is used for unit tests--not schema conformant"
     },
     
     "Mpd_player" : {
         "enabled" : true,
-        "priority" : 1,
-        "mpd_socket" : "~/.config/mpd/socket",
-        "mpd_host" : "localhost",
-        "mpd_port" : 6666
+	"bin_path" : "/bin/sh",
+        "socket" : "/run/systemd/notify",
+        "host" : "localhost",
+        "port" : 6666
     },
 
     "player_preference" : {
@@ -31,29 +31,22 @@
 
     "Sdr_player" : {
         "enabled" : true,
-        "priority" : 2,
-        "gqrx_bin_path"  : "~/bin/gqrx",
-        "gqrx_work"  : "~/.config/gqrx/gqrx.conf",
-        "gqrx_gold"  : "~/.config/gqrx/gold.conf",
-        "gqrx_low_s"      : -20.0,
-        "gqrx_low_low_s"  : -40.0
+	"description" : "should throw since work path shouldn't exist while gold should",
+        "bin_path"  : "~/bin/gqrx",
+        "gold_conf"  : "/tmp/noexist-gqrx.conf",
+        "work_conf"  : "/etc/hosts",
+        "low_s"      : -20.0,
+        "low_low_s"  : -40.0
     },
 
     "Ogg_player" : {
         "enabled" : true,
-        "priority" : 3,
-        "ogg_bin_path"   : "/usr/bin/whoami"
-    },
-
-    "NA_player" : {
-        "enabled" : true,
-        "priority" : 3,
-        "secret_path" : "/tmp/.secret/foo"
+        "bin_path"   : "/bin/sh"
     },
 
     "Mp3_player" : {
         "enabled" : false,
-        "priority" : 4,
-        "mp3_bin_path"   : "/usr/bin/mpg321"
+        "device_type" : "alsa",
+        "bin_path"   : "/bin/sh"
     }
 }

@@ -45,12 +45,6 @@ namespace fs = boost::filesystem;
 //
 // char newhome[] = "HOME=/home/qrhacker";
 
-namespace Main {
-    // The (unique) rsked instance is sometimes needed by components to
-    // retrieve environment information.  Do via Main::rsked->foo(...)
-    std::unique_ptr<Rsked> rsked;
-
-}
 
 class Player_manager {
 public:

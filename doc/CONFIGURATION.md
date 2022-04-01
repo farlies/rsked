@@ -137,7 +137,7 @@ default preferences. This section is completely optional.
 ### VU_monitor
 
 - `enabled` : boolean, if true, the volume monitoring feature is enabled
-- `vu_bin_path` : string, pathname of the VU monitor binary
+- `bin_path` : string, pathname of the VU monitor binary
 - `timeout` : number, seconds of silence to infer audio source failure
 
 The VU monitor is a child process that checks audio output at the
@@ -183,7 +183,7 @@ otherwise the TCP socket (`host`/`port`) will be used.
 ### Nrsc5_player
 
 - `enabled` : boolean, if true, the SDR player (`gqrx`) is enabled
-- `gqrx_bin_path` : string, pathname of the `gqrx` binary
+- `bin_path` : string, pathname of the `gqrx` binary
 - `device_index` : integer, Gnuradio device index
 
 This player is experimentally available, and plays HD radio.  The
@@ -207,9 +207,9 @@ you're fancy: you might need to specify which SDR `nrsc5` should use here.
 ### Sdr_player
 
 - `enabled` : boolean, if true, the SDR player (`gqrx`) is enabled
-- `gqrx_bin_path` : string, pathname of the `gqrx` binary
-- `gqrx_work` : string, pathname of working configuration file for `gqrx`
-- `gqrx_gold` : string, pathname of the reference configuration file for `gqrx`
+- `bin_path` : string, pathname of the `gqrx` binary
+- `work_conf` : string, pathname of working configuration file for `gqrx`
+- `gold_conf` : string, pathname of the reference configuration file for `gqrx`
 - `low_s` : number, signal strength (dbm) that is considered low
 - `low_low_s` : number, signal strength (dbm) that is considered very low
 - `device_vendor` : string, 4-char hex of the USB SDR vendor
@@ -230,7 +230,7 @@ the log.
 
 - `enabled` : boolean, if true, the `ogg123` player is enabled
 - `device` : string, audio device used for playback
-- `ogg_bin_path` : string, pathname of the `ogg123` binary
+- `bin_path` : string, pathname of the `ogg123` binary
 
 The `device` string is any argument acceptable to the `-d` option of
 ogg123; see the `man` page.
@@ -239,7 +239,7 @@ ogg123; see the `man` page.
 
 - `enabled` : boolean, if true, the `mpg321` player is enabled
 - `device` : string, audio device used for playback
-- `mp3_bin_path` : pathname of the `mpg321` binary
+- `bin_path` : pathname of the `mpg321` binary
 
 NOTE: the `device` attribute is not currently respected; the local
 default device will be used.

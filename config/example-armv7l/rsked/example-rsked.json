@@ -1,11 +1,11 @@
 {
     "encoding" : "UTF-8",
-    "schema" : "1.1",
+    "schema" : "1.2",
 
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2021-01-18T18:00",
+        "version" : "2022-04-01T18:00",
         "description" : "example for 32-bit RPi Linux"
     },
 
@@ -16,7 +16,7 @@
 
     "VU_monitor" : {
         "enabled" : true,
-        "vu_bin_path" : "~/bin/vumonitor",
+        "bin_path" : "~/bin/vumonitor",
         "timeout" : 40
     },
 
@@ -40,15 +40,15 @@
 
     "Nrsc5_player" : {
         "enabled" : true,
-        "nrsc5_bin_path"  : "~/bin/nrsc5",
+        "bin_path"  : "~/bin/nrsc5",
         "device_index" : 0
     },
 
     "Sdr_player" : {
         "enabled" : true,
-        "gqrx_bin_path"  : "~/bin/gqrx",
-        "gqrx_work"  : "~/.config/gqrx/gqrx.conf",
-        "gqrx_gold"  : "~/.config/gqrx/gold.conf",
+        "bin_path"  : "~/bin/gqrx",
+        "work_conf"  : "~/.config/gqrx/gqrx.conf",
+        "gold_conf"  : "~/.config/gqrx/gold.conf",
         "low_s"      : -20.0,
         "low_low_s"  : -40.0,
         "device_vendor" : "0bda",
@@ -58,12 +58,12 @@
     "Ogg_player" : {
         "enabled" : true,
         "device_type" : "pulse",
-        "ogg_bin_path"   : "/usr/bin/ogg123"
+        "bin_path"   : "/usr/bin/ogg123"
     },
 
     "Mp3_player" : {
         "enabled" : true,
         "device_type" : "alsa",
-        "mp3_bin_path"   : "/usr/bin/mpg321"
+        "bin_path"   : "/usr/bin/mpg321"
     }
 }

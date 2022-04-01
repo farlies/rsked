@@ -73,12 +73,12 @@ BOOST_AUTO_TEST_CASE( Valid_params_test )
 
     // Int
     int mpd_port=6600;
-    BOOST_TEST(cfg.get_int("Mpd_player","mpd_port",mpd_port));
+    BOOST_TEST(cfg.get_int("Mpd_player","port",mpd_port));
     BOOST_TEST(mpd_port == 6666);
 
     // Unsigned
     unsigned umpd_port=6600;
-    BOOST_TEST(cfg.get_unsigned("Mpd_player","mpd_port",umpd_port));
+    BOOST_TEST(cfg.get_unsigned("Mpd_player","port",umpd_port));
     BOOST_CHECK_EQUAL(umpd_port,6666);
 
     unsigned unexpected_port = 1313;
@@ -87,33 +87,26 @@ BOOST_AUTO_TEST_CASE( Valid_params_test )
 
     // Double
     double low_s=13.0;
-    BOOST_TEST(cfg.get_double("Sdr_player","gqrx_low_s",low_s));
+    BOOST_TEST(cfg.get_double("Sdr_player","low_s",low_s));
     BOOST_CHECK_EQUAL(low_s, -20.0);
 
     // Pathnames
-    fs::path path1_expected  { "/usr/bin/whoami" };
+    fs::path path1_expected  { "/bin/sh" };
     BOOST_TEST( fs::exists(path1_expected) );
     fs::path path1 {"/foo/bar"};
-    BOOST_TEST(cfg.get_pathname("Ogg_player","ogg_bin_path",
+    BOOST_TEST(cfg.get_pathname("Ogg_player","bin_path",
                                 FileCond::MustExist, path1));
     BOOST_CHECK_EQUAL(path1,path1_expected);
 
-    fs::path path2_default("/bin/bash"); // this file should exist 
-    BOOST_TEST( fs::exists(path2_default) );
-    fs::path path2 {path2_default};
-    BOOST_TEST(not cfg.get_pathname("NA_player","well_trodden_path",
-                                    FileCond::MustExist, path2));
-    BOOST_CHECK_EQUAL(path2,path2_default);
-
     // this path exists but must not; the key is not present in the JSON.
-    fs::path validpath("tconfig");
-    BOOST_CHECK_THROW(cfg.get_pathname("NA_player","well_trodden_path",
+    fs::path validpath("/etc/hosts");
+    BOOST_CHECK_THROW(cfg.get_pathname("Sdr_player","work_conf",
                                        FileCond::MustNotExist, validpath),
                       Config_path_error);
 
     //  the path specified in the JSON does not exist, should throw
-    fs::path invalidpath {"/tmp"};
-    BOOST_CHECK_THROW(cfg.get_pathname("NA_player","secret_path",
+    fs::path invalidpath {"/etc/hosts"};
+    BOOST_CHECK_THROW(cfg.get_pathname("Sdr_player","gold_conf",
                                        FileCond::MustExist, invalidpath),
                       Config_path_error );
 }

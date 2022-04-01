@@ -150,14 +150,14 @@ ttimeout_srcs = ['test/ttimeout.cc']
 mpdtest_srcs = ['test/mpdtest.cc', 'rsked/mpdclient.cc']+utils
 
 tvlc_srcs = ['test/tvlc.cc', 'rsked/vlcplayer.cc', 'rsked/playpref.cc',
-             'rsked/source.cc', 'rsked/respath.cc', 'rsked/inetcheck.cc'
+             'rsked/source.cc', 'test/fake_rsked.cc', 'rsked/respath.cc', 'rsked/inetcheck.cc'
              ]+utils
 
 tpty_srcs = ['test/tpty.cc', 'util/chpty.cc', 'util/logging.cc',
              'util/configutil.cc']
 
-tpmgr_srcs = ['test/tpmgr.cc', 'rsked/source.cc', 'rsked/respath.cc',
-              'rsked/playermgr.cc',  'rsked/vurunner.cc',
+tpmgr_srcs = ['test/tpmgr.cc', 'test/fake_rsked.cc', 'rsked/source.cc',
+              'rsked/respath.cc', 'rsked/playermgr.cc',  'rsked/vurunner.cc',
               'rsked/inetcheck.cc',  'rsked/baseplayer.cc',
               'rsked/oggplayer.cc',  'rsked/mp3player.cc','rsked/nrsc5player.cc',
               'rsked/mpdclient.cc',  'rsked/mpdplayer.cc', 'rsked/vlcplayer.cc',

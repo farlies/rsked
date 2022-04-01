@@ -1,11 +1,12 @@
 {
     "encoding"   : "UTF-8",
-    "schema" : "1.1",
+    "schema" : "1.2",
 
     "General" : {
         "application" : "rsked",
         "sched_path" : "~/.config/rsked/schedule.json",
-        "version" : "2021-01-01T11:36"
+        "version" : "2022-03-30T15:45",
+	"description" : "alt rsked.json using pathnames assumed to universally exist"
     },
 
     "Inet_checker" : {
@@ -15,7 +16,7 @@
 
     "VU_monitor" : {
         "enabled" : false,
-        "vu_bin_path" : "~/bin/vumonitor",
+        "bin_path" : "/bin/sh",
         "timeout" : 40
     },
 
@@ -33,15 +34,15 @@
     "Vlc_player" : {
         "enabled" : false,
         "volume" : 100,
-        "vlc_bin_path"   : "/usr/bin/vlc"
+        "bin_path"   : "/bin/sh"
     },
 
     "Mpd_player" : {
         "enabled" : true,
         "debug" : false,
         "run_mpd" : true,
-        "bin_path" : "/usr/bin/mpd",
-        "socket" : "/run/user/1000/mpd.socket",
+        "bin_path" : "/bin/sh",
+        "socket" : "/run/systemd/notify",
         "host" : "localhost",
         "port" : 6600,
         "volume" : 100
@@ -49,9 +50,9 @@
 
     "Sdr_player" : {
         "enabled" : true,
-        "gqrx_bin_path"  : "~/bin/gqrx",
-        "gqrx_work"  : "~/.config/gqrx/gqrx.conf",
-        "gqrx_gold"  : "~/.config/gqrx/gold.conf",
+        "bin_path"  : "/bin/sh",
+        "work_conf"  : "/etc/hosts",
+        "gold_conf"  : "/etc/hosts",
         "low_s"      : -20.0,
         "low_low_s"  : -40.0
     },
@@ -59,13 +60,13 @@
     "Ogg_player" : {
         "enabled" : true,
         "device_type" : "alsa",
-        "ogg_bin_path"   : "/usr/bin/ogg123"
+        "bin_path"   : "/bin/sh"
     },
 
     "Mp3_player" : {
         "enabled" : false,
         "device_type" : "alsa",
-        "mp3_bin_path"   : "/usr/bin/mpg321"
+        "bin_path"   : "/bin/sh"
     }
     
 }

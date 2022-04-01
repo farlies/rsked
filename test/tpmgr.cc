@@ -46,14 +46,6 @@
 namespace bdata = boost::unit_test::data;
 
 
-namespace Main {
-    // The Main rsked instance is sometimes needed by components to
-    // retrieve environment information via Main::rsked->foo(...)
-    // We use a mock Rsked class, instantiated by the LogFixture below.
-
-    std::unique_ptr<Rsked> rsked;
-}
-
 
 /// Note that the HOME environment variable affects path resolution.
 /// You might need to assert a different one with putenv() below...
@@ -130,7 +122,7 @@ BOOST_AUTO_TEST_CASE( config_pmgr_default )
           R"( {"encoding" : "ogg", "location" : "Herman's Hermits/Retrospective",
              "medium": "directory", "repeat" : true, "duration": 3992.731} )";
 
-        // 1. using default preferences we should get the Vlc player...
+        // 1. using default preferences we should get the Ogg player...
         spSource sp_src = std::make_shared<Source>(test_src);
         BOOST_TEST( src_init( sp_src, src_json ) );
         sp_src->describe();
@@ -138,7 +130,7 @@ BOOST_AUTO_TEST_CASE( config_pmgr_default )
         BOOST_REQUIRE( player1 );
         BOOST_TEST( player1->has_cap(Medium::directory,Encoding::ogg) );
         BOOST_TEST( player1->is_usable() );
-        BOOST_TEST( player1->name() == "Vlc_player" );
+        BOOST_TEST( player1->name() == "Ogg_player" );
 
         // 2. Disable Vlc_player and fetch again: should get Ogg_player
         player1->set_enabled(false);
@@ -147,7 +139,7 @@ BOOST_AUTO_TEST_CASE( config_pmgr_default )
         BOOST_REQUIRE( player2 );
         BOOST_TEST( player2->has_cap(Medium::directory,Encoding::ogg) );
         BOOST_TEST( player2->is_usable() );
-        BOOST_TEST( player2->name() == "Ogg_player" );
+        BOOST_TEST( player2->name() == "Vlc_player" );
 
         // 3? Disable Ogg_player and fetch again: should get nullptr
         player2->set_enabled(false);

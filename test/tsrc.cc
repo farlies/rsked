@@ -43,17 +43,25 @@
 
 namespace bdata = boost::unit_test::data;
 
-//char newhome[] = "HOME=/home/qrhacker";
-
 std::unique_ptr<ResPathSpec> Default_rps;
 
 /// Simple test fixture that just handles logging setup/teardown.
 ///
 struct LogFixture {
     LogFixture() {
+        namespace fs = boost::filesystem;
         init_logging("tsrc","tsrc_%2N.log",LF_FILE|LF_DEBUG|LF_CONSOLE);
-        // putenv(newhome);
+	fs::path tp = fs::canonical("../test");
+	std::string hstr = "HOME=";
+	hstr += tp.native();
+	char *cstr = new char[hstr.length()+1];
+	std::strcpy(cstr, hstr.c_str());
+        putenv( cstr );
+	//
         Default_rps = std::make_unique<ResPathSpec>();
+	Default_rps->set_playlist_base( tp / "Playlists" );
+	Default_rps->set_library_base( tp / "Music" );
+	Default_rps->set_announcement_base( tp / "Announce" );
     }
     ~LogFixture() {
         finish_logging();
@@ -98,8 +106,8 @@ BOOST_AUTO_TEST_CASE( alter_lib_path )
     rps.set_library_base(newbase);
     rps.resolve_library( relpath, abspath );
     LOG_INFO(Lgr) << relpath << " => " << abspath;
-    fs::path answer {"/home/sharp/projects/rsked/resource/motd.ogg"};
-    BOOST_TEST( abspath == answer );
+    fs::path answer {"../resource/motd.ogg"};
+    BOOST_TEST( abspath == fs::canonical(answer) );
 }
 
 
@@ -155,7 +163,7 @@ const char* good_sources[] = {
     R"( {"encoding" : "mixed", "medium": "playlist", "repeat" : true,
          "location" : "master.m3u", "duration": 38253.213} )",
 
-    R"( {"encoding" : "ogg", "location" : "Herman's Hermits/Retrospective",
+    R"( {"encoding" : "ogg", "location" : "Frank Zappa/Weasels Ripped My Flesh",
          "medium": "directory", "repeat" : true, "duration": 3992.731} )",
 
     R"( {"encoding" : "ogg", "medium": "file", "duration": 1,
