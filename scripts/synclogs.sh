@@ -10,6 +10,6 @@ fi
 
 RHOST=$1
 UNIT=`hostname`
-rsync -a "$HOME/logs"     logger@$RHOST:~/$UNIT
-rsync -a "$HOME/logs_old" logger@$RHOST:~/$UNIT
-rsync -a $HOME/.config/rsked/*.{json,conf}  logger@$RHOST:~/$UNIT/conf
+rsync_retry.sh "$HOME/logs"     logger@$RHOST:~/$UNIT
+rsync_retry.sh "$HOME/logs_old" logger@$RHOST:~/$UNIT
+rsync_retry.sh  $HOME/.config/rsked/*.{json,conf}  logger@$RHOST:~/$UNIT/conf
