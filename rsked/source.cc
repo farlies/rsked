@@ -456,6 +456,11 @@ void Source::load( const Json::Value &slot )
     m_repeatp = get_bool_option( slot["repeat"], false );
     m_dynamic = get_bool_option( slot["dynamic"], false );
     m_announcementp = get_bool_option( slot["announcement"], false );
+    // never repeat announcements!
+    if (m_repeatp && m_announcementp) {
+        m_repeatp = false;
+        LOG_WARNING(Lgr) << "announcement with repeat==true changed to repeat:=false";
+    }
     //
     extract_required_props(slot);
     // A local recording that does *not* repeat might be silent for a
