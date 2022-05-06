@@ -102,6 +102,7 @@ init_file_logging( boost::shared_ptr< logging::core > core,
     boost::shared_ptr< sinks::text_file_backend > backend =
         boost::make_shared< sinks::text_file_backend >(
             keywords::file_name = file_pattern,
+            keywords::open_mode = (std::ios::app|std::ios::out), // n.b. default is trunc
             keywords::rotation_size = (5 * 1024 * 1024),
             keywords::time_based_rotation
                = sinks::file::rotation_at_time_point(0, 0, 0)
