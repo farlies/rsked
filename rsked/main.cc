@@ -179,6 +179,7 @@ int main(int ac, char **av)
     if (vm.count("debug")) { log_mode |= LF_DEBUG; }
     init_logging( AppName, logpath.c_str(), log_mode );
     log_banner(true);
+    LOG_INFO(Lgr) << AppName << " COLD START";
     // -------------------------- RUN --------------------------
     try  {
         Main::rsked = std::make_unique<Rsked>(key_id,test_mode);
