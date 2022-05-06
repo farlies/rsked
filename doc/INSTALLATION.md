@@ -19,7 +19,7 @@ If you are building on Raspberry Pi, be sure to read
 systems, but we give details for two platforms regularly tested and
 known to work:
 
-- Ubuntu 20.04  on x86_64
+- Ubuntu 20.04-22.04  on x86_64
 - Raspbian 10 (Buster) on Raspberry Pi 3B+
 
 # Release
@@ -39,7 +39,7 @@ deb packages are required for a typical installation:
 - libboost-log1.67.0
 - libboost-regex1.67.0
 - libgpiod2
-- libjsoncpp1
+- libjsoncpp1  (libjsoncpp25)
 
 ### Notes
 
@@ -109,7 +109,7 @@ additionally require the following development tools and libraries:
 - libusb-dev
 
 
-##  Ubuntu 20.04:
+##  Ubuntu 20.04-22.04
 
 ```
 sudo apt-get update
@@ -128,6 +128,7 @@ sudo apt install libmpdclient-dev
 
 The particular version of `libboost` may be different (not 1.71)
 on your system--check what is available and substitute accordingly.
+(On Ubuntu 22.04 it is 1.74.)
 
 ## Raspbian Buster
 
