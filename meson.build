@@ -42,14 +42,14 @@ configure_file(input : 'util/version.h.in',
                output : 'version.h',
                configuration : vers_data)
 
-# C++ Compiler options
+# C++ Compiler options; ('-Weffc++' removed due to poor library compliance)
 if meson.get_compiler('cpp').get_id() == 'clang'
   my_cpp_args = ['-std=c++17','-Wall', '-Wextra', '-Wpedantic',
-                 '-Wconversion', '-Wshadow', '-Weffc++']
+                 '-Wconversion', '-Wshadow']
 else # gcc
   my_cpp_args = ['-std=c++17','-Wall', '-Wextra', '-Wpedantic',
                  '-Wconversion', '-Wduplicated-branches', '-Wshadow',
-                 '-Weffc++', '-Wno-psabi']
+                 '-Wno-psabi']
 endif
 
 
