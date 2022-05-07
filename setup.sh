@@ -3,15 +3,15 @@
 # Use this script to initialize common build configurations:
 #
 # Usage examples:
-#    setup.sh         # `arch` debug
-#    setyp.sh mybuild # `arch` debug build directory = "mybuild"
-#    setup.sh -c      # `arch` debug, force clang compiler
-#    setup.sh -g      # `arch` debug, force gcc compiler
-#    setup.sh -xr     # x86_64 release
-#    setup.sh -xd     # x86_64 debug
-#    setup.sh -ar     # armv7l release
-#    setup.sh -arf     # armv7l FINAL release
-#    setup.sh -ad     # armv7l debug
+#    ./setup.sh         # `arch` debug
+#    ./setup.sh mybuild # `arch` debug build directory = "mybuild"
+#    ./setup.sh -c      # `arch` debug, force clang compiler
+#    ./setup.sh -g      # `arch` debug, force gcc compiler
+#    ./setup.sh -xr     # x86_64 release
+#    ./setup.sh -xd     # x86_64 debug
+#    ./setup.sh -ar     # armv7l release
+#    ./setup.sh -arf    # armv7l FINAL release
+#    ./setup.sh -ad     # armv7l debug
 
 # Part of the rsked project. Copyright 2020 Steven A. Harp
 
