@@ -172,7 +172,7 @@ ssize_t Pty_controller::write_nb( const std::string &str )
     const char *s = str.c_str();
     while (nwritten < nb) {
         if (0 == can_write()) break;
-        ssize_t rc = write( m_cfd, s, nb );
+        ssize_t rc = write( m_cfd, s, (size_t) nb );
         if (libc_err == rc) {
             throw Chpty_write_exception();
         }

@@ -44,7 +44,7 @@ const char* DayNames[] = {
 /// The match must be exact to one of DayNames[].
 /// * Throws Schedule_error if no match is found
 ///
-int daynameToIndex( const std::string& dname )
+unsigned daynameToIndex( const std::string& dname )
 {
     for ( unsigned d=Sun; d < DaysPerWeek; d++ ) {
         if (dname == DayNames[d]) {
@@ -230,7 +230,7 @@ Schedule::Schedule()
     : m_rps( std::make_shared<ResPathSpec>() )
 {
     // initialize the Day_programs:
-    for (int d=Sun; d<DaysPerWeek; d++) {
+    for (unsigned d=Sun; d<DaysPerWeek; d++) {
         m_programs[d].name = DayNames[d];
     }
 }
@@ -316,7 +316,7 @@ void Schedule::load_sources(Json::Value &root)
 void Schedule::load_a_dayprogram( const std::string &pname,
                                   const Json::Value &jprog )
 {
-    int day = daynameToIndex(pname);
+    auto day = daynameToIndex(pname);
     Day_program &dp { m_programs[day] };
     dp.m_slots.clear();
 

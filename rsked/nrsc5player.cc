@@ -167,8 +167,8 @@ void Nrsc5_player::play( spSource src )
     m_cm->clear_args();
     m_cm->add_arg( "-q" );  // run quietly -- no console logging
     //
-    m_cm->add_arg( "-d" );  // device index (0 is typical)
-    m_cm->add_arg( m_device_index );
+    m_cm->add_arg( "-d" );  // device index (small int, 0 is typical)
+    m_cm->add_arg( (int) m_device_index );
     //
     m_cm->add_arg( freq_mhz ); //
     switch (src->encoding()) {

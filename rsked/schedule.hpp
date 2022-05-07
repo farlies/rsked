@@ -31,7 +31,7 @@
 /// Days of the week per tm_wday
 enum Day { Sun=0, Mon, Tue, Wed, Thu, Fri, Sat, DaysPerWeek };
 extern const char* DayNames[];
-int daynameToIndex( const std::string& );
+unsigned daynameToIndex( const std::string& );
 
 class Schedule;
 
