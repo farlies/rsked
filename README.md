@@ -7,7 +7,7 @@ schedule, without any requirement for human interaction.  Sources
 include locally stored recordings (ogg, mp3, mp4, flac), internet
 streams, and FM broadcasts (via inexpensive SDR hardware). It is
 intended to be run as an **embedded application** on an inexpensive
-low power microsystem (Raspberry Pi 3, RPi).  However it can run on
+low power microsystem (e.g. Raspberry Pi 3, RPi).  However it can run on
 x86 desktop computers as well, and likely on any Linux computer with a
 sound card.
 
@@ -22,6 +22,7 @@ to require human interaction to schedule audio programming.
 ## Features
 
 - Weekly program schedule defined in a simple JSON file
+- Web-based schedule editor and log viewer
 - Play MP3, MP4, FLAC, or Ogg-Vorbis files, directories, or playlists
 - Play internet streams
 - Play FM broadcast stations, including HD
@@ -33,6 +34,10 @@ to require human interaction to schedule audio programming.
 - Control of active cooling (optional, GPIO)
 - Logging of operations for remote monitoring
 - Bluetooth status monitoring and setup (optional)
+
+![rcalscreen]
+
+[rcalscreen]: rcal/rcal-eg.png
 
 See [CHANGES](doc/CHANGES.md) for a summary of important changes that have
 occurred over versions of `rsked`.

@@ -1,3 +1,9 @@
+## Version 1.0.8
+
+- rcal web-based schedule editing and log viewing
+
+See rcal/README.md for details on installing this (optional) facility.
+
 ## Version 1.0.7 (rc1), 2021-01-18
 
 - Updated example rsked.json configs, disabling vlc by default
