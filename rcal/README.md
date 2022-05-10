@@ -1,57 +1,73 @@
 # Installing RCAL Web Control
 
-Apologies: These instructions are **under construction** and incomplete.
-We hope to be filling in the missing pieces soon.
-
+**rcal** is a template for a web site that can be served directly from
+the rsked device.  It offers the ability to view and edit the
+schedule, to view rsked logs, and pause or resume the player. This
+facility is entirely optional, and it should only be enabled in a
+manner that is consistent with local network security. It is designed
+to be self contained, and does not require internet access.  (We do
+*not* recommend exposing this directly to the internet unless you
+are familiar with the security measures required.)
 
 # Install Web Content
 
-Install (or link) right here in `rcal/` two 3rd party tools:
+Install (or link) in the `rcal/` subdirectory two 3rd party tools:
 
-1. jquery.js   == jQuery v3.5.1
-2. fullcalendar-5.2.0.zip ==  FullCalendar v5.2.0 
+1. jquery.js: jQuery v3.5.1 or later https://jquery.com/
+2. fullcalendar-5.2.0.zip: v5.2.0 or later https://fullcalendar.io/
 
 
-Running`sudo ./install.sh` script will install  the web pages etc.
-Aside: It must be run as `root`. It currently assumes an empty web root
-and might not work right if existing kit is present.
+Run`sudo ./install.sh` to install the web pages and supporting kit to
+the web root (by default `/var/www`).  **First**, look over the script
+and adjust any of the variables to reflect your local system's web
+server and the correct pathnames for the 3rd party tools.  The script
+must effectively be run as `root`. It currently assumes an empty web
+root, and might not work right if existing kit is present.
 
-In the web root, make `index.html` link to `logview.html` (for now):
-
-```
-sudo su -
-cd /var/www/html
-ln -s logview.html index.html
-exit
-```
 
 # Web Server Configuration
 
-This should work with most web servers that can support PHP.
-I have tested with lighttpd and Apache. Configuration file changes
-required are, of course, server-specific.
+The `rcal` code should work with most web servers that can support PHP,
+and most graphical browsers that support modern Javascript.
+It has been tested with `lighttpd` (notes below) and `Apache` servers.
 
 ## lighttpd
 
-As its name suggests, lighttpd is a web server with a small footprint,
+As its name suggests, *lighttpd* is a web server with a small footprint,
 and is more than adequate for rcal.
 
-### PHP
+### lighttpd.conf
 
-Review the (slightly dated) tutorial here:
+Directory `/etc/lighttpd` contains files and subdirectories that are
+used to configure this server. The master configuration file is
+`lighttpd.conf`.  Make sure this file includes the following to enable
+php and to make `logview.html` a valid default web page:
+
+```
+index-file.names = ( "logview.html", "index.php", "index.html" )
+static-file.exclude-extensions = ( ".php", ".pl", ".fcgi" )
+```
+
+Enable the following subsidiary configuration modules:
+- 05-auth.conf  (optional, if you want to protect with authentication)
+- 10-accesslog.conf (optional)
+- 10-fastcgi.conf
+- 10-ssl.conf (optional, if you want to use https)
+- 15-fastcgi-php.conf
+
+See the lighttpd documentation for details about setting options in these
+files, e.g. creating user and group credentals, and notes below.
+
+### FastCGI and PHP
+
+Tutorial here:
 - https://redmine.lighttpd.net/projects/lighttpd/wiki/TutorialLighttpdAndPHP
 
 FastCGI is preferred way to run PHP, but is not enabled by
-default. Fix this in by installing a couple of mod files in the config
-directory:
+default. Copy files (as root or via sudo) from subdirectory
+conf-available to conf-enabled and adjust as needed:
 
-```
-cd /etc/lighttpd/
-sudo cp conf-available/10-fastcgi.conf conf-enabled/
-sudo cp conf-available/15-fastcgi-php.conf conf-enabled/
-```
 
-There are many options for configuration of the fastCGI module:
 - https://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_ModFastCGI
 
 The following is a `15-fastcgi-php.conf` suitable for a very light duty
@@ -121,14 +137,18 @@ auth.require  = (
 
 ## Apache
 
-TODO
+**TODO** The target functionality is the same as with lighttpd but
+the configuration details are all different...
 
 
-## Catalog
+## Catalog.json
 
 You must prepare `catalog.json`, a file that describes the local
 recorded music, even if no such files are to be programmed.
-Here is an example of one way to do this:
+This file should be installed in the html root of the server.
+The included program `rskrape.pl` is an easy way to do this.
+It uses the mediainfo utility to retrieve audio file information.
+Example:
 
 ```
 cd
@@ -141,20 +161,26 @@ sudo cp catalog.json /var/www/html/
 
 ## Sudo Policy
 
-Since web server runs as user `www-data` with homedir `/var/www` and
-has `nologin` as its shell it cannot readily run rsked, even in test
-mode. However we get around this with a well configured *sudoers*
-policy, edited by running `visudo`.  Should look roughly like:
+`rcal` may be used without any control capabilities in a "read-only" mode.
+Since web server runs as user `www-data` with home directory `/var/www` and
+has `nologin` as its shell, it cannot readily control `rsked`, even in test
+mode. `rcal` may  get around this with a well configured *sudoers*
+policy, edited by running `visudo`.  It should include something like
+he following lines:
 
 ```
 # /etc/sudoers
 Runas_Alias RSKED = pi
 Cmnd_Alias  TESTRSKED = /var/www/misc-bin/testrsked.sh ""
+Cmnd_Alias PAUSERSKED = /usr/bin/pkill -x -USR1 rsked
 
 # On all machines, www-data can run TESTRSKED command as user
 # RSKED *without* providing a password
 www-data  ALL = (RSKED) NOPASSWD: TESTRSKED
+www-data  ALL = (RSKED) NOPASSWD: PAUSERSKED
 ```
 
-Observe closely the empty pair of double quotes at the end of the `Cmnd_Alias`.
-Without this policy, rcal will not be permitted to save a schedule.
+Modify these settings to match your local installation (user, commands).
+Note well the empty pair of double quotes at the end of the `Cmnd_Alias`
+for `TESTRSKED`.
+
