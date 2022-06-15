@@ -2,20 +2,32 @@
 "use strict";
 
 var gScheduleWin=undefined;
+var gSiteName="Unknown";
 var all_menus=undefined;
+
 
 /// Link to schedule editor--just change focus if already open
 ///
 function open_rcal() {
     if (undefined==gScheduleWin || gScheduleWin.closed) {
-        gScheduleWin = window.open("./rcal.html","rcal");
+        gScheduleWin = window.open("./rcal.html",gSiteName);
     }
     gScheduleWin.focus();
 }
 
+/// Pause/resume rsked
+///
+function pause_rsked() {
+    console.log( "pause/resume button pressed");
+    $.get("pause.php", {action: 'toggle' },
+          function(resp) { })
+}
+
+
 function populate_log_menus(resp,status,jxref) {
     // assume status=="success" if we get here...
     all_menus = resp;
+    gSiteName = all_menus.site;
     var initial_value=undefined;
     $("#curlogs").empty();
     for (let om of all_menus.current) {
@@ -32,6 +44,7 @@ function populate_log_menus(resp,status,jxref) {
     if (undefined!=initial_value) {
         $('#curlogs').val(initial_value);
     }
+    $('#hostlabel').html( 'Unit = ' + gSiteName );
     refresh_log();
 }
 

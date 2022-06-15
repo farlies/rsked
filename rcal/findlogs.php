@@ -1,6 +1,6 @@
 <?php
 /// Return a JSON object with fields "current" and "old", each an
-/// array of log names
+/// array of log names, and "site" with the current site name
 
 /// This defines logbase for the installed system, e.g. /home/pi/logs
 require('localparams.php');
@@ -25,6 +25,6 @@ function find_logs( $dirname ) {
 }
 $newlogs = find_logs($logbase . "logs");
 $oldlogs = find_logs($logbase . "logs_old");
-$all_logs = array( "current" => $newlogs, "old"=>$oldlogs );
+$all_logs = array( "current" => $newlogs, "old"=>$oldlogs, "site"=>$sitename );
 echo json_encode($all_logs) . "\n";
 ?>
