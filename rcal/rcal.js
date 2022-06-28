@@ -1029,11 +1029,13 @@ function markModified() {
     updateCalTitle();
 }
 
-/// Force the calendar to show the new title.
+/// Force the calendar to show the new title. The window.name property
+/// is assumed to identify the site in a human readable manner. This
+/// is set if the window is opened by logview for example.
 function updateCalTitle() {
     TheCalendar.setOption('titleFormat',
                           function(date) {
-                              return("v." + SavedSchedule.version 
+                              return(window.name + " v" + SavedSchedule.version 
                                      + (ScheduleModified ? " - Modified" : '')); });
 }
 
