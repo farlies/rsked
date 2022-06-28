@@ -10,6 +10,15 @@
 # and may redefine variables for the site as needed, e.g. TUSER,
 # or utilities that are stored elswhere on target distro.
 
+set -o errexit
+
+# Lock this script if you can, and proceed. If it cannot immediately
+# grab the lock, fail with code 6. This prevents two sessions from
+# simultaneously trying to upload a new schedule...unlikely scenario
+# but not impossible.
+#
+[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -E6 -en "$0" "$0" "$@" || :
+
 TESTRSKED=../misc-bin/testrsked.sh
 TMPDIR=/tmp
 TUSER=pi
