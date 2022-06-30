@@ -303,6 +303,15 @@ class RcalSource {
 };
 
 
+// True iff this RcalSource is a file or directory.
+//
+function is_file_resource(src) {
+    if (undefined === src) { return false; }
+    let typ = src.type;
+    if (undefined === typ) { return false; }
+    return ((typ == 'file') || (typ == 'directory'));
+}
+
 // search DOM for the source (inner div) containing text sname
 // return the DOM element or undefined if not found
 function find_fc_source(suid) {
@@ -326,7 +335,11 @@ function src_medium_change(event) {
     const neucolor = medium_to_color(neumedium);
     $('#scolor').prop('value',neucolor);
     $('#sheader')[0].style.backgroundColor = neucolor;
+    // When switching to file media you must initialize artist/album
     config_src_fields(neumedium);
+    if ((neumedium == 'file') || (neumedium == 'directory')) {
+	config_new_file_res();
+    }
 }
 
 /// Listener for source color change.
@@ -458,6 +471,7 @@ function src_album_change(event) {
 function src_unpack_modal() {
     if (undefined === EditSource) { return; }
     EditSource.type = $('#smedium').prop('value');
+    EditSource.encoding = $('#sencoding').prop('value');
     EditSource.url = $('#iurl').prop('value');
     EditSource.artist = $('#sartselect').prop('value');
     EditSource.album = $('#salbselect').prop('value');
@@ -504,15 +518,19 @@ function config_src_fields(smedium) {
                     ['lurl','lart','lalb','lfile','lplist','lrepeat','ldynamic']);
         let sf=document.getElementById("sfreq");
         sf.setAttribute( "value", EditSource.freq );
+	document.getElementById('sencoding').value = 'wfm';
         break;
     case 'hdradio':
           disp_fields(['lfreq'],
                         ['lurl','lart','lalb','lfile','lplist','lrepeat','ldynamic']);
           sf.setAttribute( "value", EditSource.freq );
+	  document.getElementById('sencoding').value = 'wfm';
           break;
     case 'stream':
         disp_fields(['lurl','ldynamic'],
                     ['lfreq','lart','lalb','lfile','lplist','lrepeat']);
+	// streams are presumed to be mp3--not currently user adjustable
+	document.getElementById('sencoding').value = 'mp3';
         break;
     case 'file':
         disp_fields(['lfile','lalb','lart','lrepeat','ldynamic'],
@@ -743,16 +761,18 @@ function editSource( srcobj )
     dialog.querySelector('#sdynamic').checked = srcobj.dynamic;
     dialog.querySelector('#sfreq').value = srcobj.freq;
     dialog.querySelector('#sencoding').value = srcobj.encoding;
-    dialog.querySelector('#sencoding').disabled=true; // always?
-    //.........
-    if (undefined != srcobj.artist) {
-        dialog.querySelector('#sartselect').value = srcobj.artist;
-        init_src_albums( srcobj.artist );
-        dialog.querySelector('#salbselect').value = srcobj.album;
-        init_src_tracks(srcobj.artist, srcobj.album);
-        dialog.querySelector('#strackselect').value = srcobj.file;
-    } else {
-        config_new_file_res();
+    dialog.querySelector('#sencoding').disabled=true; // (for now)
+    //......... file sources need at least artist/album configured
+    if (is_file_resource(srcobj)) {
+	if (undefined != srcobj.artist) {
+            dialog.querySelector('#sartselect').value = srcobj.artist;
+            init_src_albums( srcobj.artist );
+            dialog.querySelector('#salbselect').value = srcobj.album;
+            init_src_tracks(srcobj.artist, srcobj.album);
+            dialog.querySelector('#strackselect').value = srcobj.file;
+	} else {
+            config_new_file_res();
+	}
     }
     //.........
     if (isFinite(srcobj.duration)) {
