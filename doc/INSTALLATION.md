@@ -130,7 +130,7 @@ The particular version of `libboost` may be different (not 1.71)
 on your system--check what is available and substitute accordingly.
 (On Ubuntu 22.04 it is 1.74.)
 
-## Raspbian Buster
+## Raspbian 10 Buster
 
 ```
 sudo apt-get update
@@ -146,6 +146,23 @@ sudo apt install libgpiod-dev
 sudo apt install libusb-1.0-0-dev
 sudo apt install libmpdclient-dev
 ```
+
+## Raspberry PiOS 11 (bullseye)
+```
+sudo apt-get update
+sudo apt install build-essential gcc
+sudo apt install git ninja-build meson cmake
+sudo apt install libboost1.71-dev libboost-system1.71-dev
+sudo apt install libboost-log1.71-dev libboost-program-options1.71-dev
+sudo apt install libboost-test1.71-dev  libboost-regex1.71-dev
+sudo apt install libjsoncpp-dev
+sudo apt install libao-dev
+sudo apt install libpulse-dev
+sudo apt install libgpiod-dev
+sudo apt install libusb-1.0-0-dev
+sudo apt install libmpdclient-dev
+```
+
 
 # Player Installation
 
