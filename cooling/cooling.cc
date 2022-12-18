@@ -248,7 +248,7 @@ void Cooling::initialize(bool debug)
 ///
 void Cooling::init_rsked(  Config &cfg )
 {
-    cfg.get_bool("Rsked","rsked_enabled",m_rsked_enabled);
+    cfg.get_bool("Rsked","enabled",m_rsked_enabled);
     if (not m_rsked_enabled) {
         return;  // rest of section is ignored if not enabled
     }
@@ -837,8 +837,9 @@ uint32_t Cooling::get_status()
 /// Green Off : OFF
 /// Green Solid : rsked playing
 /// Green Flashing : paused
+/// If rsked is not enabled, the green LED indicates that the fan is running.
 ///
-/// Red Solid : rsked not running
+/// Red Solid : rsked not running (or disabled)
 /// Red Flashing : rsked error
 ///
 void Cooling::update_leds()
@@ -866,8 +867,12 @@ void Cooling::update_leds()
         default:
             break;
         }
+        illuminate_red(not m_rsked_cm->running());
+    } else {
+      // cooling is not running rsked: show fan status
+      illuminate_red(true);
+      illuminate_grn(m_fan_running);
     }
-    illuminate_red(not m_rsked_cm->running());
 }
 
 
@@ -941,6 +946,9 @@ int Cooling::run()
         if (polls >= m_poll_trace) { polls=0; }
         log_banner(false);
     }
+    illuminate_red(false);
+    illuminate_grn(false);
+    stop_fan();
     LOG_INFO(Lgr) << AppName << " exits via signal " << g_TermSignal;
     mark_ended(AppName);
     return 0;
