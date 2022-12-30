@@ -21,6 +21,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <iostream>
+#include <thread>
 
 #include "util/config.hpp"
 #include "util/configutil.hpp"
@@ -28,6 +29,51 @@
 #include "cooling.hpp"
 #include "status.h"
 #include "version.h"
+
+
+/// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+///  >> Compile-time parameters--not currently in the config file <<
+
+const long DefaultPollMsec=1000;
+
+const long MAX_POLL_MSEC = 5000;
+
+/// The minimum gap between restart phases, seconds.
+sec_t  Rsked_restart_cooldown_secs {3600}; // hourly
+
+/// Interval (seconds) to log the banner (proving we are alive).
+const sec_t Banner_interval_secs {3600};
+
+/// Duration of LED illumination when in blink mode, milliseconds.
+const msec_t Blink_interval {2000};
+
+/// Settling time for GPIO button on gpiod. A single press often
+/// generates multiple events in gpiod so we must wait a little to
+/// be sure it has gone down and is back up to stay.
+///
+const msec_t Button_thresh_ms  { 250 };
+
+/// Interval (seconds) between rsked crashes, at or below which
+/// we should infer that there is something critical preventing
+/// proper rsked start-up.
+///
+const sec_t Min_intercrash_secs { 180 };
+
+/// How many times to attempt starting rsked
+const int Max_rsked_restarts  { 3 };
+
+/// Cooling must run the fan at least this long once started (seconds)
+const sec_t Lowest_cool_secs { 10 };
+
+/// Longest duration (seconds) to wait for an rsked child to start
+const sec_t Wait_for_rsked_start_secs { 2 };
+
+/// Fan temperature limits, degrees C
+constexpr const double Fan_lowest_stop_temp { 25.0 };
+constexpr const double Fan_highest_start_temp { 80.0 };
+
+/// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
 namespace fs = boost::filesystem;
 
@@ -129,7 +175,7 @@ void Cooling::stop_mpd_player()
 /// 3. Configuration file name
 ///
 Cooling::Cooling(boost::program_options::variables_map &vm)
-    : m_last_blink(boost::posix_time::microsec_clock::universal_time()),
+    : m_last_blink(myclock_t::now()),
       m_cfg_path (expand_home("~/.config/rsked/cooling.json")),
       m_rsked_bin_path( expand_home("~/bin/rsked") ),
       m_rsked_cfg_path( expand_home("~/.config/rsked/rsked.json") )
@@ -218,8 +264,6 @@ void Cooling::initialize(bool debug)
                          << cfg_appname << "' in " << m_cfg_path;
     }
     // General: Polling etc
-    const long DefaultPollMsec=1000;
-    const long MAX_POLL_MSEC = 5000;
     long poll_msec = DefaultPollMsec;
     cfg.get_long("General","poll_msec",poll_msec);
     if ((poll_msec > MAX_POLL_MSEC) or (poll_msec < 1)) {
@@ -227,13 +271,10 @@ void Cooling::initialize(bool debug)
         poll_msec = DefaultPollMsec;
         LOG_INFO(Lgr) << "poll_msec := " <<poll_msec;
     }
-    m_poll_timespec.tv_sec = poll_msec/1000;
-    poll_msec -= 1000 * m_poll_timespec.tv_sec;
-    m_poll_timespec.tv_nsec = (poll_msec * 1'000'000);
+    m_poll_interval = msec_t(poll_msec);
     cfg.get_unsigned("General","poll_trace",m_poll_trace);
-    LOG_DEBUG(Lgr) << "poll_timespec: "
-                   << m_poll_timespec.tv_sec << "s + "
-                   << m_poll_timespec.tv_nsec <<  "ns";
+    LOG_DEBUG(Lgr) << "poll_timespec: " << m_poll_interval.count() << "msec";
+
     // Other sections:
     init_rsked( cfg );
     init_cooling( cfg );
@@ -305,15 +346,14 @@ void Cooling::reload_config()
 ///
 void Cooling::log_banner(bool force)
 {
-    constexpr const time_t BANNER_INTERVAL_SECS {3600};
-    time_t now = time(0);
-    if ( ((now - m_last_banner) < BANNER_INTERVAL_SECS) and not force ) {
+    timept_t tnow = myclock_t::now();
+    if ( ((tnow - m_last_banner) < Banner_interval_secs) and not force ) {
         return;
     }
     LOG_INFO(Lgr) << AppName << " version "
                   << VERSION_STR " ("  __DATE__ " " __TIME__  << ")";
     LOG_INFO(Lgr) << "config: " << m_cfgversion << ", " << m_cfgdesc;
-    m_last_banner = now;
+    m_last_banner = tnow;
 }
 
 
@@ -340,13 +380,14 @@ void Cooling::init_cooling( Config &cfg )
         throw Cooling_config_exception();
     }
     //
-    int mcs=static_cast<int>(m_min_cool_secs);
-    cfg.get_int("Cooling","min_cool_secs",mcs);
-    if (mcs < Lowest_cool_secs) {
-        LOG_ERROR(Lgr) << "min_cool_secs must be at least " << Lowest_cool_secs;
+    long mcs = (long) m_min_cool_secs.count();
+    cfg.get_long("Cooling","min_cool_secs",mcs);
+    if (mcs < Lowest_cool_secs.count()) {
+        LOG_ERROR(Lgr) << "min_cool_secs must be at least "
+                       << Lowest_cool_secs.count();
         throw Cooling_config_exception();
     }
-    m_min_cool_secs = static_cast<time_t>(mcs);
+    m_min_cool_secs = sec_t( mcs );
     //
     unsigned pin_num=4;
     cfg.get_unsigned("Cooling","fan_gpio",pin_num);
@@ -374,6 +415,7 @@ void Cooling::init_cooling( Config &cfg )
 ///
 void Cooling::init_snooze_button( Config &cfg )
 {
+    using namespace std::chrono_literals;
     cfg.get_bool("SnoozeButton", "enabled", m_snooze_button_enabled);
     unsigned pin_num=18;
     cfg.get_unsigned("SnoozeButton","button_gpio",pin_num);
@@ -383,10 +425,14 @@ void Cooling::init_snooze_button( Config &cfg )
     // Claim the GPIO--but only if snooze button control is enabled
     if (m_snooze_button_enabled) {
         if (not config_gpio_pin( m_pbutton_gpio, pin_num, Gpio::IN, GPIO_NC)) {
-            m_fan_control_enabled = false;
+            m_snooze_button_enabled = false;  // mark disabled
             LOG_ERROR(Lgr) << "No GPIO snooze button available this session";
         } else {
             LOG_INFO(Lgr) << "Snooze button enabled on GPIO " << pin_num;
+            if ( m_pbutton_gpio.event_wait(2ms) ) {  // short wait
+                m_pbutton_gpio.event_read();
+                LOG_INFO(Lgr) << "ignoring lingering snooze button event";
+            }
         }
         m_last_pbstate = m_pbutton_gpio.get_value();
         LOG_INFO(Lgr) << "Button is now "
@@ -436,17 +482,18 @@ void Cooling::init_panel_leds( Config &cfg )
 
 //////////////////////////// GPIO Operations /////////////////////////////
 
-/// Start the fan (if we have control of it)
+/// Start the fan (if we have control of it).
 ///
 void Cooling::start_fan()
 {
-    if (not m_fan_control_enabled) return;
-    if (m_fan_running) return;
+    if (not m_fan_control_enabled or m_fan_running) {
+        return;
+    }
     if (m_fan_gpio) {
         try {
             m_fan_gpio.set_value(GPIO_ON); // turn fan on
             LOG_INFO(Lgr) << "Started FAN at temp =" << m_degc;
-            m_last_cool_start = time(0);
+            m_last_cool_start = myclock_t::now();
             m_fan_running = true;
         } catch ( std::exception &ex ) {
             LOG_ERROR(Lgr) << "Fan Start operation failed: " << ex.what();
@@ -460,11 +507,13 @@ void Cooling::start_fan()
 ///
 void Cooling::stop_fan()
 {
-    if (not m_fan_control_enabled) return;
-    if (!m_fan_running) return;
+    if (not m_fan_control_enabled or not m_fan_running) {
+        return;
+    }
     if (m_fan_gpio) {
-        time_t tnow = time(0);
-        if ((tnow - m_last_cool_start) < m_min_cool_secs) return;
+        if ((myclock_t::now() - m_last_cool_start) < m_min_cool_secs) {
+            return;
+        }
         try {
             m_fan_gpio.set_value(GPIO_OFF);
             LOG_INFO(Lgr) << "Halted FAN at temp=" << m_degc;
@@ -518,33 +567,59 @@ void Cooling::toggle_grn()
     illuminate_grn( not m_grn_state);
 }
 
-/// Wired with a pull-up resistor so that it is normally high (+3.3V).
-/// If pbutton goes low (off, ~0.05V) then it is being depressed.
-/// Insists on seeing button release (high) after press (low).
-///
-void Cooling::check_buttons()
-{
-    namespace pt = boost::posix_time;
-    if (! m_pbutton_gpio ) { return; } // disabled
 
-    int s = m_pbutton_gpio.get_value();
-    //
-    if ((GPIO_OFF == m_last_pbstate) and (GPIO_ON == s)) {
-        m_last_pbdown = pt::microsec_clock::universal_time();
-        illuminate_grn( false );
-        if (m_rsked_enabled) {
-            // signal pause
-            LOG_INFO(Lgr) << "snooze button released, signal pause";
-            m_rsked_cm->signal_child(SIGUSR1);
-        } else {
-            LOG_INFO(Lgr) << "snooze button pressed (no effect)";
+/**
+ * Sits here for poll_wait duration monitoring the line for a button
+ * press. Always returns after poll_wait. Return value is number of
+ * button presses detected.
+ */
+unsigned Cooling::wait_button()
+{
+    unsigned nevts = 0;
+    nsec_t last_fts  = SCZERO;
+    nsec_t ewait(m_poll_interval);
+
+    // Button processing disabled...simple wait and return
+    if (! m_pbutton_gpio ) {
+        std::this_thread::sleep_for(m_poll_interval);
+        return 0;
+    }
+
+    auto deadline = myclock_t::now() + m_poll_interval;
+    while (true) {
+        if (m_pbutton_gpio.event_wait( ewait )) {
+            const ::gpiod::line_event &fee = m_pbutton_gpio.event_read();
+            nsec_t fts = fee.timestamp;
+            nsec_t dt = (fts - last_fts);
+            // wait for a rising edge after threshold time and current high level
+            if ((GPIO_ON == m_pbutton_gpio.get_value()) && (dt > Button_thresh_ms)) {
+                button_pressed( GPIO_ON );   // ON: button has been released
+                last_fts = fts;
+                nevts++;
+            }
+        }
+        ewait =  (deadline - myclock_t::now());
+        if (ewait <= SCZERO) {
+            break;  // no time remaining
         }
     }
-    else if ((GPIO_ON == m_last_pbstate) and (GPIO_OFF == s)) {
-        // button depressed but not yet released: light up as feedback
-        illuminate_grn( true );
-    }
+    return nevts;
+}
 
+/// If button is high (up) again, signal rsked to pause/resume.
+/// Note time as m_last_pbtime.  TODO: limit high frequency pressing.
+///
+void Cooling::button_pressed(int s)
+{
+    if (GPIO_ON == s) {
+        m_last_pbtime = myclock_t::now();
+        if (m_rsked_enabled) {
+            LOG_INFO(Lgr) << "snooze button Down=>Up, signal pause/resume";
+            m_rsked_cm->signal_child(SIGUSR1);
+        } else {
+            LOG_INFO(Lgr) << "snooze button pressed (to no effect)";
+        }
+    }
     m_last_pbstate = s;
 }
 
@@ -586,9 +661,7 @@ Cooling::config_gpio_pin( gpiod::line &line, unsigned pnum,
             LOG_INFO(Lgr) << "GPIO " << pnum << " exported, direction OUTPUT"
                 " Initially " << state;
         } else {
-            gpiod::line_request config_i
-               {AppName,gpiod::line_request::DIRECTION_INPUT,0};
-            line.request( config_i );
+            line.request({AppName, ::gpiod::line_request::EVENT_RISING_EDGE, 0});
             LOG_INFO(Lgr) << "GPIO " << pnum << " exported, direction INPUT";
         }
         return true;
@@ -658,20 +731,20 @@ bool Cooling::start_rsked()
         terminate_rsked();
         return false;
     }
+    timept_t tnow = myclock_t::now();
     if (m_rsked_broken) {
-        time_t tnow = time(0);
         if ((tnow - m_last_failed_start) < Rsked_restart_cooldown_secs) {
             return false;
         }
-        m_rsked_broken = false; // suppose it is working again...
-        m_last_failed_start = 0;
+        m_rsked_broken = false; // Let's suppose it is working again...
+        m_last_failed_start = timept_t();
         LOG_INFO(Lgr) << "Time has passed, try restarting rsked again...";
         illuminate_red(false);
     }
     for (int i=Max_rsked_restarts; i>0; --i) {
         if (start_rsked_once()) return true;
     }
-    mark_rsked_broken(time(0));
+    mark_rsked_broken( tnow );
     LOG_ERROR(Lgr) << "Giving up restarts for a while--check rsked config";
     //
     return false;
@@ -739,7 +812,7 @@ bool Cooling::start_rsked_once()
     m_rsked_cm->add_arg(m_rsked_cfg_path.native());
     try {
         m_rsked_cm->start_child();
-        sleep( Wait_for_rsked_start_secs );
+        std::this_thread::sleep_for( Wait_for_rsked_start_secs );
     } catch(...) {
         LOG_ERROR(Lgr) << "Exception: could not start application rsked";
         return false;
@@ -757,7 +830,7 @@ bool Cooling::start_rsked_once()
 
 /// Mark rsked as broken; turn on the red light.
 ///
-void Cooling::mark_rsked_broken(time_t tx)
+void Cooling::mark_rsked_broken(timept_t tx)
 {
     m_rsked_broken = true;
     m_last_failed_start = tx;
@@ -802,7 +875,7 @@ void Cooling::check_rsked()
 ///
 void Cooling::maybe_restart_rsked()
 {
-    time_t tnow=time(0);
+    timept_t tnow= myclock_t::now();
     if (m_rsked_broken) {       // was already marked as broken
         if ((tnow - m_last_rsked_crash) < Rsked_restart_cooldown_secs)  {
             return;            // it is too soon to attempt a restart
@@ -844,7 +917,6 @@ uint32_t Cooling::get_status()
 ///
 void Cooling::update_leds()
 {
-    namespace pt = boost::posix_time;
     if (m_rsked_enabled) {
         switch (get_status())
         {
@@ -856,11 +928,10 @@ void Cooling::update_leds()
             break;
         case RSK_PAUSED:
         {
-            pt::ptime tt(pt::microsec_clock::universal_time());
-            pt::time_duration dt = (tt - m_last_blink);
-            if (dt >= pt::seconds(2)) {
+            timept_t tnow = myclock_t::now();
+            if ((tnow - m_last_blink) >= Blink_interval) {
                 toggle_grn();
-                m_last_blink = tt;
+                m_last_blink = tnow;
             }
         }
         break;
@@ -928,16 +999,17 @@ int Cooling::run()
     setup_sigterm_handler();
     if (m_rsked_enabled) { start_rsked(); }
     for (;;) {
-        nanosleep(&m_poll_timespec,nullptr);  // snooze; n.b. wakes on signal
+        wait_button();   // waits m_poll_interval, button or not
         if (g_Terminate) { break; }
         if (g_ReloadReq) {
             reload_config();
             g_ReloadReq=false;
             continue;
         }
-        if (m_rsked_enabled) { check_rsked(); }
+        if (m_rsked_enabled) {
+            check_rsked();
+        }
         update_leds();
-        check_buttons();
         control_temp();
         if (0==polls++) {       // trace
             LOG_INFO(Lgr) << "rsked " << rsk_modename( get_status())

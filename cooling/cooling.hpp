@@ -1,7 +1,7 @@
 #pragma once
 
 /*   Part of the rsked package.
- *   Copyright 2020 Steven A. Harp   farlies(at)gmail.com
+ *   Copyright 2022 Steven A. Harp   farlies(at)gmail.com
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,21 +16,41 @@
  *   limitations under the License.
  */
 
+/* >> You may wish to adjust some of the compile-time parameters in << */
+/* >> found at the start of cooling.cc                              << */
+
 #include <sys/shm.h>
 #include <time.h>
 #include <memory>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include "boost/date_time/posix_time/posix_time_types.hpp"
+#include <chrono>
 #include <gpiod.hpp>
 #include "util/configutil.hpp"
 #include "util/childmgr.hpp"
 
 class Config;
 
-// In main.cc:
+/// In main.cc:
 extern const char *AppName;
 
+/// Timing stuff
+using myclock_t = std::chrono::steady_clock;
+using  timept_t = std::chrono::time_point<myclock_t>;
+using    nsec_t = std::chrono::nanoseconds;
+using    msec_t = std::chrono::milliseconds;
+using     sec_t = std::chrono::seconds;
+const auto SCZERO = myclock_t::duration::zero();
+
+
+
+/// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+/// Constants for configuring/using GPIO lines
+enum class Gpio { IN, OUT };
+enum { GPIO_NC=(-1), GPIO_OFF=0, GPIO_ON=1 };
+
+/// Exception Types
 
 struct Cooling_config_exception  : public std::exception {
     const char *what() const noexcept {
@@ -50,22 +70,7 @@ struct Cooling_runtime_exception  : public std::exception {
     }
 };
 
-/// Misc operational parameters (not in config file)
-enum {
-    Max_rsked_restarts = 3,       // how many times to attempt rsked start
-    Lowest_cool_secs = 5,         // must ran fan at least this long
-    Min_intercrash_secs = 180,    // should not crash this frequently
-    Rsked_restart_cooldown_secs = 3600, // gap between restart phases--hourly
-    Wait_for_rsked_start_secs = 2 // max time for rsked child to start
-};
-
-/// Constants for configuring/using GPIO lines
-enum class Gpio { IN, OUT };
-enum { GPIO_NC=(-1), GPIO_OFF=0, GPIO_ON=1 };
-
-/// Fan temp limits
-constexpr const double Fan_lowest_stop_temp { 25.0 };
-constexpr const double Fan_highest_start_temp { 80.0 };
+/// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 /// This application is useful when running rsked on an embedded device
 /// like RPi.  It will monitor core temperature and turn on an external
@@ -82,9 +87,9 @@ private:
     bool m_console_log {false};  // true: log to console
     bool m_debug {false};        // true: log debug level messages
     bool m_logging_up {false};   // true: logging has been initialized
-    struct timespec m_poll_timespec {1,0}; // polling period
+    msec_t m_poll_interval {1000}; // polling period, milliseconds
     unsigned m_poll_trace {30};  // log every poll_trace polls
-    time_t m_last_banner=0;      // last time we logged the banner
+    timept_t m_last_banner {SCZERO}; // last time we logged the banner
     key_t m_sh_token {0};        // shared memory token
     int m_shm_id {0};            // id of shared memory
     uint32_t *m_shm_word {nullptr}; // address of shared memory word
@@ -101,22 +106,22 @@ private:
     boost::filesystem::path m_temp_sensor_path
                             {"/sys/class/thermal/thermal_zone0/temp"};
     bool m_fan_running {false};      // is the fan running
-    time_t m_min_cool_secs {240};  // run fan for at least this period
+    sec_t m_min_cool_secs {240};  // run fan for at least this period
     double m_cool_start_temp { 59.0 }; // deg C
     double m_cool_stop_temp { 49.0 };  // deg C
-    time_t m_last_cool_start { 0 };
+    timept_t m_last_cool_start {SCZERO};
     // LEDS
     bool m_panel_leds_enabled {false};
     gpiod::line m_red_gpio {};  // gpio line for red LED
     gpiod::line m_grn_gpio {};  // gpio line for green LED
     bool m_red_state = false;    // commanded red LED state true=ON
     bool m_grn_state = false;    // commanded grn LED state true=ON
-    boost::posix_time::ptime m_last_blink; // not_a_date_time
+    timept_t m_last_blink;       //
     // BUTTON
     bool m_snooze_button_enabled {false};
     gpiod::line m_pbutton_gpio {}; // gpio line for pushbutton
-    time_t m_last_pbcheck {0};   // last time we checked buttons
-    boost::posix_time::ptime m_last_pbdown {}; // not_a_date_time
+    timept_t m_last_pbcheck {SCZERO};   // last time we checked buttons
+    timept_t m_last_pbtime {SCZERO};    // last observed button press
     int m_last_pbstate {-1};        // 0=down 1=up
     //
     /////// RSKED ///////
@@ -124,8 +129,8 @@ private:
     bool m_rsked_debug {false}; // print debug messages in rsked log?
     unsigned m_rsked_errors=0;   // count times rsked fails
     bool m_rsked_broken {false};     // does rsked appear to be unstartable?
-    time_t m_last_failed_start {0};  // gmtime when we gave up restarts
-    time_t m_last_rsked_crash {0};  // gmtime when rsked last observed dead
+    timept_t m_last_failed_start {SCZERO}; // when we gave up restarts
+    timept_t m_last_rsked_crash {SCZERO};  // when rsked last observed dead
 
     std::string m_kill_pattern { "'ogg123|mpg321|gqrx'" };
     std::string m_mpd_stop_cmd { "/usr/bin/mpc stop" };
@@ -134,7 +139,7 @@ private:
     boost::filesystem::path m_rsked_bin_path;
     boost::filesystem::path m_rsked_cfg_path;
     //
-    void check_buttons();
+    void button_pressed(int);
     void check_rsked();
     bool config_gpio_pin( gpiod::line&, unsigned, Gpio, int );
     void control_temp();
@@ -146,7 +151,7 @@ private:
     void init_rsked(Config&);
     void init_snooze_button(Config&);
     void kill_aux_processes();
-    void mark_rsked_broken(time_t);
+    void mark_rsked_broken(timept_t);
     void maybe_restart_rsked();
     void reload_config();
     bool setup_gpio();
@@ -165,6 +170,7 @@ private:
     void teardown_gpio();
     void teardown_shm();
     void update_leds();
+    unsigned wait_button();
 
 public:
     void initialize(bool /*debug*/);
