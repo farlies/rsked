@@ -28,10 +28,7 @@
 #include "source.hpp"
 #include "schedule.hpp"
 #include "player.hpp"
-
-/// TODO: Awkwardly these live in main.cc:
-extern const char* AppName;
-extern void log_banner(bool);
+#include "main.hpp"
 
 class Player_manager;
 class VU_runner;
@@ -71,7 +68,7 @@ private:
     spPlay_slot m_susp_slot {};      // suspended slot
     spPlayer m_susp_player {};       // suspended player
     //
-    time_t snooze1_secs  { SnzS };  // snooze; default one hour, in seconds
+    time_t m_snooze_secs {SnzS};    // snooze period, seconds
     bool m_snoozing  { false };      // have we been snoozing?
     time_t m_snooze_until { 0 };     // 0, or time to resume play when in snooze
     time_t m_check_enabled_time {0}; // when we start VU checking

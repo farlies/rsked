@@ -50,16 +50,16 @@ namespace po = boost::program_options;
 std::unique_ptr<Rsked> Main::rsked {};
 
 /// Our official name, used in pid file
-const char *AppName { "rsked" };
+const char *Main::AppName { "rsked" };
 
 /// Config file unless changed on the command line
-std::string DefaultConfigPath { "~/.config/rsked/rsked.json" };
+::std::string Main::DefaultConfigPath { "~/.config/rsked/rsked.json" };
 
 /// Log the version and compilation information.
 /// If force==false, this will only print every LOG_INTERVAL_SECS,
 /// with the intention of getting this info in every log file.
 ///
-void log_banner(bool force)
+void Main::log_banner(bool force)
 {
     constexpr const time_t LOG_INTERVAL_SECS { 600 };
 
@@ -68,7 +68,7 @@ void log_banner(bool force)
     if ( ((now - last) < LOG_INTERVAL_SECS) and not force ) {
         return; 
     }
-    LOG_INFO(Lgr) << AppName << " version "
+    LOG_INFO(Lgr) << Main::AppName << " version "
                   << VERSION_STR "  built "  __DATE__ " " __TIME__ ;
     last = now;
 }
@@ -76,14 +76,14 @@ void log_banner(bool force)
 /// Flag will be set to true if we must exit main loop due to
 /// signal or condition.
 ///
-bool Terminate = false;
-int  gTermSignal = 0;
+bool Main::Terminate = false;
+int  Main::gTermSignal = 0;
 
 /// detected Button1 press (SIGUSR1) at given time
-bool Button1 = false;
+bool Main::Button1 = false;
 
 /// detected HUP - reload requested
-bool ReloadReq = false;
+bool Main::ReloadReq = false;
 
 
 /// Signal handler function for various signals.
@@ -92,14 +92,14 @@ bool ReloadReq = false;
 void my_signal_handler(int s)
 {
     if ((s == SIGTERM) || (s == SIGINT) || (s==SIGQUIT)) {
-        Terminate = true;
-        gTermSignal = s;
+        Main::Terminate = true;
+        Main::gTermSignal = s;
     }
     else if (s == SIGUSR1) {
-        Button1 = true;
+        Main::Button1 = true;
     }
     else if (s == SIGHUP) {
-        ReloadReq = true;
+        Main::ReloadReq = true;
     }
 }
 
@@ -151,18 +151,18 @@ int main(int ac, char **av)
         exit(0);
     }
     if (vm.count("version")) {
-        std::cout << AppName << " version "
+        std::cout << Main::AppName << " version "
                   << VERSION_STR "  built "  __DATE__ " " __TIME__  << "\n";
         exit(0);
     }
     bool test_mode = (vm.count("test") > 0);
     if (not test_mode) {
-        if (is_running(AppName)) {  // only one rsked is allowed
-            std::cerr  << "Abort: only one copy of " << AppName
+        if (is_running(Main::AppName)) {  // only one rsked is allowed
+            std::cerr  << "Abort: only one copy of " << Main::AppName
                        << " may be running at a time." << std::endl;
             exit(2);
         }
-        mark_running(AppName);      // create a pid file
+        mark_running(Main::AppName);      // create a pid file
     } else {
         std::cerr << ";;; Test mode\n";
     }
@@ -177,9 +177,9 @@ int main(int ac, char **av)
     if (test_mode) log_mode = LF_CONSOLE;
     //
     if (vm.count("debug")) { log_mode |= LF_DEBUG; }
-    init_logging( AppName, logpath.c_str(), log_mode );
-    log_banner(true);
-    LOG_INFO(Lgr) << AppName << " COLD START";
+    init_logging( Main::AppName, logpath.c_str(), log_mode );
+    Main::log_banner(true);
+    LOG_INFO(Lgr) << Main::AppName << " COLD START";
     // -------------------------- RUN --------------------------
     try  {
         Main::rsked = std::make_unique<Rsked>(key_id,test_mode);
@@ -187,7 +187,7 @@ int main(int ac, char **av)
             std::string cstr { vm["config"].as<std::string>() };
             Main::rsked->configure(cstr,vm);
         } else {
-            Main::rsked->configure(DefaultConfigPath,vm);
+            Main::rsked->configure(Main::DefaultConfigPath,vm);
         }
         if (!test_mode) {
             Main::rsked->track_schedule(); // <==MAY RUN "FOREVER"==
@@ -208,10 +208,10 @@ int main(int ac, char **av)
     Main::rsked.reset();
     // ---------------------------------------------------------
     Child_mgr::kill_all();
-    LOG_INFO(Lgr) << "Exiting on signal " << gTermSignal;
+    LOG_INFO(Lgr) << "Exiting on signal " << Main::gTermSignal;
     if (not test_mode) {
         finish_logging();
-        mark_ended(AppName);
+        mark_ended(Main::AppName);
     }
     return return_code;
 }

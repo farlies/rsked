@@ -26,19 +26,19 @@
 #include "schedule.hpp"
 #include "status.h"
 #include "vurunner.hpp"
-#include "boost/date_time/gregorian/gregorian.hpp"
 
-/// TODO: pack these into Rsked singleton
-extern bool Terminate;
-extern bool Button1;
-extern bool ReloadReq;
 
-/// Default paths
+/// >> ----------  Default paths------------ <<
+
+
+/// Schedule file
 const boost::filesystem::path DefaultSchedulePath
 {"~/.config/rsked/schedule.json"};
 
+/// Message of the day directory
 const boost::filesystem::path DefaultMotdPath
 {"~/.config/rsked/motd"};
+
 
 namespace po = boost::program_options;
 
@@ -46,7 +46,7 @@ namespace po = boost::program_options;
 /// @arg key  status out shared memory key passed from command line
 ///
 Rsked::Rsked(key_t status_key, bool test)
-    : m_config( std::make_unique<Config>("~/.config/rsked/rsked.json") ),
+    : m_config( std::make_unique<Config>(Main::DefaultConfigPath.c_str()) ),
       m_sched( std::make_unique<Schedule>() ),
       m_vu_runner( std::make_unique<VU_runner>() ),
       m_pmgr( std::make_unique<Player_manager>() ),
@@ -147,7 +147,7 @@ void Rsked::configure(const std::string& p, const po::variables_map &vm)
 ///
 void Rsked::reload_schedule()
 {
-    ReloadReq = false;
+    Main::ReloadReq = false;
     LOG_INFO(Lgr) << "Rsked:: reloading schedule on signal";
     //
     std::unique_ptr<Schedule> psched = std::make_unique<Schedule>();
@@ -205,7 +205,7 @@ bool Rsked::snoozep()
 void Rsked::enter_snooze()
 {
     try {
-        m_snooze_until = time(0) + snooze1_secs;
+        m_snooze_until = time(0) + m_snooze_secs;
         update_status(RSK_PAUSED);
         // pause current player if any; eat any sigchild event
         if (m_cur_player) {
@@ -213,7 +213,7 @@ void Rsked::enter_snooze()
             sleep(1); // may return immediately if child dies
         }
         LOG_INFO(Lgr) << "Rsked: Snooze for " <<
-            (snooze1_secs/60) << " minutes";
+            (m_snooze_secs/60) << " minutes";
         m_snoozing = true;
     } catch(...) {
         LOG_ERROR(Lgr) << "Failed to enter snooze mode";
@@ -528,21 +528,21 @@ void Rsked::track_schedule()
     LOG_INFO(Lgr) << "Tracking schedule.";
 
     for (;;) {
-        if (Terminate) { break; } // must exit rsked
+        if (Main::Terminate) { break; } // must exit rsked
         if ( nanosleep( &m_rest, nullptr) ) {
             LOG_INFO(Lgr) << "Sleep interrupted";
         }
-        if (Terminate) { break; } // must exit rsked
+        if (Main::Terminate) { break; } // must exit rsked
 
         m_pmgr->check_players();   // check all player processes
 
-        if (ReloadReq or not m_sched) {
+        if (Main::ReloadReq or not m_sched) {
             reload_schedule();
             continue;
         }
-        if (Button1) {
+        if (Main::Button1) {
             LOG_INFO(Lgr) << "Snooze button pressed.";
-            Button1 = false;
+            Main::Button1 = false;
             toggle_snooze();    // might enter or exit snooze mode
         }
         if (snoozep()) {        // true: we should be snoozing...
@@ -559,7 +559,7 @@ void Rsked::track_schedule()
         }
         maybe_start_playing();
         check_playback_level(); // may mark cur source as defective
-        log_banner(false);
+        Main::log_banner(false);
     }
 }
 
